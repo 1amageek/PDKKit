@@ -1,5 +1,22 @@
 // swift-tools-version: 6.3
 import PackageDescription
+import Foundation
+
+let workspaceRoot = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+
+let xcircuitePackageDependency: Package.Dependency = FileManager.default.fileExists(
+    atPath: workspaceRoot.appendingPathComponent("XcircuitePackage/Package.swift").path
+)
+    ? .package(path: "../XcircuitePackage")
+    : .package(url: "https://github.com/1amageek/XcircuitePackage.git", revision: "55b757efa6c906c30e829c2ca5b67566856dec6b")
+
+let swiftMaskDataDependency: Package.Dependency = FileManager.default.fileExists(
+    atPath: workspaceRoot.appendingPathComponent("swift-mask-data/Package.swift").path
+)
+    ? .package(path: "../swift-mask-data")
+    : .package(url: "https://github.com/1amageek/swift-mask-data.git", revision: "9dcad7a886f0c7dc470062f3ab346fac6e1048db")
 
 let package = Package(
     name: "PDKKit",
@@ -14,8 +31,8 @@ let package = Package(
         .executable(name: "pdkkit", targets: ["PDKKitCLI"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/1amageek/XcircuitePackage.git", revision: "55b757efa6c906c30e829c2ca5b67566856dec6b"),
-        .package(url: "https://github.com/1amageek/swift-mask-data.git", revision: "9dcad7a886f0c7dc470062f3ab346fac6e1048db"),
+        xcircuitePackageDependency,
+        swiftMaskDataDependency,
     ],
     targets: [
         .target(
