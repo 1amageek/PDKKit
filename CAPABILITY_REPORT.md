@@ -18,7 +18,7 @@
 | Local qualification gate | `PDKQualificationGate`, digest-bound corpus + oracle evidence | Available for `oracleCorrelated` handoff |
 | Qualification artifact evaluator | `PDKQualificationRequest`, `LocalPDKQualificationEvaluator` | Available for immutable payload/envelope artifacts |
 | Deterministic JSON API surface | `pdkkit inspect/discover/validate/corpus/inspect-view/oracle/qualify` | Available |
-| Xcircuite stage execution | six PDK adapters, immutable envelopes, agent-facing runtime specs and approval/resume flow | Available for the PDK integration slice; full platform release flow remains open |
+| Xcircuite stage execution | six PDK adapters, immutable envelopes, agent-facing runtime specs and approval/resume flow | Available for the PDK integration slice; release adapter contract is available across the workspace |
 
 ## Explicit limitations
 
@@ -36,7 +36,9 @@
 - `qualificationState` remains `unverified`; ToolQualification owns promotion
   to a process-scoped qualified state.
 - ToolQualification scope matching is enforced at the Xcircuite trust gate for
-  the PDK slice. The checked-in fixture provides contract evidence only; it does
+  the PDK slice. The workspace also defines an independent
+  `ToolProcessQualificationEvidence` artifact and a ReleaseEngine fail-closed
+  consumer. The checked-in fixture provides contract evidence only; it does
   not establish an independent process qualification.
 
 ## Evidence flow

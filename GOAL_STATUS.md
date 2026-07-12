@@ -2,7 +2,7 @@
 
 ## Current state
 
-**M0-M6 local evidence contracts and the PDK-specific M7 integration slice are implemented. The North Star platform goal is not complete. Foundry/process qualification is intentionally not claimed.**
+**M0-M6 local evidence contracts, the PDK-specific M7 integration slice and the cross-package M6b/M8 release contracts are implemented. The North Star platform goal is not complete. Foundry/process qualification is intentionally not claimed.**
 
 | Maturity gate | Status | Evidence |
 |---|---|---|
@@ -17,11 +17,11 @@
 | Fixture corpus | M3/M4 contract-complete | Retained valid, blocked and failed corpus cases plus manifest-bound LEF/SPICE/Liberty checks |
 | Oracle correlation | Complete for immutable local structural oracle | Manifest-digest-bound expectation, comparison payload, mismatch blocker and CLI evidence |
 | Local qualification gate | Complete for `oracleCorrelated` handoff | Matching corpus/oracle reports required; `processQualified` is never emitted |
-| Process qualification | Not claimed | Requires independent process-scoped ToolQualification evidence |
-| ToolQualification trust scope | Implemented as a generic contract | Implementation, binary, algorithm, process and deck scope must match; fixture evidence is not foundry qualification |
+| Process qualification | Contract implemented; not claimed | Requires an independent, fresh process-scoped ToolQualification evidence record with PDK scope |
+| ToolQualification trust scope | Implemented as a generic and PDK-aware contract | Implementation, binary, algorithm, process, deck, PDK ID and PDK digest must match; fixture evidence is not foundry qualification |
 | Xcircuite stage adapter | Passed for the PDK slice | Six PDK FlowStageExecutor adapters, runtime-spec round-trip and immutable envelope persistence |
-| End-to-end flow evidence | Passed for the PDK slice | `xcodebuild` selected test: 6 tests, including scope mismatch block and approval/resume |
-| Release readiness | Blocked by evidence | No foundry-specific corpus/oracle/approval is present |
+| End-to-end flow evidence | Passed for PDK and release adapter slices | PDK selected test: 6; release adapter test: 5; approval/resume and runtime round-trip covered |
+| Release readiness | Contract implemented, blocked by evidence | No foundry-specific corpus/oracle/approval is present |
 
 ## Function status
 
@@ -71,7 +71,7 @@ The package goal is complete only when every P0 function has a concrete backend,
 - No external-tool adapter has been selected or qualified for a foundry process.
 - The retained corpus is a deterministic contract fixture, not foundry evidence.
 - Independent process-specific qualification and release approval remain
-  external evidence gates.
+  external evidence gates even though their typed contracts now exist.
 - Full process qualification and release-profile eligibility still require
   independent process-scoped evidence, foundry/reference artifacts and an
   explicit human approval record. The PDK-specific headless integration gate

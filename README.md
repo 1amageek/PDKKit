@@ -9,9 +9,11 @@ validation, retained corpus evaluation and parser-backed standard-view
 inspection, immutable oracle comparison and a local qualification gate. The
 PDK stage slice is also executable through Xcircuite with immutable artifacts,
 scope-bound tool evidence, human approval and resume coverage. The larger
-platform goal remains open: full model/timing semantics, independent
-process-scoped tool qualification and release approval are separate evidence
-gates owned across PDKKit, ToolQualification and Xcircuite.
+platform goal remains open: full model/timing semantics and actual foundry
+approval are separate evidence gates. The workspace now provides typed
+process-qualification and release-eligibility contracts in ToolQualification,
+ReleaseEngine and Xcircuite, but this package does not manufacture the
+independent evidence required to pass those gates.
 
 ## Products
 
@@ -115,7 +117,8 @@ perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Packa
 
 The repository's current verification result is 27 tests in 5 Swift Testing
 suites plus a successful Xcode package test. The Xcircuite PDK integration
-slice passes 6 tests in 1 suite with `xcodebuild`. The Xcode command may print
+slice passes 6 tests in 1 suite with `xcodebuild`; the release-stage adapter
+slice passes 5 tests in 1 suite. The Xcode command may print
 environment-specific IDE warnings while still returning success.
 
 ## Evidence boundary
@@ -131,7 +134,8 @@ Local inspection -> retained corpus -> immutable oracle comparison
 ```
 
 `oracleCorrelated` is the highest state this package emits. A process-scoped
-`processQualified` result requires independent ToolQualification evidence and
+`processQualified` result requires an independent
+`ToolProcessQualificationEvidence` record with matching PDK scope, followed by
 release approval outside this package. This boundary is intentional: a local
 parser or retained fixture cannot establish manufacturing-process trust by
 itself.

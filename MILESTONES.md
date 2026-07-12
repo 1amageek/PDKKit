@@ -32,11 +32,11 @@ flowchart LR
 | M4b | SPICE and Liberty structural inspection and manifest binding | Complete for structural contract | Full model/table semantics remain open |
 | M5 | Immutable reference-oracle comparison and mismatch classification | Complete for local structural oracle contract | manifest-bound expectation, mismatch blocker, CLI and regression fixture |
 | M6 | Local qualification gate from corpus + oracle evidence | Complete for `oracleCorrelated` handoff | digest-bound corpus/oracle reports and explicit non-qualification limitation |
-| M6b | Process-scoped ToolQualification evidence and trust-gate promotion | Generic scope contract implemented; process evidence not claimed | independent qualified tool descriptor, fresh evidence and scope match |
+| M6b | Process-scoped ToolQualification evidence and trust-gate promotion | Independent qualification artifact contract implemented; actual process evidence not claimed | independent qualified tool descriptor, fresh evidence and matching PDK scope |
 | M7 | Xcircuite runtime execution, immutable stage artifacts, human review and resume | PDK adapter/runtime slice complete | clean headless PDK integration build, scope mismatch block and resume test |
-| M8 | Release-profile eligibility and approval record | Not started | all required gates, approval artifact and reproducible run |
+| M8 | Release-profile eligibility and approval record | Release qualification contract implemented outside PDKKit; external approval open | all required gates, approval artifact and reproducible run |
 
-## Current implementation focus: M6b/M7 evidence handoff
+## Current implementation focus: M4b/M6b/M8 evidence handoff
 
 M3 turned isolated smoke tests into a retained, auditable set of expected
 outcomes. M4-M6 now extend that evidence through canonical standard-view
@@ -52,12 +52,14 @@ retained corpus report and oracle comparison all agree. It does not promote
 `processQualified`; that remains owned by independent ToolQualification and
 human approval.
 
-The generic M6b contract now binds ToolQualification evidence to the requested
-implementation, binary digest, algorithm version, process profile, and deck
-digest. Xcircuite's PDK stage slice consumes that contract at the trust gate,
-persists every stage envelope, and records approval/resume transitions. The
-workspace fixture demonstrates the contract boundary; it is not independent
-foundry evidence and does not close process qualification.
+The M6b contract now binds ToolQualification evidence to the requested
+implementation, binary digest, algorithm version, process profile, deck
+digest, PDK ID and PDK digest. `ToolProcessQualificationEvidence` records
+independence, evidence lineage, qualification status and expiry. ReleaseEngine
+re-reads that typed artifact from a declared `productionApproval` reference and
+fails closed on parse, freshness, identity or scope mismatch. The workspace
+fixture demonstrates the contract boundary; it is not independent foundry
+evidence and does not close process qualification.
 
 ## Exit gates and ownership
 
@@ -66,7 +68,8 @@ foundry evidence and does not close process qualification.
 | Manifest/asset integrity | PDKKit | immutable references and validation envelope |
 | Format semantics | PDKKit adapter or approved external tool | canonical view report |
 | Oracle correlation | PDKKit, then ToolQualification/Xcircuite | immutable comparison result and mismatch evidence |
-| Process qualification | ToolQualification | process-scoped qualification record |
+| Process qualification | ToolQualification | independent process-scoped qualification record and evidence lineage |
+| Release eligibility | ReleaseEngine/Xcircuite | retained release result, approval record and reproducible run |
 | Human approval/resume | Xcircuite/DesignFlowKernel | run ledger, diff, approval and resume artifacts |
 
 The package remains `unverified` until the external gates are attached.
