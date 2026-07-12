@@ -5,14 +5,17 @@ import Foundation
 let workspaceRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .deletingLastPathComponent()
+let isFullLSIWorkspace = FileManager.default.fileExists(
+    atPath: workspaceRoot.appendingPathComponent("Xcircuite/Package.swift").path
+)
 
-let xcircuitePackageDependency: Package.Dependency = FileManager.default.fileExists(
+let xcircuitePackageDependency: Package.Dependency = isFullLSIWorkspace && FileManager.default.fileExists(
     atPath: workspaceRoot.appendingPathComponent("XcircuitePackage/Package.swift").path
 )
     ? .package(path: "../XcircuitePackage")
     : .package(url: "https://github.com/1amageek/XcircuitePackage.git", revision: "55b757efa6c906c30e829c2ca5b67566856dec6b")
 
-let swiftMaskDataDependency: Package.Dependency = FileManager.default.fileExists(
+let swiftMaskDataDependency: Package.Dependency = isFullLSIWorkspace && FileManager.default.fileExists(
     atPath: workspaceRoot.appendingPathComponent("swift-mask-data/Package.swift").path
 )
     ? .package(path: "../swift-mask-data")
