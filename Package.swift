@@ -14,8 +14,8 @@ let package = Package(
         .executable(name: "pdkkit", targets: ["PDKKitCLI"]),
     ],
     dependencies: [
-        .package(path: "../XcircuitePackage"),
-        .package(path: "../swift-mask-data"),
+        .package(url: "https://github.com/1amageek/XcircuitePackage.git", branch: "main"),
+        .package(url: "https://github.com/1amageek/swift-mask-data.git", branch: "main"),
     ],
     targets: [
         .target(
