@@ -18,7 +18,27 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         _ request: PDKOracleRequest
     ) async throws -> XcircuiteEngineResultEnvelope<PDKOracleComparisonPayload> {
         let startedAt = clock.now()
-        let oracleURL = URL(filePath: request.oracle.path).standardizedFileURL
+        let oracleURL: URL
+        do {
+            oracleURL = try PDKArtifactURLResolver().resolve(
+                request.oracle,
+                baseDirectoryPath: request.projectRootPath
+            )
+        } catch {
+            return makeEnvelope(
+                request: request,
+                startedAt: startedAt,
+                status: .blocked,
+                oracleID: "unavailable",
+                findings: [PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.oracle.input-path-invalid",
+                    message: "Oracle expectation path could not be resolved: \(error.localizedDescription)",
+                    entity: request.oracle.path,
+                    suggestedActions: ["provide_project_root", "repair_oracle_reference"]
+                )]
+            )
+        }
         let data: Data
         do {
             data = try Data(contentsOf: oracleURL)
@@ -89,7 +109,8 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 inputs: [request.pdk.manifest],
                 pdk: request.pdk,
                 assetID: view.assetID,
-                format: view.format
+                format: view.format,
+                projectRootPath: request.projectRootPath
             )
             do {
                 let envelope = try await manifestInspector.execute(inspectionRequest)

@@ -2,9 +2,10 @@
 
 ## Status
 
-The implementation order below is complete through the local oracle and
-qualification-evidence gates. Deep model/table semantics, independent process
-qualification and runtime integration remain open.
+The implementation order below is complete through the local oracle,
+qualification-evidence and PDK-specific runtime integration gates. Deep
+model/table semantics, independent process qualification and release-profile
+approval remain open.
 
 ## Order
 
@@ -32,8 +33,12 @@ qualification and runtime integration remain open.
 - M4b structural SPICE/Liberty inspection with model, subcircuit, cell, pin, corner and timing-arc facts plus manifest binding and malformed-text regression cases.
 - M5 immutable manifest-digest-bound oracle expectations, canonical field comparison, structured mismatch blockers and `pdkkit oracle`.
 - M6 `PDKQualificationGate` and `pdkkit qualify`, which require matching retained corpus and oracle evidence and stop at `oracleCorrelated`.
-- M7 PDK standard-view, oracle and qualification FlowStageExecutor adapters with immutable stage-envelope persistence; final Xcircuite runtime compilation remains an open gate.
-- Xcircuite discovery/validation FlowStageExecutor adapters and persistence tests.
+- M7 six PDK FlowStageExecutor adapters with immutable stage-envelope
+  persistence, agent-facing Codable runtime specs, project-root-bounded artifact
+  references, ToolQualification scope enforcement, human approval and resume
+  regression coverage.
+- Xcircuite discovery/validation/corpus/standard-view/oracle/qualification
+  adapters and persistence tests.
 
 ## Completion gates
 
@@ -42,7 +47,8 @@ qualification and runtime integration remain open.
 - Native and external backends produce the same result schema.
 - No UI type enters a public contract.
 - No result claims foundry qualification without process-scoped oracle evidence.
-- Xcircuite can execute, persist, review and resume the stage without circuit-studio.
+- Xcircuite can execute, persist, review and resume the PDK stage without
+  circuit-studio.
 
 ## M3 evidence gate
 
@@ -65,6 +71,17 @@ canonical field matches the selected immutable expectation. The qualification
 gate additionally requires a passing retained corpus case bound to the same
 manifest digest. It returns `oracleCorrelated` as a local evidence handoff and
 never claims `processQualified`.
+
+## M6b/M7 evidence gate
+
+The ToolQualification evidence contract is valid only when its complete scope
+matches the requested implementation ID, binary digest, algorithm version,
+process profile ID and deck digest. Xcircuite applies this requirement before
+running the PDK qualification stage. A mismatched scope is blocked, while a
+matching scope still requires human approval before a resumed run may continue.
+The PDK-specific xcodebuild regression covers all six adapters and persists
+the resulting envelopes; the fixture is contract evidence, not foundry
+qualification.
 
 ## Evidence gate
 

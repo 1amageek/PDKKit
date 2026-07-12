@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import XcircuitePackage
 @testable import PDKCore
 
 @Suite("PDKCore implementation")
@@ -58,6 +59,42 @@ struct PDKCoreTests {
         let report = PDKCorpusSuiteValidator().validate(suite)
         #expect(!report.isValid)
         #expect(report.findings.contains { $0.code == "pdk.corpus.unsafe-manifest-path" })
+    }
+
+    @Test("artifact references resolve relative to an explicit project root")
+    func artifactReferencesUseProjectRoot() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appending(path: "pdkkit-artifact-root-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer {
+            do {
+                try FileManager.default.removeItem(at: root)
+            } catch {
+                Issue.record("Failed to remove artifact root fixture: \(error)")
+            }
+        }
+
+        let reference = XcircuiteFileReference(
+            artifactID: "report",
+            path: "reports/result.json",
+            kind: .report,
+            format: .json
+        )
+        let resolved = try PDKArtifactURLResolver().resolve(
+            reference,
+            baseDirectoryPath: root.path
+        )
+        #expect(resolved.path == root.appending(path: "reports/result.json").path)
+        #expect(throws: PDKArtifactPathError.self) {
+            try PDKArtifactURLResolver().resolve(
+                XcircuiteFileReference(
+                    path: "../outside.json",
+                    kind: .report,
+                    format: .json
+                ),
+                baseDirectoryPath: root.path
+            )
+        }
     }
 
     private func fixtureURL() -> URL {

@@ -12,6 +12,7 @@ public struct PDKManifestViewInspectionRequest: XcircuiteEngineRequest {
     public var assetID: String
     public var format: PDKStandardViewFormat
     public var requireNonEmpty: Bool
+    public var projectRootPath: String?
 
     public init(
         runID: String,
@@ -19,7 +20,8 @@ public struct PDKManifestViewInspectionRequest: XcircuiteEngineRequest {
         pdk: PDKReference,
         assetID: String,
         format: PDKStandardViewFormat,
-        requireNonEmpty: Bool = true
+        requireNonEmpty: Bool = true,
+        projectRootPath: String? = nil
     ) {
         self.schemaVersion = Self.currentSchemaVersion
         self.runID = runID
@@ -28,5 +30,6 @@ public struct PDKManifestViewInspectionRequest: XcircuiteEngineRequest {
         self.assetID = assetID
         self.format = format
         self.requireNonEmpty = requireNonEmpty
+        self.projectRootPath = projectRootPath
     }
 }

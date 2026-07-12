@@ -2,7 +2,7 @@
 
 ## Current state
 
-**M0-M6 local evidence contracts are implemented. The North Star platform goal is not complete. Foundry/process qualification is intentionally not claimed.**
+**M0-M6 local evidence contracts and the PDK-specific M7 integration slice are implemented. The North Star platform goal is not complete. Foundry/process qualification is intentionally not claimed.**
 
 | Maturity gate | Status | Evidence |
 |---|---|---|
@@ -10,7 +10,7 @@
 | Public package products | Complete | Package.swift, PDKCore/Discovery/Validation/Kit/CLI products |
 | Shared Xcircuite request/result contract | Complete | Codable, Hashable, Sendable requests and result payloads |
 | Contract build | Passed | `swift build` |
-| Contract test | Passed | 26 PDKKit Swift Testing cases across 5 suites |
+| Contract test | Passed | 27 PDKKit Swift Testing cases across 5 suites |
 | Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, semantic validation, standard-view IR, oracle comparison and qualification gate |
 | CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `oracle`, `qualify` |
 | Standard-view semantics | Structural M4a/M4b complete | LEF/GDSII/OASIS/SPICE/Liberty parser-backed structural IR, corner binding and manifest binding; deep model/timing semantics remain open |
@@ -18,8 +18,9 @@
 | Oracle correlation | Complete for immutable local structural oracle | Manifest-digest-bound expectation, comparison payload, mismatch blocker and CLI evidence |
 | Local qualification gate | Complete for `oracleCorrelated` handoff | Matching corpus/oracle reports required; `processQualified` is never emitted |
 | Process qualification | Not claimed | Requires independent process-scoped ToolQualification evidence |
-| Xcircuite stage adapter | Implemented, build pending | Discovery/validation plus standard-view, oracle and qualification FlowStageExecutor adapters |
-| End-to-end flow evidence | Runtime gate open | New adapters persist result artifacts; concurrent Xcircuite dependency build prevented final compile confirmation |
+| ToolQualification trust scope | Implemented as a generic contract | Implementation, binary, algorithm, process and deck scope must match; fixture evidence is not foundry qualification |
+| Xcircuite stage adapter | Passed for the PDK slice | Six PDK FlowStageExecutor adapters, runtime-spec round-trip and immutable envelope persistence |
+| End-to-end flow evidence | Passed for the PDK slice | `xcodebuild` selected test: 6 tests, including scope mismatch block and approval/resume |
 | Release readiness | Blocked by evidence | No foundry-specific corpus/oracle/approval is present |
 
 ## Function status
@@ -71,12 +72,9 @@ The package goal is complete only when every P0 function has a concrete backend,
 - The retained corpus is a deterministic contract fixture, not foundry evidence.
 - Independent process-specific qualification and release approval remain
   external evidence gates.
-- The current Xcircuite dependency graph has unrelated existing compile errors
-  before the PDK runtime target is reached, including
-  `DFTEngine/Sources/ATPGEngine/GateLevelSimulationError.swift:14`,
-  `RTLVerificationEngine/Sources/RTLVerificationEngine/ExternalRTLVerificationEngine.swift:125`
-  and the previously observed
-  `Xcircuite/Sources/Xcircuite/ReleaseStageExecutionAdapterSupport.swift:90`.
-  The full headless integration gate cannot be marked green from this workspace state.
+- Full process qualification and release-profile eligibility still require
+  independent process-scoped evidence, foundry/reference artifacts and an
+  explicit human approval record. The PDK-specific headless integration gate
+  is green, but that evidence must not be generalized to all platform stages.
 
 This file must be updated by implementation agents whenever a maturity gate changes. A source file or type name alone is never evidence of implementation or qualification.

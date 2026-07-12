@@ -14,6 +14,7 @@ public struct PDKStandardViewInspectionRequest: XcircuiteEngineRequest {
     public var expectedLayerNames: [String]
     public var expectedPhysicalLayerNumbers: [Int]
     public var expectedCellNames: [String]
+    public var projectRootPath: String?
 
     public init(
         runID: String,
@@ -23,7 +24,8 @@ public struct PDKStandardViewInspectionRequest: XcircuiteEngineRequest {
         requireNonEmpty: Bool = true,
         expectedLayerNames: [String] = [],
         expectedPhysicalLayerNumbers: [Int] = [],
-        expectedCellNames: [String] = []
+        expectedCellNames: [String] = [],
+        projectRootPath: String? = nil
     ) {
         self.schemaVersion = Self.currentSchemaVersion
         self.runID = runID
@@ -34,5 +36,6 @@ public struct PDKStandardViewInspectionRequest: XcircuiteEngineRequest {
         self.expectedLayerNames = Array(Set(expectedLayerNames)).sorted()
         self.expectedPhysicalLayerNumbers = Array(Set(expectedPhysicalLayerNumbers)).sorted()
         self.expectedCellNames = Array(Set(expectedCellNames)).sorted()
+        self.projectRootPath = projectRootPath
     }
 }

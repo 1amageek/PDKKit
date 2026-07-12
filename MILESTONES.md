@@ -32,11 +32,11 @@ flowchart LR
 | M4b | SPICE and Liberty structural inspection and manifest binding | Complete for structural contract | Full model/table semantics remain open |
 | M5 | Immutable reference-oracle comparison and mismatch classification | Complete for local structural oracle contract | manifest-bound expectation, mismatch blocker, CLI and regression fixture |
 | M6 | Local qualification gate from corpus + oracle evidence | Complete for `oracleCorrelated` handoff | digest-bound corpus/oracle reports and explicit non-qualification limitation |
-| M6b | Process-scoped ToolQualification evidence and trust-gate promotion | Not started | independent qualified tool descriptor, fresh evidence and scope match |
-| M7 | Xcircuite runtime execution, immutable stage artifacts, human review and resume | PDK adapter slice implemented; runtime gate open | clean headless integration build and resume test |
+| M6b | Process-scoped ToolQualification evidence and trust-gate promotion | Generic scope contract implemented; process evidence not claimed | independent qualified tool descriptor, fresh evidence and scope match |
+| M7 | Xcircuite runtime execution, immutable stage artifacts, human review and resume | PDK adapter/runtime slice complete | clean headless PDK integration build, scope mismatch block and resume test |
 | M8 | Release-profile eligibility and approval record | Not started | all required gates, approval artifact and reproducible run |
 
-## Current implementation focus: M6b
+## Current implementation focus: M6b/M7 evidence handoff
 
 M3 turned isolated smoke tests into a retained, auditable set of expected
 outcomes. M4-M6 now extend that evidence through canonical standard-view
@@ -51,6 +51,13 @@ The local gate may produce `oracleCorrelated` only when the selected PDK digest,
 retained corpus report and oracle comparison all agree. It does not promote
 `processQualified`; that remains owned by independent ToolQualification and
 human approval.
+
+The generic M6b contract now binds ToolQualification evidence to the requested
+implementation, binary digest, algorithm version, process profile, and deck
+digest. Xcircuite's PDK stage slice consumes that contract at the trust gate,
+persists every stage envelope, and records approval/resume transitions. The
+workspace fixture demonstrates the contract boundary; it is not independent
+foundry evidence and does not close process qualification.
 
 ## Exit gates and ownership
 

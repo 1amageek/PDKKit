@@ -15,9 +15,20 @@ struct PDKStandardViewTests {
         let oracleURL = fixtureRootURL().appending(path: "standard-view-oracle.json")
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let oracleData = try Data(contentsOf: oracleURL)
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "pdkkit-relative-oracle-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try oracleData.write(to: directory.appending(path: "oracle.json"), options: [.atomic])
+        defer {
+            do {
+                try FileManager.default.removeItem(at: directory)
+            } catch {
+                Issue.record("Failed to remove relative oracle fixture: \(error)")
+            }
+        }
         let oracle = XcircuiteFileReference(
             artifactID: "fixture-standard-view-oracle",
-            path: oracleURL.path,
+            path: "oracle.json",
             kind: .technology,
             format: .json,
             sha256: try SHA256PDKDigestor().digest(data: oracleData),
@@ -25,7 +36,12 @@ struct PDKStandardViewTests {
         )
 
         let envelope = try await LocalPDKOracleComparator().execute(
-            PDKOracleRequest(runID: "oracle-correlation", pdk: pdk, oracle: oracle)
+            PDKOracleRequest(
+                runID: "oracle-correlation",
+                pdk: pdk,
+                oracle: oracle,
+                projectRootPath: directory.path
+            )
         )
         #expect(envelope.status == .completed, "\(envelope.diagnostics)")
         #expect(envelope.payload.isValid)

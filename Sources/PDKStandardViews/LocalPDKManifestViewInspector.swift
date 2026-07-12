@@ -153,7 +153,8 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
             requireNonEmpty: request.requireNonEmpty,
             expectedLayerNames: expectedLayerNames,
             expectedPhysicalLayerNumbers: expectedPhysicalLayerNumbers,
-            expectedCellNames: expectedCellNames
+            expectedCellNames: expectedCellNames,
+            projectRootPath: request.projectRootPath
         )
         let inspectionEnvelope = try await standardInspector.execute(inspectionRequest)
         var findings = inspectionEnvelope.payload.findings

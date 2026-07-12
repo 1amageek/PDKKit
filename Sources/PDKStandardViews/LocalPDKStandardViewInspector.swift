@@ -52,15 +52,38 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             )
         }
 
+        let inputURL: URL
+        do {
+            inputURL = try PDKArtifactURLResolver().resolve(
+                input,
+                baseDirectoryPath: request.projectRootPath
+            )
+        } catch {
+            let finding = PDKValidationFinding(
+                severity: .blocker,
+                code: "pdk.standard-view.input-path-invalid",
+                message: "The standard-view artifact path could not be resolved: \(error.localizedDescription)",
+                entity: input.path,
+                suggestedActions: ["provide_project_root", "repair_standard_view_reference"]
+            )
+            return makeEnvelope(
+                request: request,
+                startedAt: startedAt,
+                status: .blocked,
+                findings: [finding],
+                artifacts: [input]
+            )
+        }
+
         let data: Data
         do {
-            data = try Data(contentsOf: URL(filePath: input.path))
+            data = try Data(contentsOf: inputURL)
         } catch {
             let finding = PDKValidationFinding(
                 severity: .blocker,
                 code: "pdk.standard-view.input-unreadable",
                 message: "The standard-view artifact could not be read: \(error.localizedDescription)",
-                entity: input.path,
+                entity: inputURL.path,
                 suggestedActions: ["restore_standard_view_artifact", "check_file_permissions"]
             )
             return makeEnvelope(

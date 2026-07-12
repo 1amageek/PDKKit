@@ -22,11 +22,13 @@ public struct LocalPDKQualificationEvaluator: PDKQualificationExecuting {
         do {
             let corpus = try loadPayload(
                 PDKCorpusValidationPayload.self,
-                from: request.corpusReport
+                from: request.corpusReport,
+                baseDirectoryPath: request.projectRootPath
             )
             let oracle = try loadPayload(
                 PDKOracleComparisonPayload.self,
-                from: request.oracleReport
+                from: request.oracleReport,
+                baseDirectoryPath: request.projectRootPath
             )
             let assessment = gate.evaluate(pdk: request.pdk, corpus: corpus, oracle: oracle)
             let status: XcircuiteEngineExecutionStatus = assessment.isValid ? .completed : .blocked
@@ -66,9 +68,21 @@ public struct LocalPDKQualificationEvaluator: PDKQualificationExecuting {
 
     private func loadPayload<Payload: Codable & Hashable & Sendable>(
         _ type: Payload.Type,
-        from reference: XcircuiteFileReference
+        from reference: XcircuiteFileReference,
+        baseDirectoryPath: String?
     ) throws -> Payload {
-        let url = URL(filePath: reference.path).standardizedFileURL
+        let url: URL
+        do {
+            url = try PDKArtifactURLResolver().resolve(
+                reference,
+                baseDirectoryPath: baseDirectoryPath
+            )
+        } catch {
+            throw PDKQualificationArtifactError.invalidPath(
+                path: reference.path,
+                reason: error.localizedDescription
+            )
+        }
         let data: Data
         do {
             data = try Data(contentsOf: url)

@@ -145,7 +145,7 @@ struct PDKEngineTests {
         try oracleData.write(to: oracleURL, options: [.atomic])
         let corpusReference = XcircuiteFileReference(
             artifactID: "corpus",
-            path: corpusURL.path,
+            path: "corpus.json",
             kind: .report,
             format: .json,
             sha256: try SHA256PDKDigestor().digest(data: corpusData),
@@ -153,7 +153,7 @@ struct PDKEngineTests {
         )
         let oracleReference = XcircuiteFileReference(
             artifactID: "oracle",
-            path: oracleURL.path,
+            path: "oracle.json",
             kind: .report,
             format: .json,
             sha256: try SHA256PDKDigestor().digest(data: oracleData),
@@ -165,7 +165,8 @@ struct PDKEngineTests {
                 runID: "qualification-evaluator",
                 pdk: pdk,
                 corpusReport: corpusReference,
-                oracleReport: oracleReference
+                oracleReport: oracleReference,
+                projectRootPath: directory.path
             )
         )
         #expect(envelope.status == .completed, "\(envelope.diagnostics)")

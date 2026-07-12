@@ -7,7 +7,9 @@ Canonical process-design-kit discovery, identity, asset integrity and validation
 The local contract layer is executable for deterministic manifest-driven discovery,
 validation, retained corpus evaluation and parser-backed standard-view
 inspection, immutable oracle comparison and a local qualification gate. The
-larger platform goal remains open: full model/timing semantics, independent
+PDK stage slice is also executable through Xcircuite with immutable artifacts,
+scope-bound tool evidence, human approval and resume coverage. The larger
+platform goal remains open: full model/timing semantics, independent
 process-scoped tool qualification and release approval are separate evidence
 gates owned across PDKKit, ToolQualification and Xcircuite.
 
@@ -38,10 +40,19 @@ Xcircuite resolves a PDKReference before constructing downstream stage requests.
 
 The library does not depend on the Xcircuite runtime. Xcircuite owns the adapter to `DesignFlowKernel.FlowStageExecutor`, artifact persistence, qualification gates, repair loops and human approval.
 
-The Xcircuite package provides `PDKDiscoveryFlowStageExecutor` and
-`PDKValidationFlowStageExecutor`. They persist the complete engine envelope as
-an immutable run artifact and map completed, blocked, failed and cancelled
-states to flow gates.
+The Xcircuite package provides discovery, validation, retained-corpus,
+standard-view, oracle and qualification `FlowStageExecutor` adapters. The
+agent-facing `XcircuiteFlowStageExecutorSpec` can encode and construct all six
+PDK stages. Each adapter persists the complete engine envelope as an immutable
+run artifact and maps completed, blocked, failed and cancelled states to flow
+gates. Qualification evidence is accepted only when the ToolQualification
+scope matches the requested implementation, binary, algorithm, process and
+deck; the integration test also covers human approval followed by resume.
+
+Relative artifact references are resolved against an explicit project root and
+cannot escape it. Adapters pass the project root into PDKKit, so a persisted
+run remains reproducible even when its inputs are stored as project-relative
+references.
 
 ## Manifest contract
 
@@ -102,8 +113,9 @@ perl -e 'alarm shift; exec @ARGV' 30 swift test
 perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Package -destination 'platform=macOS'
 ```
 
-The repository's current verification result is 26 tests in 5 Swift Testing
-suites plus a successful Xcode package test. The Xcode command may print
+The repository's current verification result is 27 tests in 5 Swift Testing
+suites plus a successful Xcode package test. The Xcircuite PDK integration
+slice passes 6 tests in 1 suite with `xcodebuild`. The Xcode command may print
 environment-specific IDE warnings while still returning success.
 
 ## Evidence boundary
