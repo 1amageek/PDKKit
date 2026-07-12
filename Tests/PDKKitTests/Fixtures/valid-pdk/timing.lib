@@ -1,0 +1,15 @@
+library (tt) {
+  delay_model : table_lookup;
+  cell (nmos) {
+    area : 1.0;
+    pin (D) {
+      direction : output;
+      timing () {
+        related_pin : "G";
+        cell_rise (scalar) {
+          values ("0.1");
+        }
+      }
+    }
+  }
+}

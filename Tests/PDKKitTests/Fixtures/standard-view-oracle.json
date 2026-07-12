@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "oracleID": "fixture-standard-view-oracle",
+  "processID": "fixture-180nm",
+  "version": "2026.1",
+  "pdkDigest": "46c7715916d256d99fe99fa815d57ba3adf4aed964931546bebfaafa7fe25dab",
+  "views": [
+    {
+      "assetID": "cells",
+      "format": "lef",
+      "expectedLibraryName": "LEF",
+      "expectedLayerNames": ["M1"],
+      "expectedCellNames": ["nmos"],
+      "expectedElementCount": 2,
+      "expectedMetadata": { "lef.version": "5.8", "dbuPerMicron": "1000.0" }
+    },
+    {
+      "assetID": "liberty-view",
+      "format": "liberty",
+      "expectedLibraryName": "tt",
+      "expectedCellNames": ["nmos"],
+      "expectedPinNames": ["D"],
+      "expectedCornerNames": ["tt"],
+      "expectedTimingRelatedPinNames": ["G"],
+      "expectedTimingArcCount": 1,
+      "expectedTimingTableValueCount": 1,
+      "expectedElementCount": 15
+    },
+    {
+      "assetID": "spice-view",
+      "format": "spice",
+      "expectedLibraryName": "SPICE",
+      "expectedModelNames": ["nmos_180n"],
+      "expectedModelTypes": ["nmos"],
+      "expectedModelParameterNames": ["level"],
+      "expectedCornerNames": ["tt"],
+      "expectedElementCount": 4,
+      "expectedMetadata": { "spice.modelCount": "1", "spice.endSeen": "true" }
+    }
+  ],
+  "metadata": {
+    "purpose": "retained structural oracle correlation",
+    "qualification": "unverified"
+  }
+}

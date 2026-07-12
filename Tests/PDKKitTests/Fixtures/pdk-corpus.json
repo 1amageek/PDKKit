@@ -1,0 +1,35 @@
+{
+  "cases": [
+    {
+      "caseID": "invalid-manifest-is-failed",
+      "expectedFindingCodes": ["pdk.corpus.reference-build-failed"],
+      "expectedOutcome": "failed",
+      "manifestPath": "invalid-pdk/pdk.json"
+    },
+    {
+      "caseID": "missing-manifest-is-blocked",
+      "expectedFindingCodes": ["pdk.corpus.manifest-missing"],
+      "expectedOutcome": "blocked",
+      "manifestPath": "missing-pdk/pdk.json"
+    },
+    {
+      "caseID": "retained-fixture-is-valid",
+      "expectedOutcome": "valid",
+      "manifestPath": "valid-pdk/pdk.json",
+      "requiredAssetRoles": ["cell", "layerMap", "model", "ruleDeck"],
+      "standardViewChecks": [
+        { "assetID": "cells", "format": "lef" },
+        { "assetID": "liberty-view", "format": "liberty" },
+        { "assetID": "spice-view", "format": "spice" }
+      ]
+    }
+  ],
+  "metadata": {
+    "purpose": "PDKKit contract corpus",
+    "qualification": "unverified"
+  },
+  "processID": "fixture-180nm",
+  "schemaVersion": 1,
+  "suiteID": "pdkkit-fixture-suite",
+  "version": "2026.1"
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "processID": "fixture-180nm",
+  "version": "2026.1",
+  "displayName": "PDKKit retained fixture",
+  "assets": [
+    { "assetID": "layer-map", "role": "layerMap", "path": "layer-map.json", "kind": "technology", "format": "JSON", "required": true },
+    { "assetID": "models", "role": "model", "path": "models.spice", "kind": "model", "format": "SPICE", "required": true },
+    { "assetID": "cells", "role": "cell", "path": "cells.lef", "kind": "technology", "format": "LEF", "required": true },
+    { "assetID": "rules", "role": "ruleDeck", "path": "rules.deck", "kind": "ruleDeck", "format": "TEXT", "required": true },
+    { "assetID": "layout", "role": "gdsii", "path": "layout.gds", "kind": "layout", "format": "GDSII", "required": true },
+    { "assetID": "spice-view", "role": "spice", "path": "models.spice", "kind": "model", "format": "SPICE", "required": true },
+    { "assetID": "liberty-view", "role": "liberty", "path": "timing.lib", "kind": "model", "format": "LIBERTY", "required": true }
+  ],
+  "layers": [
+    { "layerID": "active", "name": "ACTIVE", "number": 1, "purpose": "diffusion" },
+    { "layerID": "metal1", "name": "M1", "number": 10, "purpose": "metal", "isRoutingLayer": true, "minimumWidth": 0.2, "minimumSpacing": 0.2 }
+  ],
+  "devices": [
+    {
+      "deviceID": "nmos",
+      "modelName": "nmos_180n",
+      "terminals": [
+        { "name": "D", "role": "output", "order": 0 },
+        { "name": "G", "role": "input", "order": 1 },
+        { "name": "S", "role": "output", "order": 2 },
+        { "name": "B", "role": "bulk", "order": 3 }
+      ],
+      "extractionRecognition": { "layerIDs": ["active"], "markerNames": ["nmos"], "extractorKeys": ["mos.nmos"] }
+    }
+  ],
+  "corners": [
+    {
+      "cornerID": "tt-1v8-25c",
+      "pvt": { "process": { "name": "tt", "nominal": true }, "voltage": 1.8, "temperatureCelsius": 25.0 },
+      "assetIDs": ["models", "spice-view"],
+      "viewMappings": { "spice": "spice-view" }
+    }
+  ],
+  "crossViewMappings": [
+    { "mappingID": "layer-map-view", "view": "layerMap", "assetID": "layer-map", "layerIDs": ["active", "metal1"] },
+    { "mappingID": "spice-device-view", "view": "spice", "assetID": "spice-view", "deviceIDs": ["nmos"], "cornerIDs": ["tt-1v8-25c"] },
+    { "mappingID": "lef-cell-view", "view": "lef", "assetID": "cells", "deviceIDs": ["nmos"] },
+    { "mappingID": "gds-layout-view", "view": "gdsii", "assetID": "layout", "layerIDs": ["active", "metal1"] },
+    { "mappingID": "liberty-device-view", "view": "liberty", "assetID": "liberty-view", "deviceIDs": ["nmos"], "cornerIDs": ["tt-1v8-25c"] }
+  ],
+  "metadata": { "units": "micron", "source": "retained-fixture" }
+}
