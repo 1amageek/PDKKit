@@ -105,8 +105,9 @@ structured blockers.
 An external backend result is accepted only when its JSON envelope decodes with
 the request schema version and run ID, its payload identifies the requested
 asset, and its completed payload is valid. Standard-view payloads must preserve
-the requested format when an inspection is present. Rule-deck payloads must
-preserve the requested PDK digest. Schema, run, asset, format and digest
+the requested format and exact digest-bearing source reference. Rule-deck
+payloads must preserve the requested PDK digest and resolved asset reference.
+Schema, run, asset, format, source-reference and digest
 mismatches are blocked. Provider failures, malformed JSON and invalid completed
 payloads are failed with typed findings. This is envelope and semantic
 integration evidence, not external-tool execution or process qualification.

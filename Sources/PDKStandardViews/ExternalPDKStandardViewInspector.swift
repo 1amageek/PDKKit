@@ -21,6 +21,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         _ request: PDKStandardViewInspectionRequest
     ) async throws -> XcircuiteEngineResultEnvelope<PDKStandardViewInspectionPayload> {
         let startedAt = clock.now()
+        var receivedArtifacts: [XcircuiteFileReference] = []
         let data: Data
         do {
             data = try await provider.resultData(for: request)
@@ -45,14 +46,19 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                 expectedSchemaVersion: PDKStandardViewInspectionRequest.currentSchemaVersion,
                 expectedRunID: request.runID
             )
+            receivedArtifacts = envelope.artifacts
             try validate(payload: envelope.payload, status: envelope.status, request: request)
             return envelope
         } catch let error as PDKExternalInspectionError {
+            if receivedArtifacts.isEmpty {
+                receivedArtifacts = artifacts(from: data)
+            }
             let status: XcircuiteEngineExecutionStatus = isTrustBoundaryError(error) ? .blocked : .failed
             return failureEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: status,
+                artifacts: receivedArtifacts,
                 finding: finding(
                     code: "pdk.external.standard-view-contract-mismatch",
                     message: error.localizedDescription,
@@ -61,10 +67,14 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                 )
             )
         } catch {
+            if receivedArtifacts.isEmpty {
+                receivedArtifacts = artifacts(from: data)
+            }
             return failureEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
+                artifacts: receivedArtifacts,
                 finding: finding(
                     code: "pdk.external.standard-view-result-invalid",
                     message: "External standard-view result could not be validated: " + error.localizedDescription,
@@ -92,6 +102,14 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                 actual: inspection.format
             )
         }
+        if let inspection = payload.inspection {
+            guard request.inputs.contains(where: { $0 == inspection.source }) else {
+                throw PDKExternalInspectionError.inputReferenceMismatch(
+                    expected: request.inputs.map(Self.referenceDescription).sorted().joined(separator: ", "),
+                    actual: Self.referenceDescription(inspection.source)
+                )
+            }
+        }
         if status == .completed {
             guard payload.isValid, payload.inspection != nil else {
                 throw PDKExternalInspectionError.completedPayloadInvalid(
@@ -103,11 +121,23 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
 
     private func isTrustBoundaryError(_ error: PDKExternalInspectionError) -> Bool {
         switch error {
-        case .schemaVersionMismatch, .runIDMismatch, .assetIDMismatch, .standardViewFormatMismatch, .pdkDigestMismatch:
+        case .schemaVersionMismatch, .runIDMismatch, .assetIDMismatch, .standardViewFormatMismatch, .pdkDigestMismatch,
+             .inputReferenceMismatch, .inputReferenceUnavailable:
             true
         case .invalidJSON, .completedPayloadInvalid:
             false
         }
+    }
+
+    private static func referenceDescription(_ reference: XcircuiteFileReference) -> String {
+        [
+            reference.artifactID ?? "<anonymous>",
+            reference.path,
+            reference.kind.rawValue,
+            reference.format.rawValue,
+            reference.sha256 ?? "<missing-sha256>",
+            reference.byteCount.map(String.init) ?? "<missing-byte-count>",
+        ].joined(separator: "|")
     }
 
     private func finding(
@@ -129,6 +159,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         request: PDKStandardViewInspectionRequest,
         startedAt: Date,
         status: XcircuiteEngineExecutionStatus,
+        artifacts: [XcircuiteFileReference] = [],
         finding: PDKValidationFinding
     ) -> XcircuiteEngineResultEnvelope<PDKStandardViewInspectionPayload> {
         XcircuiteEngineResultEnvelope(
@@ -136,6 +167,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
             runID: request.runID,
             status: status,
             diagnostics: [PDKStandardViewDiagnosticMapper.map(finding)],
+            artifacts: artifacts,
             metadata: XcircuiteEngineExecutionMetadata(
                 engineID: "PDKStandardViewInspection",
                 implementationID: "ExternalPDKStandardViewInspector",
@@ -155,5 +187,17 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                 ]
             )
         )
+    }
+
+    private func artifacts(from data: Data) -> [XcircuiteFileReference] {
+        do {
+            return try JSONDecoder().decode(ArtifactContainer.self, from: data).artifacts
+        } catch {
+            return []
+        }
+    }
+
+    private struct ArtifactContainer: Decodable {
+        var artifacts: [XcircuiteFileReference] = []
     }
 }

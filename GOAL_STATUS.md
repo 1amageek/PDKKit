@@ -10,11 +10,11 @@
 | Public package products | Complete | Package.swift, PDKCore/Discovery/Validation/Kit/CLI products; contract version 2 |
 | Shared Xcircuite request/result contract | Complete | Codable, Hashable, Sendable requests and result payloads |
 | Contract build | Passed | `swift build` |
-| Contract test | Passed | 45 PDKKit Swift Testing cases across 6 suites; external envelope parity, standalone rule-deck inspector, corpus retention, schema compatibility and CLI evidence included |
+| Contract test | Passed | 46 PDKKit Swift Testing cases across 6 suites; external envelope parity, source-reference binding, standalone rule-deck inspector, corpus retention, schema compatibility and CLI evidence included |
 | Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, parser-backed cross-view semantic validation, standard-view IR, oracle comparison and qualification gate |
 | CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `inspect-rule-deck`, `oracle`, `qualify` |
 | Standard-view semantics | Supported detailed M4a/M4b subset complete | LEF/GDSII/OASIS structure plus numeric SPICE model parameters, subcircuits, Liberty cells/timing tables/units; unsupported constructs block execution |
-| External backend parity | M4c contract complete | Shared JSON result envelopes, fail-closed schema/run/asset/format/digest checks and manifest-binding regression tests; external process qualification remains open |
+| External backend parity | M4c contract complete for envelope and input-reference binding | Shared JSON result envelopes, fail-closed schema/run/asset/format/source-reference/digest checks and manifest-binding regression tests; external process qualification remains open |
 | Fixture corpus | M3/M4/M2b contract-complete | Retained valid, blocked and failed corpus cases plus manifest-bound LEF/SPICE/Liberty/rule-deck checks |
 | Oracle correlation | Complete for immutable local detailed oracle | Manifest-digest-bound expectation, numeric model/table fields, mismatch blocker and CLI evidence |
 | Local qualification gate | Complete for `oracleCorrelated` handoff | Matching corpus/oracle reports required; `processQualified` is never emitted |

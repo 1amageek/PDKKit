@@ -97,8 +97,9 @@ limitations.
 External providers return JSON-encoded `XcircuiteEngineResultEnvelope` values
 with the request schema version and run ID. The external inspectors validate
 the envelope before returning it, then validate the payload asset identity,
-standard-view format when present, completed-payload validity and rule-deck PDK
-digest binding. Schema, run, asset, format and digest mismatches are blocked;
+standard-view format when present, completed-payload validity, digest-bearing
+standard-view source binding and rule-deck asset/PDK digest binding. Schema,
+run, asset, format, source-reference and digest mismatches are blocked;
 malformed JSON, provider failures and invalid completed payloads are returned
 as structured failures. The contract does not qualify the external process.
 

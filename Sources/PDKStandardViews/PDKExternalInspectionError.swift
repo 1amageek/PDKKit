@@ -7,6 +7,8 @@ public enum PDKExternalInspectionError: Error, Sendable, Equatable, LocalizedErr
     case assetIDMismatch(expected: String, actual: String)
     case standardViewFormatMismatch(expected: PDKStandardViewFormat, actual: PDKStandardViewFormat)
     case pdkDigestMismatch(expected: String, actual: String)
+    case inputReferenceMismatch(expected: String, actual: String)
+    case inputReferenceUnavailable(String)
     case completedPayloadInvalid(String)
 
     public var errorDescription: String? {
@@ -23,6 +25,10 @@ public enum PDKExternalInspectionError: Error, Sendable, Equatable, LocalizedErr
             "External standard-view format \(actual.rawValue) does not match expected format \(expected.rawValue)."
         case .pdkDigestMismatch(let expected, let actual):
             "External rule-deck result PDK digest \(actual) does not match expected digest \(expected)."
+        case .inputReferenceMismatch(let expected, let actual):
+            "External inspection source reference \(actual) does not match the requested input reference \(expected)."
+        case .inputReferenceUnavailable(let reason):
+            "External inspection input reference could not be verified: " + reason
         case .completedPayloadInvalid(let reason):
             "External inspection returned a completed result with invalid payload: " + reason
         }

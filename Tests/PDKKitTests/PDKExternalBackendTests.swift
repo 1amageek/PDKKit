@@ -64,6 +64,16 @@ struct PDKExternalBackendTests {
 
         var wrongRun = localEnvelope
         wrongRun.runID = "unexpected-run"
+        wrongRun.artifacts = [
+            XcircuiteFileReference(
+                artifactID: "external-log",
+                path: "external.log",
+                kind: .report,
+                format: .text,
+                sha256: "abc",
+                byteCount: 3
+            ),
+        ]
         let runResult = try await ExternalPDKStandardViewInspector(
             provider: StaticStandardViewResultProvider(data: try JSONEncoder().encode(wrongRun))
         ).execute(request)
@@ -71,6 +81,7 @@ struct PDKExternalBackendTests {
         #expect(runResult.payload.findings.contains {
             $0.code == "pdk.external.standard-view-contract-mismatch"
         })
+        #expect(runResult.artifacts.compactMap(\.artifactID) == ["external-log"])
     }
 
     @Test("external standard-view malformed data remains structured")
@@ -87,6 +98,24 @@ struct PDKExternalBackendTests {
         })
         #expect(envelope.payload.limitations.contains {
             $0.contains("shared envelope boundary")
+        })
+    }
+
+    @Test("external standard-view source references are bound to requested inputs")
+    func externalStandardViewSourceReferenceMismatchIsBlocked() async throws {
+        let request = try standardViewRequest()
+        var tampered = try await LocalPDKStandardViewInspector().execute(request)
+        var inspection = try #require(tampered.payload.inspection)
+        inspection.source.path = "tampered.lef"
+        tampered.payload.inspection = inspection
+
+        let envelope = try await ExternalPDKStandardViewInspector(
+            provider: StaticStandardViewResultProvider(data: try JSONEncoder().encode(tampered))
+        ).execute(request)
+
+        #expect(envelope.status == .blocked)
+        #expect(envelope.payload.findings.contains {
+            $0.code == "pdk.external.standard-view-contract-mismatch"
         })
     }
 
@@ -119,6 +148,18 @@ struct PDKExternalBackendTests {
         ).execute(request)
         #expect(blocked.status == .blocked)
         #expect(blocked.payload.findings.contains {
+            $0.code == "pdk.external.rule-deck-contract-mismatch"
+        })
+
+        var wrongReference = localEnvelope
+        var wrongPayload = wrongReference.payload
+        wrongPayload.reference?.path = "tampered.deck"
+        wrongReference.payload = wrongPayload
+        let referenceBlocked = try await ExternalPDKRuleDeckInspector(
+            provider: StaticRuleDeckResultProvider(data: try JSONEncoder().encode(wrongReference))
+        ).execute(request)
+        #expect(referenceBlocked.status == .blocked)
+        #expect(referenceBlocked.payload.findings.contains {
             $0.code == "pdk.external.rule-deck-contract-mismatch"
         })
     }
