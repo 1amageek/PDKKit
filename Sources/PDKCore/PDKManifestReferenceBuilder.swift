@@ -1,26 +1,38 @@
+import CircuiteFoundation
 import Foundation
 import XcircuitePackage
 
 public struct PDKManifestReferenceBuilder: Sendable {
-    private let digestor: any PDKDigesting
+    private let digester: any ContentDigesting
 
-    public init(digestor: any PDKDigesting = SHA256PDKDigestor()) {
-        self.digestor = digestor
+    public init(digester: any ContentDigesting = SHA256ContentDigester()) {
+        self.digester = digester
     }
 
     public func makeReference(for url: URL) throws -> PDKReference {
         let data = try Data(contentsOf: url)
         let decoded = try PDKManifestCodec.decode(data: data)
-        let digest = try digestor.digest(data: data)
-        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-        let byteCount = (attributes[.size] as? NSNumber)?.int64Value
+        let location = try ArtifactLocation(fileURL: url)
+        let artifactLocator = ArtifactLocator(
+            location: location,
+            kind: .technology,
+            format: .json
+        )
+        let foundationReference = try LocalArtifactReferencer(digester: digester).reference(
+            artifactLocator
+        )
+        guard foundationReference.byteCount <= UInt64(Int64.max) else {
+            throw PDKReferenceError.manifestByteCountOverflow
+        }
+        let manifestURL = try location.resolvedFileURL()
+        let digest = foundationReference.digest.hexadecimalValue
         let manifestReference = XcircuiteFileReference(
             artifactID: "pdk-manifest",
-            path: url.path,
+            path: manifestURL.path,
             kind: .technology,
             format: .json,
             sha256: digest,
-            byteCount: byteCount
+            byteCount: Int64(foundationReference.byteCount)
         )
         let reference = PDKReference(
             manifest: manifestReference,

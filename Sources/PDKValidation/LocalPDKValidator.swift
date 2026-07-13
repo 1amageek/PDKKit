@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import PDKCore
 import PDKStandardViews
 import XcircuitePackage
@@ -554,29 +555,6 @@ public struct LocalPDKValidator: PDKValidating {
                 ))
                 continue
             }
-            guard FileManager.default.fileExists(atPath: url.path) else {
-                findings.append(PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.validation.input-missing",
-                    message: "Declared input artifact does not exist.",
-                    entity: input.path,
-                    suggestedActions: ["restore_input_artifact"]
-                ))
-                continue
-            }
-            let data: Data
-            do {
-                data = try Data(contentsOf: url)
-            } catch {
-                findings.append(PDKValidationFinding(
-                    severity: .error,
-                    code: "pdk.validation.input-unreadable",
-                    message: "Declared input artifact could not be read: \(error.localizedDescription)",
-                    entity: input.path,
-                    suggestedActions: ["check_file_permissions"]
-                ))
-                continue
-            }
             if input.sha256 == nil {
                 findings.append(PDKValidationFinding(
                     severity: .blocker,
@@ -585,27 +563,6 @@ public struct LocalPDKValidator: PDKValidating {
                     entity: input.path,
                     suggestedActions: ["attach_sha256_digest"]
                 ))
-            } else if let expected = input.sha256 {
-                do {
-                    let actual = try digestor.digest(data: data)
-                    if expected.lowercased() != actual {
-                        findings.append(PDKValidationFinding(
-                            severity: .blocker,
-                            code: "pdk.validation.input-digest-mismatch",
-                            message: "Declared input digest does not match the file bytes.",
-                            entity: input.path,
-                            suggestedActions: ["rebuild_input_reference", "check_immutable_artifact"]
-                        ))
-                    }
-                } catch {
-                    findings.append(PDKValidationFinding(
-                        severity: .error,
-                        code: "pdk.validation.input-hash-failed",
-                        message: "Input artifact could not be hashed: \(error.localizedDescription)",
-                        entity: input.path,
-                        suggestedActions: ["check_file_permissions"]
-                    ))
-                }
             }
             if input.byteCount == nil {
                 findings.append(PDKValidationFinding(
@@ -615,13 +572,64 @@ public struct LocalPDKValidator: PDKValidating {
                     entity: input.path,
                     suggestedActions: ["attach_byte_count"]
                 ))
-            } else if let expected = input.byteCount, expected != Int64(data.count) {
+            }
+
+            guard input.sha256 != nil, input.byteCount != nil else {
+                continue
+            }
+
+            do {
+                let foundationReference = try PDKFoundationArtifactBridge.artifactReference(
+                    for: input,
+                    resolvedURL: url
+                )
+                let integrity = LocalArtifactVerifier().verify(
+                    foundationReference,
+                    relativeTo: nil
+                )
+                for issue in integrity.issues {
+                    switch issue.code {
+                    case .missingFile:
+                        findings.append(PDKValidationFinding(
+                            severity: .blocker,
+                            code: "pdk.validation.input-missing",
+                            message: "Declared input artifact does not exist.",
+                            entity: input.path,
+                            suggestedActions: ["restore_input_artifact"]
+                        ))
+                    case .byteCountMismatch:
+                        findings.append(PDKValidationFinding(
+                            severity: .blocker,
+                            code: "pdk.validation.input-byte-count-mismatch",
+                            message: "Declared input byte count does not match the file.",
+                            entity: input.path,
+                            suggestedActions: ["rebuild_input_reference"]
+                        ))
+                    case .digestMismatch:
+                        findings.append(PDKValidationFinding(
+                            severity: .blocker,
+                            code: "pdk.validation.input-digest-mismatch",
+                            message: "Declared input digest does not match the file bytes.",
+                            entity: input.path,
+                            suggestedActions: ["rebuild_input_reference", "check_immutable_artifact"]
+                        ))
+                    case .notRegularFile, .unreadableFile, .invalidLocation, .unsupportedDigestAlgorithm:
+                        findings.append(PDKValidationFinding(
+                            severity: .error,
+                            code: "pdk.validation.input-hash-failed",
+                            message: "Input artifact integrity could not be verified: \(issue.code.rawValue).",
+                            entity: input.path,
+                            suggestedActions: ["check_file_permissions"]
+                        ))
+                    }
+                }
+            } catch {
                 findings.append(PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.validation.input-byte-count-mismatch",
-                    message: "Declared input byte count does not match the file.",
+                    severity: .error,
+                    code: "pdk.validation.input-hash-failed",
+                    message: "Input artifact could not be represented at the Foundation boundary: \(error.localizedDescription)",
                     entity: input.path,
-                    suggestedActions: ["rebuild_input_reference"]
+                    suggestedActions: ["check_file_permissions", "rebuild_input_reference"]
                 ))
             }
         }

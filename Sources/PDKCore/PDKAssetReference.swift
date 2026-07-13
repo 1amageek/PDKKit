@@ -1,3 +1,4 @@
+import CircuiteFoundation
 import Foundation
 import XcircuitePackage
 
@@ -45,6 +46,15 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
             format: format,
             sha256: sha256,
             byteCount: byteCount
+        )
+    }
+
+    /// Returns the Foundation intent for this asset before it is materialized.
+    public func artifactLocator() throws -> ArtifactLocator {
+        ArtifactLocator(
+            location: try ArtifactLocation(workspaceRelativePath: path),
+            kind: try ArtifactKind(rawValue: "pdk.\(kind.rawValue.lowercased())"),
+            format: try PDKFoundationArtifactBridge.artifactFormat(for: format)
         )
     }
 

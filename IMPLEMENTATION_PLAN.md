@@ -26,8 +26,11 @@ open.
 ## Implemented slices
 
 - Manifest schema migration and typed process/layer/device/corner semantics.
-- Deterministic local discovery and reference digest construction.
-- Root-bounded asset resolution, SHA-256 and byte-count verification.
+- Deterministic local discovery and reference digest construction through the
+  CircuiteFoundation artifact boundary.
+- Root-bounded, symlink-safe asset resolution with streaming SHA-256 and
+  byte-count verification. Xcircuite file references remain compatibility
+  projections for the current execution envelope.
 - Cross-view mapping coverage and structured blocked diagnostics.
 - Deterministic JSON CLI with inspect/discover/validate/corpus commands.
 - Retained positive fixture, isolated negative-path fixture and request/payload round-trip tests.

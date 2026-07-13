@@ -26,7 +26,9 @@ Provide one immutable, process-scoped source of truth for every design and signo
 
 - Public execution surfaces are protocol-first, Sendable and dependency-injected.
 - Requests and payloads are Codable, Hashable and schema-versioned.
-- Inputs and outputs use immutable XcircuiteFileReference artifacts.
+- PDKCore uses CircuiteFoundation `ArtifactLocator` and `ArtifactReference` for
+  artifact intent and verified identity. The existing XcircuiteFileReference
+  shape remains only as a compatibility envelope projection.
 - Diagnostics contain a stable code, severity, affected entity and suggested actions.
 - Unsupported semantics and missing prerequisites produce blocked results.
 - Native and external-tool backends conform to identical request and payload schemas.

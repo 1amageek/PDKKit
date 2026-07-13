@@ -1,11 +1,12 @@
+import CircuiteFoundation
 import Foundation
 import XcircuitePackage
 
 public struct LocalPDKAssetResolver: PDKAssetResolving {
-    private let digestor: any PDKDigesting
+    private let referencer: LocalArtifactReferencer
 
-    public init(digestor: any PDKDigesting = SHA256PDKDigestor()) {
-        self.digestor = digestor
+    public init(contentDigester: any ContentDigesting = SHA256ContentDigester()) {
+        self.referencer = LocalArtifactReferencer(digester: contentDigester)
     }
 
     public func resolve(
@@ -16,43 +17,86 @@ public struct LocalPDKAssetResolver: PDKAssetResolving {
             throw PDKAssetResolutionError.emptyPath(assetID: asset.assetID)
         }
         let rootURL = manifestURL.deletingLastPathComponent().standardizedFileURL
-        let assetURL = URL(filePath: asset.path, relativeTo: rootURL).standardizedFileURL
-        let rootPath = rootURL.path.hasSuffix("/") ? rootURL.path : rootURL.path + "/"
-        guard assetURL.path == rootURL.path || assetURL.path.hasPrefix(rootPath) else {
-            throw PDKAssetResolutionError.outsideManifestRoot(assetID: asset.assetID, path: asset.path)
-        }
-        var isDirectory: ObjCBool = false
-        guard FileManager.default.fileExists(atPath: assetURL.path, isDirectory: &isDirectory) else {
-            throw PDKAssetResolutionError.missingFile(assetID: asset.assetID, path: assetURL.path)
-        }
-        guard !isDirectory.boolValue else {
-            throw PDKAssetResolutionError.notRegularFile(assetID: asset.assetID, path: assetURL.path)
-        }
-        let data: Data
+        let locator: ArtifactLocator
         do {
-            data = try Data(contentsOf: assetURL)
+            locator = try asset.artifactLocator()
         } catch {
-            throw PDKAssetResolutionError.unreadableFile(
+            throw PDKAssetResolutionError.invalidPath(
                 assetID: asset.assetID,
-                path: assetURL.path,
+                path: asset.path,
                 reason: error.localizedDescription
             )
         }
-        let digest = try digestor.digest(data: data)
+
+        let foundationReference: ArtifactReference
+        do {
+            foundationReference = try referencer.reference(
+                locator,
+                relativeTo: rootURL
+            )
+        } catch let error as ArtifactReferenceError {
+            switch error {
+            case .fileNotFound(let url):
+                throw PDKAssetResolutionError.missingFile(assetID: asset.assetID, path: url.path)
+            case .notRegularFile(let url):
+                throw PDKAssetResolutionError.notRegularFile(assetID: asset.assetID, path: url.path)
+            case .metadataUnavailable(let url, let reason):
+                throw PDKAssetResolutionError.unreadableFile(
+                    assetID: asset.assetID,
+                    path: url.path,
+                    reason: reason
+                )
+            case .byteCountOverflow(let url):
+                throw PDKAssetResolutionError.byteCountOverflow(assetID: asset.assetID, path: url.path)
+            case .changedDuringReference(let url):
+                throw PDKAssetResolutionError.changedDuringReference(
+                    assetID: asset.assetID,
+                    path: url.path
+                )
+            }
+        } catch let error as ArtifactLocationError {
+            switch error {
+            case .outsideWorkspaceRoot(let url):
+                throw PDKAssetResolutionError.outsideManifestRoot(
+                    assetID: asset.assetID,
+                    path: url.path
+                )
+            default:
+                throw PDKAssetResolutionError.invalidPath(
+                    assetID: asset.assetID,
+                    path: asset.path,
+                    reason: error.localizedDescription
+                )
+            }
+        } catch {
+            throw PDKAssetResolutionError.unreadableFile(
+                assetID: asset.assetID,
+                path: rootURL.appending(path: asset.path).path,
+                reason: error.localizedDescription
+            )
+        }
+
+        guard foundationReference.byteCount <= UInt64(Int64.max) else {
+            throw PDKAssetResolutionError.byteCountOverflow(
+                assetID: asset.assetID,
+                path: foundationReference.locator.location.value
+            )
+        }
+        let assetURL = try foundationReference.locator.location.resolvedFileURL(relativeTo: rootURL)
         let reference = XcircuiteFileReference(
             artifactID: asset.assetID,
             path: assetURL.path,
             kind: asset.kind,
             format: asset.format,
-            sha256: digest,
-            byteCount: Int64(data.count)
+            sha256: foundationReference.digest.hexadecimalValue,
+            byteCount: Int64(foundationReference.byteCount)
         )
         return PDKResolvedAsset(
             assetID: asset.assetID,
             path: assetURL.path,
             reference: reference,
-            computedSHA256: digest,
-            computedByteCount: Int64(data.count)
+            computedSHA256: foundationReference.digest.hexadecimalValue,
+            computedByteCount: Int64(foundationReference.byteCount)
         )
     }
 }

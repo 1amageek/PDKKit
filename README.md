@@ -38,8 +38,24 @@ Every executing product uses:
 - a `Codable`, `Hashable`, `Sendable` request conforming to `XcircuiteEngineRequest`;
 - `XcircuiteEngineResultEnvelope<Payload>` for status, diagnostics, artifacts and execution metadata;
 - protocol-first dependency injection;
-- immutable `XcircuiteFileReference` inputs and outputs;
+- immutable artifact identities from CircuiteFoundation, projected to
+  `XcircuiteFileReference` for the current execution envelope;
 - explicit blocked, failed and cancelled states.
+
+The artifact boundary has two representations with different authority:
+
+```mermaid
+flowchart LR
+  Intent["PDKAssetReference\nartifact intent"] --> Locator["CircuiteFoundation\nArtifactLocator"]
+  Locator --> Referencer["LocalArtifactReferencer\nstreaming SHA-256"]
+  Referencer --> Identity["ArtifactReference\nimmutable verified identity"]
+  Identity --> Compatibility["XcircuiteFileReference\nexecution-envelope projection"]
+```
+
+`ArtifactReference` is the integrity source of truth inside PDKCore. The
+Xcircuite projection is retained for the current request/result envelope and
+is validated from the Foundation identity; it does not replace the canonical
+artifact contract.
 
 External providers conform to `PDKExternalStandardViewResultProviding` or
 `PDKExternalRuleDeckResultProviding` and return JSON-encoded
@@ -156,7 +172,7 @@ swift build
 perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Package -destination 'platform=macOS'
 ```
 
-The repository's current verification result is 46 tests in 6 Swift Testing
+The repository's current verification result is 50 tests in 6 Swift Testing
 suites. The detailed standard-view suite passes 12 tests with
 `xcodebuild test-without-building` after an Xcode `build-for-testing` build.
 The Xcircuite PDK integration slice passes 6 tests in 1 suite with `xcodebuild`;

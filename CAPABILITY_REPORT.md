@@ -8,7 +8,7 @@
 | Immutable PDK identity and manifest digest | `PDKManifestReferenceBuilder`, SHA-256 test | Available |
 | Local recursive discovery | `LocalPDKDiscoverer`, discovery test | Available |
 | Manifest-relative asset resolution | `LocalPDKAssetResolver`, validation fixture | Available |
-| Asset SHA-256 and byte-count integrity | `LocalPDKValidator`, negative-path test | Available |
+| Asset SHA-256 and byte-count integrity | `CircuiteFoundation.LocalArtifactReferencer`/`LocalArtifactVerifier` through `LocalPDKAssetResolver` and `LocalPDKValidator`, negative-path tests | Available |
 | Layer, device and extraction semantics | Typed `PDKCore` models and validator | Available when declared |
 | PVT/RC/EM/reliability corner model | `PDKCornerDefinition` and scope export | Available when declared |
 | Cross-view mapping coverage | layer/device/corner coverage checks | Blocked when mappings are absent |

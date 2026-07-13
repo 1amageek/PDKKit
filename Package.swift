@@ -21,6 +21,12 @@ let swiftMaskDataDependency: Package.Dependency = isFullLSIWorkspace && FileMana
     ? .package(path: "../swift-mask-data")
     : .package(url: "https://github.com/1amageek/swift-mask-data.git", revision: "9dcad7a886f0c7dc470062f3ab346fac6e1048db")
 
+let circuiteFoundationDependency: Package.Dependency = isFullLSIWorkspace && FileManager.default.fileExists(
+    atPath: workspaceRoot.appendingPathComponent("CircuiteFoundation/Package.swift").path
+)
+    ? .package(path: "../CircuiteFoundation")
+    : .package(url: "https://github.com/1amageek/CircuiteFoundation.git", revision: "8b5b1427280415e8acb3789cb364284b906f6cab")
+
 let package = Package(
     name: "PDKKit",
     platforms: [.macOS(.v26)],
@@ -34,13 +40,17 @@ let package = Package(
         .executable(name: "pdkkit", targets: ["PDKKitCLI"]),
     ],
     dependencies: [
+        circuiteFoundationDependency,
         xcircuitePackageDependency,
         swiftMaskDataDependency,
     ],
     targets: [
         .target(
             name: "PDKCore",
-            dependencies: [.product(name: "XcircuitePackage", package: "XcircuitePackage")]
+            dependencies: [
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "XcircuitePackage", package: "XcircuitePackage"),
+            ]
         ),
         .target(
             name: "PDKDiscovery",

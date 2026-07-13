@@ -10,7 +10,7 @@
 | Public package products | Complete | Package.swift, PDKCore/Discovery/Validation/Kit/CLI products; contract version 2 |
 | Shared Xcircuite request/result contract | Complete | Codable, Hashable, Sendable requests and result payloads |
 | Contract build | Passed | `swift build` |
-| Contract test | Passed | 46 PDKKit Swift Testing cases across 6 suites; external envelope parity, source-reference binding, standalone rule-deck inspector, corpus retention, schema compatibility and CLI evidence included |
+| Contract test | Passed | 50 PDKKit Swift Testing cases across 6 suites; Foundation artifact projection, symlink containment, digest binding, external envelope parity, source-reference binding, corpus retention, schema compatibility and CLI evidence included |
 | Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, parser-backed cross-view semantic validation, standard-view IR, oracle comparison and qualification gate |
 | CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `inspect-rule-deck`, `oracle`, `qualify` |
 | Standard-view semantics | Supported detailed M4a/M4b subset complete | LEF/GDSII/OASIS structure plus numeric SPICE model parameters, subcircuits, Liberty cells/timing tables/units; unsupported constructs block execution |
@@ -30,7 +30,7 @@
 |---|---|---|---|---|
 | Manifest schema and migration | Implemented | Current schema plus legacy key/path migration | Retained fixture | Not qualified |
 | Local discovery | Implemented | Deterministic recursive local discovery | Retained fixture | Not qualified |
-| Asset resolution and hashing | Implemented | Root-bounded resolution, SHA-256 and byte-count checks | Positive/negative tests | Not qualified |
+| Asset resolution and hashing | Implemented | CircuiteFoundation locator/reference/verifier boundary, root-bounded symlink-safe resolution, streaming SHA-256 and byte-count checks; Xcircuite reference retained as compatibility projection | Positive/negative tests | Not qualified |
 | Layer and device semantics | Implemented | Typed layers, purposes, terminals and extraction recognition | Retained fixture | Not qualified |
 | Corner model | Implemented | PVT plus RC/EM/reliability references and view mappings | Retained fixture | Not qualified |
 | Cross-view validation | Implemented | Manifest mapping coverage plus parser-backed LEF/GDSII/OASIS/SPICE/Liberty `standardViewResults` and protocol-first rule-deck inspection in `ruleDeckResults` | Valid, comment-filtered and semantic-blocked fixtures | Not qualified |

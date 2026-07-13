@@ -24,8 +24,10 @@ This package owns the schemas and engine protocols listed in its public products
 ## Dependency direction
 
 ```text
-standard artifacts / canonical references
-                 ↓
+Swift/Foundation
+       ↓
+CircuiteFoundation artifact intent, identity and integrity
+       ↓
 PDKKit protocols and result schemas
                  ↓
 PDKStandardViews parser-backed adapters
@@ -52,6 +54,14 @@ PDKKit validation emits a `PDKCapabilityReport` and
 `PDKQualificationScope`. Both retain process ID, version and PDK digest. The
 qualification state starts at `unverified`; no local validation result is
 treated as foundry qualification.
+
+`PDKAssetReference` is the PDK-owned artifact intent. Its
+`artifactLocator()` projection uses `CircuiteFoundation.ArtifactLocator`.
+`LocalPDKAssetResolver` materializes that intent through
+`LocalArtifactReferencer`, producing a streaming SHA-256 and an immutable
+`ArtifactReference` before it creates the retained Xcircuite compatibility
+reference. The compatibility reference remains in the execution envelope
+until the envelope migration is completed; it is not the integrity authority.
 
 `PDKQualificationGate` may emit `oracleCorrelated` only when the retained
 corpus and immutable oracle reports are both valid and share the selected PDK

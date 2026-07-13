@@ -26,7 +26,7 @@ flowchart LR
 | ID | Deliverable | Status | Proof required to close |
 |---|---|---|---|
 | M0 | Protocol-first package products, typed requests/results, deterministic CLI | Complete | `swift build`, contract tests, CLI output tests |
-| M1 | Versioned manifest, migration, immutable manifest/asset references and SHA-256 checks | Complete | migration tests, positive and tampered-asset tests |
+| M1 | Versioned manifest, migration, CircuiteFoundation-backed immutable manifest/asset references and SHA-256 checks | Complete | migration tests, positive and tampered-asset tests |
 | M2 | Layer/device/corner/cross-view coverage and blocked unavailable semantics | Complete at manifest, parser-backed declared-view and rule-deck layer level | validator findings, standard-view/rule-deck results and negative-path fixtures |
 | M2b | Protocol-first rule-deck inspection, per-layer evidence and validation request schema evolution | Complete for text integrity, statements and mapped-layer evidence | standalone request/payload, CLI, comment-filtered negative test, schema v1 compatibility |
 | M3 | Retained corpus suite schema, deterministic case evaluator and machine-readable corpus report | Complete for contract evidence; schema v2 retains rule-deck checks | corpus fixture, positive/blocked cases, standard-view/rule-deck result artifacts and deterministic report tests |

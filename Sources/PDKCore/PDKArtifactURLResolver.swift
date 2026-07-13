@@ -1,3 +1,4 @@
+import CircuiteFoundation
 import Foundation
 import XcircuitePackage
 
@@ -14,7 +15,11 @@ public struct PDKArtifactURLResolver: Sendable {
         }
 
         if path.hasPrefix("/") {
-            return URL(filePath: path).standardizedFileURL
+            do {
+                return try ArtifactLocation(fileURL: URL(filePath: path)).resolvedFileURL()
+            } catch {
+                throw PDKArtifactPathError.pathEscapesBaseDirectory(path)
+            }
         }
 
         guard let baseDirectoryPath else {
@@ -25,17 +30,20 @@ public struct PDKArtifactURLResolver: Sendable {
             throw PDKArtifactPathError.baseDirectoryNotAbsolute(baseDirectoryPath)
         }
 
-        let baseURL = URL(filePath: basePath).standardizedFileURL
-        let resolvedURL = baseURL.appending(path: path).standardizedFileURL
-        guard isContained(resolvedURL, in: baseURL) else {
+        do {
+            let baseURL = try ArtifactLocation(fileURL: URL(filePath: basePath))
+                .resolvedFileURL()
+            let relativeLocation = try ArtifactLocation(workspaceRelativePath: path)
+            return try relativeLocation.resolvedFileURL(relativeTo: baseURL)
+        } catch let error as ArtifactLocationError {
+            switch error {
+            case .outsideWorkspaceRoot:
+                throw PDKArtifactPathError.pathEscapesBaseDirectory(path)
+            default:
+                throw PDKArtifactPathError.pathEscapesBaseDirectory(path)
+            }
+        } catch {
             throw PDKArtifactPathError.pathEscapesBaseDirectory(path)
         }
-        return resolvedURL
-    }
-
-    private func isContained(_ url: URL, in base: URL) -> Bool {
-        let path = url.path(percentEncoded: false)
-        let basePath = base.path(percentEncoded: false)
-        return path == basePath || path.hasPrefix(basePath.hasSuffix("/") ? basePath : "\(basePath)/")
     }
 }
