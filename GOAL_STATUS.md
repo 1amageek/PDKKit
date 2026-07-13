@@ -2,7 +2,7 @@
 
 ## Current state
 
-**M0-M6 local evidence contracts, the PDK-specific M7 integration slice and the cross-package M6b/M8 release contracts are implemented. The North Star platform goal is not complete. Foundry/process qualification is intentionally not claimed.**
+**M0-M6 local evidence contracts, M4c external envelope parity, the PDK-specific M7 integration slice and the cross-package M6b/M8 release contracts are implemented. The North Star platform goal is not complete. Foundry/process qualification is intentionally not claimed.**
 
 | Maturity gate | Status | Evidence |
 |---|---|---|
@@ -10,10 +10,11 @@
 | Public package products | Complete | Package.swift, PDKCore/Discovery/Validation/Kit/CLI products; contract version 2 |
 | Shared Xcircuite request/result contract | Complete | Codable, Hashable, Sendable requests and result payloads |
 | Contract build | Passed | `swift build` |
-| Contract test | Passed | 41 PDKKit Swift Testing cases across 5 suites; standalone rule-deck inspector, corpus retention, schema compatibility and CLI evidence included |
+| Contract test | Passed | 45 PDKKit Swift Testing cases across 6 suites; external envelope parity, standalone rule-deck inspector, corpus retention, schema compatibility and CLI evidence included |
 | Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, parser-backed cross-view semantic validation, standard-view IR, oracle comparison and qualification gate |
 | CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `inspect-rule-deck`, `oracle`, `qualify` |
 | Standard-view semantics | Supported detailed M4a/M4b subset complete | LEF/GDSII/OASIS structure plus numeric SPICE model parameters, subcircuits, Liberty cells/timing tables/units; unsupported constructs block execution |
+| External backend parity | M4c contract complete | Shared JSON result envelopes, fail-closed schema/run/asset/format/digest checks and manifest-binding regression tests; external process qualification remains open |
 | Fixture corpus | M3/M4/M2b contract-complete | Retained valid, blocked and failed corpus cases plus manifest-bound LEF/SPICE/Liberty/rule-deck checks |
 | Oracle correlation | Complete for immutable local detailed oracle | Manifest-digest-bound expectation, numeric model/table fields, mismatch blocker and CLI evidence |
 | Local qualification gate | Complete for `oracleCorrelated` handoff | Matching corpus/oracle reports required; `processQualified` is never emitted |
@@ -84,6 +85,9 @@ The package goal is complete only when every P0 function has a concrete backend,
   by PDKKit-owned text adapters; complete vendor-specific semantic coverage is
   still open.
 - No external-tool adapter has been selected or qualified for a foundry process.
+- External standard-view and rule-deck envelope adapters are implemented, but
+  they do not execute external processes or create the independent
+  ToolQualification evidence required for a foundry process.
 - The retained corpus is a deterministic contract fixture, not foundry evidence.
 - Independent process-specific qualification and release approval remain
   external evidence gates even though their typed contracts now exist.

@@ -13,7 +13,8 @@ flowchart LR
   M2b --> M3[Retained PDK corpus]
   M3 --> M4a[M4a LEF/GDSII/OASIS]
   M4a --> M4b[M4b SPICE/Liberty]
-  M4b --> M5[Immutable oracle correlation]
+  M4b --> M4c[M4c external envelope parity]
+  M4c --> M5[Immutable oracle correlation]
   M5 --> M6[Local qualification gate]
   M6 --> M6b[Process-scoped qualification]
   M6b --> M7[Xcircuite trust gate and resume]
@@ -32,6 +33,7 @@ flowchart LR
 | M4 | Standard-view semantic adapters across the declared PDK views | Complete for the supported canonical semantics and validation integration | Complete vendor-specific language coverage remains a separate gate |
 | M4a | Parser-backed LEF, GDSII and OASIS canonical inspection plus manifest binding | Complete for selected mask views | parser tests, malformed-input findings, manifest binding and CLI evidence |
 | M4b | SPICE and Liberty detailed numeric inspection and manifest binding | Complete for the supported canonical numeric subset | Complete vendor-specific language coverage remains open |
+| M4c | Native/local and external backend result-envelope parity with fail-closed trust-boundary validation | Contract complete; external process execution and qualification remain open | External adapter contract tests, schema/run/asset/format/digest mismatch blockers, provider-owned process evidence |
 | M5 | Immutable reference-oracle comparison and mismatch classification | Complete for local detailed oracle contract | manifest-bound expectation, numeric field mismatch blocker, CLI and regression fixture |
 | M6 | Local qualification gate from corpus + oracle evidence | Complete for `oracleCorrelated` handoff | digest-bound corpus/oracle reports and explicit non-qualification limitation |
 | M6b | Process-scoped ToolQualification evidence and trust-gate promotion | Independent qualification artifact contract implemented; actual process evidence not claimed | independent qualified tool descriptor, fresh evidence and matching PDK scope |
@@ -70,6 +72,15 @@ gate fails closed for unsupported expressions, missing SPICE termination,
 non-numeric Liberty values, inconsistent table dimensions and missing timing
 units. This closes the supported numeric subset; it does not imply complete
 coverage of all vendor extensions.
+
+M4c adds `ExternalPDKStandardViewInspector` and
+`ExternalPDKRuleDeckInspector`. Both consume the same typed
+`XcircuiteEngineResultEnvelope` used by local implementations and reject
+schema, run, asset, format or PDK-digest mismatches as structured blockers.
+Malformed JSON, provider failures and invalid completed payloads remain
+structured failures. These adapters define the integration boundary only;
+they do not claim that an external process has been discovered, executed,
+qualified or approved.
 
 The validation path now invokes those same manifest-bound inspectors for every
 declared LEF, GDSII/OASIS, SPICE and Liberty mapping. The resulting

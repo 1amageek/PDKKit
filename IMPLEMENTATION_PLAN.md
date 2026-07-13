@@ -3,7 +3,7 @@
 ## Status
 
 The implementation order below is complete through the supported detailed
-standard-view numeric semantics, local oracle, qualification-evidence and
+standard-view numeric semantics, external envelope parity, local oracle, qualification-evidence and
 PDK-specific runtime integration gates. Complete vendor-specific language
 coverage, independent process qualification and release-profile approval remain
 open.
@@ -17,10 +17,11 @@ open.
 5. Retained PDK corpus contract and deterministic evaluator
 6. M4a parser-backed LEF/GDSII/OASIS inspection and manifest binding
 7. M4b SPICE/Liberty detailed numeric inspection and manifest binding
-8. Immutable reference-oracle correlation
-9. Local qualification gate and evidence handoff
-10. Process-scoped ToolQualification integration
-11. Xcircuite runtime, review and resume evidence
+8. M4c native/local and external result-envelope parity
+9. Immutable reference-oracle correlation
+10. Local qualification gate and evidence handoff
+11. Process-scoped ToolQualification integration
+12. Xcircuite runtime, review and resume evidence
 
 ## Implemented slices
 
@@ -56,12 +57,19 @@ open.
   regression coverage.
 - Xcircuite discovery/validation/corpus/standard-view/oracle/qualification
   adapters and persistence tests.
+- M4c external standard-view and rule-deck providers with shared JSON envelope
+  decoding, schema/run/asset/format/digest boundary validation and structured
+  contract regression tests. The adapters intentionally leave external
+  process execution and qualification to Xcircuite/SignoffToolSupport and
+  ToolQualification.
 
 ## Completion gates
 
 - Public APIs remain protocol-first and Sendable.
 - Every unsupported semantic produces a structured blocked result.
 - Native and external backends produce the same result schema.
+- External result adapters reject trust-boundary mismatches before evidence is
+  consumed by manifest binding or downstream stages.
 - No UI type enters a public contract.
 - No result claims foundry qualification without process-scoped oracle evidence.
 - Xcircuite can execute, persist, review and resume the PDK stage without
@@ -91,6 +99,17 @@ default). A parser failure or semantic blocker changes the validation result to
 `ruleDeckResults` applies the same fail-closed policy to declared rule decks;
 missing mapping, unreadable text, empty statements or missing layer evidence are
 structured blockers.
+
+## M4c evidence gate
+
+An external backend result is accepted only when its JSON envelope decodes with
+the request schema version and run ID, its payload identifies the requested
+asset, and its completed payload is valid. Standard-view payloads must preserve
+the requested format when an inspection is present. Rule-deck payloads must
+preserve the requested PDK digest. Schema, run, asset, format and digest
+mismatches are blocked. Provider failures, malformed JSON and invalid completed
+payloads are failed with typed findings. This is envelope and semantic
+integration evidence, not external-tool execution or process qualification.
 
 ## M5/M6 evidence gate
 

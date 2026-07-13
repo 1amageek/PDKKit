@@ -11,6 +11,10 @@ PDK stage slice is also executable through Xcircuite with immutable artifacts,
 scope-bound tool evidence, human approval and resume coverage. The larger
 platform goal remains open: complete coverage of every vendor-specific
 model/timing construct and actual foundry approval are separate evidence gates.
+External standard-view and rule-deck backends can now return the same typed
+result envelopes as the local inspectors. The adapters fail closed on envelope
+schema, run, asset, format and PDK-digest mismatches; they do not execute or
+qualify an external process by themselves.
 The workspace now provides typed
 process-qualification and release-eligibility contracts in ToolQualification,
 ReleaseEngine and Xcircuite, but this package does not manufacture the
@@ -23,7 +27,7 @@ independent evidence required to pass those gates.
 | `PDKCore` | PDK identity and immutable manifest reference |
 | `PDKDiscovery` | Deterministic local PDK discovery without qualification claims |
 | `PDKValidation` | Manifest, input, asset, digest, parser-backed cross-view, retained corpus and local qualification gate |
-| `PDKStandardViews` | Canonical standard-view and rule-deck inspection, manifest binding and immutable oracle comparison |
+| `PDKStandardViews` | Canonical standard-view and rule-deck inspection, local/external envelope adapters, manifest binding and immutable oracle comparison |
 | `PDKKit` | Umbrella API and public contract version (2) |
 | `PDKKitCLICore` / `pdkkit` | Deterministic JSON inspection, discovery, validation, corpus, standard-view, rule-deck, oracle and qualification CLI |
 
@@ -36,6 +40,14 @@ Every executing product uses:
 - protocol-first dependency injection;
 - immutable `XcircuiteFileReference` inputs and outputs;
 - explicit blocked, failed and cancelled states.
+
+External providers conform to `PDKExternalStandardViewResultProviding` or
+`PDKExternalRuleDeckResultProviding` and return JSON-encoded
+`XcircuiteEngineResultEnvelope` payloads. `ExternalPDKStandardViewInspector`
+and `ExternalPDKRuleDeckInspector` validate the shared envelope before the
+result is consumed by manifest binding or downstream evidence. Provider
+process execution, tool discovery and process-scoped qualification remain
+owned by Xcircuite/SignoffToolSupport and ToolQualification.
 
 ## Xcircuite integration
 
@@ -143,7 +155,7 @@ swift build
 perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Package -destination 'platform=macOS'
 ```
 
-The repository's current verification result is 41 tests in 5 Swift Testing
+The repository's current verification result is 45 tests in 6 Swift Testing
 suites. The detailed standard-view suite passes 12 tests with
 `xcodebuild test-without-building` after an Xcode `build-for-testing` build.
 The Xcircuite PDK integration slice passes 6 tests in 1 suite with `xcodebuild`;

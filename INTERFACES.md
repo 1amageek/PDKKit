@@ -52,6 +52,10 @@ Umbrella API.
 | `LocalPDKManifestViewInspector` | Resolve a manifest asset, inspect it and return binding evidence |
 | `PDKRuleDeckInspecting` | Inspect a manifest-bound rule-deck asset through a typed request/payload contract |
 | `LocalPDKRuleDeckInspector` | Verify rule-deck integrity, executable statements and mapped-layer evidence |
+| `PDKExternalStandardViewResultProviding` | Supply a JSON-encoded shared result envelope from an external standard-view backend |
+| `PDKExternalRuleDeckResultProviding` | Supply a JSON-encoded shared result envelope from an external rule-deck backend |
+| `ExternalPDKStandardViewInspector` | Decode and fail closed on external standard-view envelope contract mismatches |
+| `ExternalPDKRuleDeckInspector` | Decode and fail closed on external rule-deck envelope, asset and PDK-digest mismatches |
 | `LocalPDKOracleComparator` | Compare manifest-bound canonical facts against digest-bound immutable expectations |
 | `PDKQualificationGate` | Require matching retained corpus and oracle evidence for `oracleCorrelated` |
 | `LocalPDKQualificationEvaluator` | Load immutable corpus/oracle payload artifacts and return a qualification envelope |
@@ -89,6 +93,14 @@ It does not claim complete vendor-specific language coverage or process qualific
 rule-deck asset. Its payload retains the immutable source reference, statement
 count, expected/observed layer IDs, per-layer evidence and explicit grammar
 limitations.
+
+External providers return JSON-encoded `XcircuiteEngineResultEnvelope` values
+with the request schema version and run ID. The external inspectors validate
+the envelope before returning it, then validate the payload asset identity,
+standard-view format when present, completed-payload validity and rule-deck PDK
+digest binding. Schema, run, asset, format and digest mismatches are blocked;
+malformed JSON, provider failures and invalid completed payloads are returned
+as structured failures. The contract does not qualify the external process.
 
 
 ## Error contract
