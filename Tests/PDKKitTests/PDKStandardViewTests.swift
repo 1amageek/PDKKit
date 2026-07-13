@@ -94,12 +94,26 @@ struct PDKStandardViewTests {
     func lefInspectionBindsManifest() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let relativePdk = PDKReference(
+            manifest: XcircuiteFileReference(
+                artifactID: pdk.manifest.artifactID,
+                path: "pdk.json",
+                kind: pdk.manifest.kind,
+                format: pdk.manifest.format,
+                sha256: pdk.manifest.sha256,
+                byteCount: pdk.manifest.byteCount
+            ),
+            processID: pdk.processID,
+            version: pdk.version,
+            digest: pdk.digest
+        )
         let request = PDKManifestViewInspectionRequest(
             runID: "lef-inspection",
-            inputs: [pdk.manifest],
-            pdk: pdk,
+            inputs: [relativePdk.manifest],
+            pdk: relativePdk,
             assetID: "cells",
-            format: .lef
+            format: .lef,
+            projectRootPath: fixtureURL().path
         )
 
         let envelope = try await LocalPDKManifestViewInspector().execute(request)
@@ -139,14 +153,93 @@ struct PDKStandardViewTests {
                 #expect(envelope.payload.inspection?.inspection?.modelTypes == ["nmos"])
                 #expect(envelope.payload.inspection?.inspection?.modelParameterNames == ["level"])
                 #expect(envelope.payload.inspection?.inspection?.cornerNames == ["tt"])
+                #expect(envelope.payload.inspection?.inspection?.spiceModels.first?.parameters.first?.numericValue == 1.0)
+                #expect(envelope.payload.inspection?.inspection?.spiceModels.first?.parameters.first?.isExpression == false)
             } else {
                 #expect(envelope.payload.inspection?.inspection?.cellNames == ["nmos"])
                 #expect(envelope.payload.inspection?.inspection?.timingArcCount == 1)
                 #expect(envelope.payload.inspection?.inspection?.timingRelatedPinNames == ["G"])
                 #expect(envelope.payload.inspection?.inspection?.timingTableValueCount == 1)
                 #expect(envelope.payload.inspection?.inspection?.cornerNames == ["tt"])
+                #expect(envelope.payload.inspection?.inspection?.unitDeclarations == ["time_unit": "1ns", "voltage_unit": "1V"])
+                #expect(envelope.payload.inspection?.inspection?.libertyCells.first?.area == 1.0)
+                #expect(envelope.payload.inspection?.inspection?.libertyTimingTables.first?.values == [0.1])
+                #expect(envelope.payload.inspection?.inspection?.libertyTimingTables.first?.hasCompleteNumericSemantics == true)
             }
         }
+    }
+
+    @Test("unsupported SPICE expressions block detailed semantic inspection")
+    func unsupportedSpiceExpressionBlocksInspection() async throws {
+        let data = Data(".lib tt\n.model nmos nmos level={vto + 1}\n.endl tt\n.end\n".utf8)
+        let result = try await inspectTemporaryText(
+            data: data,
+            format: .spice,
+            fileExtension: "spice"
+        )
+        #expect(result.status == .blocked)
+        #expect(result.payload.findings.contains { $0.code == "pdk.standard-view.spice-parameter-unsupported" })
+    }
+
+    @Test("Liberty timing table dimensions are validated")
+    func libertyTimingTableDimensionsBlockInspection() async throws {
+        let text = """
+        library (tt) {
+          time_unit : "1ns";
+          cell (nmos) {
+            pin (D) {
+              timing () {
+                related_pin : "G";
+                cell_rise (table) {
+                  index_1 ("0.1, 0.2");
+                  values ("0.1");
+                }
+              }
+            }
+          }
+        }
+        """
+        let result = try await inspectTemporaryText(
+            data: Data(text.utf8),
+            format: .liberty,
+            fileExtension: "liberty"
+        )
+        #expect(result.status == .blocked)
+        #expect(result.payload.findings.contains { $0.code == "pdk.standard-view.liberty-table-dimension-mismatch" })
+    }
+
+    @Test("SPICE engineering suffixes are normalized")
+    func spiceEngineeringSuffixesAreNormalized() async throws {
+        let data = Data(".model nmos nmos level=1 kp=2u\n.end\n".utf8)
+        let result = try await inspectTemporaryText(
+            data: data,
+            format: .spice,
+            fileExtension: "spice"
+        )
+        #expect(result.status == .completed)
+        let parameters = result.payload.inspection?.spiceModels.first?.parameters ?? []
+        #expect(parameters.first(where: { $0.name == "kp" })?.numericValue == 2.0e-6)
+        #expect(parameters.first(where: { $0.name == "kp" })?.unitSuffix == "u")
+    }
+
+    @Test("SPICE subcircuits retain terminals and parameter semantics")
+    func spiceSubcircuitSemanticsAreCanonical() async throws {
+        let text = """
+        .subckt inv A Y VDD VSS params: w=1u
+        M1 Y A VSS VSS nmos w=1u
+        .ends inv
+        .end
+        """
+        let result = try await inspectTemporaryText(
+            data: Data(text.utf8),
+            format: .spice,
+            fileExtension: "spice"
+        )
+        #expect(result.status == .completed)
+        #expect(result.payload.inspection?.spiceSubcircuits.first?.name == "inv")
+        #expect(result.payload.inspection?.spiceSubcircuits.first?.terminals == ["A", "Y", "VDD", "VSS"])
+        #expect(result.payload.inspection?.spiceSubcircuits.first?.parameterNames == ["w"])
+        #expect(result.payload.inspection?.spiceSubcircuits.first?.statementCount == 1)
     }
 
     @Test("GDSII and OASIS parsers produce the same canonical layer and cell facts")
@@ -328,5 +421,39 @@ struct PDKStandardViewTests {
         URL(filePath: #filePath)
             .deletingLastPathComponent()
             .appending(path: "Fixtures")
+    }
+
+    private func inspectTemporaryText(
+        data: Data,
+        format: PDKStandardViewFormat,
+        fileExtension: String
+    ) async throws -> XcircuiteEngineResultEnvelope<PDKStandardViewInspectionPayload> {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "pdkkit-detailed-semantic-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let fileURL = directory.appending(path: "view.\(fileExtension)")
+        try data.write(to: fileURL, options: [.atomic])
+        defer {
+            do {
+                try FileManager.default.removeItem(at: directory)
+            } catch {
+                Issue.record("Failed to remove temporary detailed semantic fixture: \(error)")
+            }
+        }
+        let reference = XcircuiteFileReference(
+            artifactID: "detailed-\(format.rawValue)",
+            path: fileURL.path,
+            kind: .model,
+            format: format.fileFormat,
+            sha256: try SHA256PDKDigestor().digest(data: data),
+            byteCount: Int64(data.count)
+        )
+        return try await LocalPDKStandardViewInspector().execute(
+            PDKStandardViewInspectionRequest(
+                runID: "detailed-\(format.rawValue)",
+                inputs: [reference],
+                format: format
+            )
+        )
     }
 }

@@ -24,8 +24,23 @@ public struct LocalPDKValidator: PDKValidating {
         _ request: PDKValidationRequest
     ) async throws -> XcircuiteEngineResultEnvelope<PDKValidationPayload> {
         let startedAt = clock.now()
-        let manifestURL = URL(filePath: request.pdk.manifest.path).standardizedFileURL
-        let result = validate(request: request, manifestURL: manifestURL)
+        let validationResult: ValidationResult
+        do {
+            let manifestURL = try PDKArtifactURLResolver().resolve(
+                request.pdk.manifest,
+                baseDirectoryPath: request.projectRootPath
+            )
+            validationResult = validate(request: request, manifestURL: manifestURL)
+        } catch {
+            let finding = PDKValidationFinding(
+                severity: .blocker,
+                code: "pdk.validation.manifest-path-invalid",
+                message: "PDK manifest reference could not be resolved: \(error.localizedDescription)",
+                entity: request.pdk.manifest.path,
+                suggestedActions: ["provide_project_root", "repair_manifest_reference"]
+            )
+            validationResult = result(status: .blocked, findings: [finding], request: request)
+        }
         let completedAt = clock.now()
         let metadata = XcircuiteEngineExecutionMetadata(
             engineID: "PDKValidation",
@@ -37,17 +52,17 @@ public struct LocalPDKValidator: PDKValidating {
         return XcircuiteEngineResultEnvelope(
             schemaVersion: PDKValidationRequest.currentSchemaVersion,
             runID: request.runID,
-            status: result.status,
-            diagnostics: result.diagnostics,
-            artifacts: result.resolvedAssets.map(\.reference),
+            status: validationResult.status,
+            diagnostics: validationResult.diagnostics,
+            artifacts: validationResult.resolvedAssets.map(\.reference),
             metadata: metadata,
             payload: PDKValidationPayload(
-                isValid: result.status == .completed,
-                missingRequirements: result.missingRequirements,
-                findings: result.findings,
-                resolvedAssets: result.resolvedAssets,
-                qualificationScope: result.qualificationScope,
-                capabilityReport: result.capabilityReport
+                isValid: validationResult.status == .completed,
+                missingRequirements: validationResult.missingRequirements,
+                findings: validationResult.findings,
+                resolvedAssets: validationResult.resolvedAssets,
+                qualificationScope: validationResult.qualificationScope,
+                capabilityReport: validationResult.capabilityReport
             )
         )
     }
@@ -82,7 +97,7 @@ public struct LocalPDKValidator: PDKValidating {
         }
 
         var findings = manifestValidator.validate(decoded.manifest).findings
-        validateInputs(request.inputs, findings: &findings)
+        validateInputs(request.inputs, projectRootPath: request.projectRootPath, findings: &findings)
         if decoded.wasMigrated {
             findings.append(PDKValidationFinding(
                 severity: .warning,
@@ -313,10 +328,26 @@ public struct LocalPDKValidator: PDKValidating {
 
     private func validateInputs(
         _ inputs: [XcircuiteFileReference],
+        projectRootPath: String?,
         findings: inout [PDKValidationFinding]
     ) {
         for input in inputs {
-            let url = URL(filePath: input.path).standardizedFileURL
+            let url: URL
+            do {
+                url = try PDKArtifactURLResolver().resolve(
+                    input,
+                    baseDirectoryPath: projectRootPath
+                )
+            } catch {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.validation.input-path-invalid",
+                    message: "Declared input artifact path could not be resolved: \(error.localizedDescription)",
+                    entity: input.path,
+                    suggestedActions: ["provide_project_root", "repair_input_reference"]
+                ))
+                continue
+            }
             guard FileManager.default.fileExists(atPath: url.path) else {
                 findings.append(PDKValidationFinding(
                     severity: .blocker,

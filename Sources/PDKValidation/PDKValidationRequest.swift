@@ -12,13 +12,15 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
     public var pdk: PDKReference
     public var requiredAssetRoles: [PDKAssetRole]
     public var validateCrossViews: Bool
+    public var projectRootPath: String?
 
     public init(
         runID: String,
         inputs: [XcircuiteFileReference],
         pdk: PDKReference,
         requiredAssetRoles: [PDKAssetRole] = [],
-        validateCrossViews: Bool = true
+        validateCrossViews: Bool = true,
+        projectRootPath: String? = nil
     ) {
         self.schemaVersion = Self.currentSchemaVersion
         self.runID = runID
@@ -26,6 +28,7 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
         self.pdk = pdk
         self.requiredAssetRoles = requiredAssetRoles
         self.validateCrossViews = validateCrossViews
+        self.projectRootPath = projectRootPath
     }
 
     public init(from decoder: Decoder) throws {
@@ -36,6 +39,7 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
         pdk = try container.decode(PDKReference.self, forKey: .pdk)
         requiredAssetRoles = try container.decodeIfPresent([PDKAssetRole].self, forKey: .requiredAssetRoles) ?? []
         validateCrossViews = try container.decodeIfPresent(Bool.self, forKey: .validateCrossViews) ?? true
+        projectRootPath = try container.decodeIfPresent(String.self, forKey: .projectRootPath)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -45,5 +49,6 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
         case pdk
         case requiredAssetRoles
         case validateCrossViews
+        case projectRootPath
     }
 }

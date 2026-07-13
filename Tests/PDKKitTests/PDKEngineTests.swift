@@ -28,6 +28,62 @@ struct PDKEngineTests {
         #expect(envelope.payload.capabilityReport?.capabilities.contains { $0.capabilityID == "cross-view.mapping" } == true)
     }
 
+    @Test("relative manifest and input references use the explicit project root")
+    func validatesRelativeReferences() async throws {
+        let manifestURL = fixtureURL().appending(path: "pdk.json")
+        let absoluteReference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let relativeManifest = XcircuiteFileReference(
+            artifactID: absoluteReference.manifest.artifactID,
+            path: "pdk.json",
+            kind: absoluteReference.manifest.kind,
+            format: absoluteReference.manifest.format,
+            sha256: absoluteReference.manifest.sha256,
+            byteCount: absoluteReference.manifest.byteCount
+        )
+        let relativeReference = PDKReference(
+            manifest: relativeManifest,
+            processID: absoluteReference.processID,
+            version: absoluteReference.version,
+            digest: absoluteReference.digest
+        )
+        let envelope = try await LocalPDKValidator().execute(
+            PDKValidationRequest(
+                runID: "validation-relative-references",
+                inputs: [relativeManifest],
+                pdk: relativeReference,
+                requiredAssetRoles: [.layerMap, .model],
+                projectRootPath: fixtureURL().path
+            )
+        )
+        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
+        #expect(envelope.payload.isValid)
+        #expect(envelope.payload.resolvedAssets.count == 7)
+
+        let traversalManifest = XcircuiteFileReference(
+            artifactID: relativeManifest.artifactID,
+            path: "../pdk.json",
+            kind: relativeManifest.kind,
+            format: relativeManifest.format,
+            sha256: relativeManifest.sha256,
+            byteCount: relativeManifest.byteCount
+        )
+        let blocked = try await LocalPDKValidator().execute(
+            PDKValidationRequest(
+                runID: "validation-relative-traversal",
+                inputs: [traversalManifest],
+                pdk: PDKReference(
+                    manifest: traversalManifest,
+                    processID: absoluteReference.processID,
+                    version: absoluteReference.version,
+                    digest: absoluteReference.digest
+                ),
+                projectRootPath: fixtureURL().path
+            )
+        )
+        #expect(blocked.status == .blocked)
+        #expect(blocked.payload.findings.contains { $0.code == "pdk.validation.manifest-path-invalid" })
+    }
+
     @Test("missing required assets block validation")
     func missingAssetBlocks() async throws {
         let isolatedFixture = try makeIsolatedFixture()

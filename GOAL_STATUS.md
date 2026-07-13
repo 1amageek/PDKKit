@@ -10,12 +10,12 @@
 | Public package products | Complete | Package.swift, PDKCore/Discovery/Validation/Kit/CLI products |
 | Shared Xcircuite request/result contract | Complete | Codable, Hashable, Sendable requests and result payloads |
 | Contract build | Passed | `swift build` |
-| Contract test | Passed | 27 PDKKit Swift Testing cases across 5 suites |
+| Contract test | Passed | 32 PDKKit Swift Testing cases across 5 suites; detailed standard-view xcodebuild suite 12/12 |
 | Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, semantic validation, standard-view IR, oracle comparison and qualification gate |
 | CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `oracle`, `qualify` |
-| Standard-view semantics | Structural M4a/M4b complete | LEF/GDSII/OASIS/SPICE/Liberty parser-backed structural IR, corner binding and manifest binding; deep model/timing semantics remain open |
+| Standard-view semantics | Supported detailed M4a/M4b subset complete | LEF/GDSII/OASIS structure plus numeric SPICE model parameters, subcircuits, Liberty cells/timing tables/units; unsupported constructs block execution |
 | Fixture corpus | M3/M4 contract-complete | Retained valid, blocked and failed corpus cases plus manifest-bound LEF/SPICE/Liberty checks |
-| Oracle correlation | Complete for immutable local structural oracle | Manifest-digest-bound expectation, comparison payload, mismatch blocker and CLI evidence |
+| Oracle correlation | Complete for immutable local detailed oracle | Manifest-digest-bound expectation, numeric model/table fields, mismatch blocker and CLI evidence |
 | Local qualification gate | Complete for `oracleCorrelated` handoff | Matching corpus/oracle reports required; `processQualified` is never emitted |
 | Process qualification | Contract implemented; not claimed | Requires an independent, fresh process-scoped ToolQualification evidence record with PDK scope |
 | ToolQualification trust scope | Implemented as a generic and PDK-aware contract | Implementation, binary, algorithm, process, deck, PDK ID and PDK digest must match; fixture evidence is not foundry qualification |
@@ -63,11 +63,13 @@ The package goal is complete only when every P0 function has a concrete backend,
 
 ## Current blockers
 
-- Deep format-specific model/timing semantics remain a separate gate; absent
-  mappings and oracle mismatches are blocked rather than passed.
+- Complete vendor-specific model/timing language coverage remains a separate
+  gate; unsupported expressions, incomplete tables, absent mappings and oracle
+  mismatches are blocked rather than passed.
 - LEF/GDSII/OASIS inspection is backed by the workspace `swift-mask-data`
-  parser. SPICE and Liberty structural/model/timing facts are now inspected by
-  PDKKit-owned text adapters; full semantic depth is still open.
+  parser. SPICE and Liberty detailed numeric model/timing facts are inspected
+  by PDKKit-owned text adapters; complete vendor-specific semantic coverage is
+  still open.
 - No external-tool adapter has been selected or qualified for a foundry process.
 - The retained corpus is a deterministic contract fixture, not foundry evidence.
 - Independent process-specific qualification and release approval remain

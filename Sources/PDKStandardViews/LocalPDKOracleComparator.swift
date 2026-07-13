@@ -314,11 +314,17 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         compareOptional(expected.expectedModelNames, observed.modelNames, field: "modelNames", expected: expected, findings: &findings)
         compareOptional(expected.expectedModelTypes, observed.modelTypes, field: "modelTypes", expected: expected, findings: &findings)
         compareOptional(expected.expectedModelParameterNames, observed.modelParameterNames, field: "modelParameterNames", expected: expected, findings: &findings)
+        compareOptional(expected.expectedSpiceModels, observed.spiceModels, field: "spiceModels", expected: expected, findings: &findings)
+        compareOptional(expected.expectedSpiceSubcircuits, observed.spiceSubcircuits, field: "spiceSubcircuits", expected: expected, findings: &findings)
         compareOptional(expected.expectedPinNames, observed.pinNames, field: "pinNames", expected: expected, findings: &findings)
         compareOptional(expected.expectedCornerNames, observed.cornerNames, field: "cornerNames", expected: expected, findings: &findings)
         compareOptional(expected.expectedTimingArcCount, observed.timingArcCount, field: "timingArcCount", expected: expected, findings: &findings)
         compareOptional(expected.expectedTimingRelatedPinNames, observed.timingRelatedPinNames, field: "timingRelatedPinNames", expected: expected, findings: &findings)
         compareOptional(expected.expectedTimingTableValueCount, observed.timingTableValueCount, field: "timingTableValueCount", expected: expected, findings: &findings)
+        compareOptional(expected.expectedLibertyCells, observed.libertyCells, field: "libertyCells", expected: expected, findings: &findings)
+        compareOptional(expected.expectedLibertyTimingArcs, observed.libertyTimingArcs, field: "libertyTimingArcs", expected: expected, findings: &findings)
+        compareOptional(expected.expectedLibertyTimingTables, observed.libertyTimingTables, field: "libertyTimingTables", expected: expected, findings: &findings)
+        compareOptional(expected.expectedUnitDeclarations, observed.unitDeclarations, field: "unitDeclarations", expected: expected, findings: &findings)
         compareOptional(expected.expectedElementCount, observed.elementCount, field: "elementCount", expected: expected, findings: &findings)
         if let expectedMetadata = expected.expectedMetadata {
             for key in expectedMetadata.keys.sorted() {

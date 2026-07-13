@@ -1,4 +1,6 @@
 library (tt) {
+  time_unit : "1ns";
+  voltage_unit : "1V";
   delay_model : table_lookup;
   cell (nmos) {
     area : 1.0;
@@ -6,6 +8,7 @@ library (tt) {
       direction : output;
       timing () {
         related_pin : "G";
+        timing_type : combinational;
         cell_rise (scalar) {
           values ("0.1");
         }

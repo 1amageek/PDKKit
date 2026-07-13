@@ -27,16 +27,16 @@ flowchart LR
 | M1 | Versioned manifest, migration, immutable manifest/asset references and SHA-256 checks | Complete | migration tests, positive and tampered-asset tests |
 | M2 | Layer/device/corner/cross-view coverage and blocked unavailable semantics | Complete at manifest-contract level | validator findings and negative-path fixtures |
 | M3 | Retained corpus suite schema, deterministic case evaluator and machine-readable corpus report | Complete for contract evidence | corpus fixture, positive/blocked cases, deterministic report tests |
-| M4 | Standard-view semantic adapters across the declared PDK views | Complete for declared structural semantics | Deep model/table semantics remain a separate gate |
+| M4 | Standard-view semantic adapters across the declared PDK views | Complete for the supported canonical semantics | Complete vendor-specific language coverage remains a separate gate |
 | M4a | Parser-backed LEF, GDSII and OASIS canonical inspection plus manifest binding | Complete for selected mask views | parser tests, malformed-input findings, manifest binding and CLI evidence |
-| M4b | SPICE and Liberty structural inspection and manifest binding | Complete for structural contract | Full model/table semantics remain open |
-| M5 | Immutable reference-oracle comparison and mismatch classification | Complete for local structural oracle contract | manifest-bound expectation, mismatch blocker, CLI and regression fixture |
+| M4b | SPICE and Liberty detailed numeric inspection and manifest binding | Complete for the supported canonical numeric subset | Complete vendor-specific language coverage remains open |
+| M5 | Immutable reference-oracle comparison and mismatch classification | Complete for local detailed oracle contract | manifest-bound expectation, numeric field mismatch blocker, CLI and regression fixture |
 | M6 | Local qualification gate from corpus + oracle evidence | Complete for `oracleCorrelated` handoff | digest-bound corpus/oracle reports and explicit non-qualification limitation |
 | M6b | Process-scoped ToolQualification evidence and trust-gate promotion | Independent qualification artifact contract implemented; actual process evidence not claimed | independent qualified tool descriptor, fresh evidence and matching PDK scope |
 | M7 | Xcircuite runtime execution, immutable stage artifacts, human review and resume | PDK adapter/runtime slice complete | clean headless PDK integration build, scope mismatch block and resume test |
 | M8 | Release-profile eligibility and approval record | Release qualification contract implemented outside PDKKit; external approval open | all required gates, approval artifact and reproducible run |
 
-## Current implementation focus: M4b/M6b/M8 evidence handoff
+## Current implementation focus: M4b coverage/M6b/M8 evidence handoff
 
 M3 turned isolated smoke tests into a retained, auditable set of expected
 outcomes. M4-M6 now extend that evidence through canonical standard-view
@@ -60,6 +60,14 @@ re-reads that typed artifact from a declared `productionApproval` reference and
 fails closed on parse, freshness, identity or scope mismatch. The workspace
 fixture demonstrates the contract boundary; it is not independent foundry
 evidence and does not close process qualification.
+
+M4b now emits typed SPICE model parameters with engineering-suffix
+normalization, subcircuit terminals and parameter declarations, Liberty cells,
+timing arcs, timing table indices/values and unit declarations. The semantic
+gate fails closed for unsupported expressions, missing SPICE termination,
+non-numeric Liberty values, inconsistent table dimensions and missing timing
+units. This closes the supported numeric subset; it does not imply complete
+coverage of all vendor extensions.
 
 ## Exit gates and ownership
 

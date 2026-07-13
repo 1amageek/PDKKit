@@ -13,7 +13,7 @@
 | PVT/RC/EM/reliability corner model | `PDKCornerDefinition` and scope export | Available when declared |
 | Cross-view mapping coverage | layer/device/corner coverage checks | Blocked when mappings are absent |
 | Retained corpus evaluation | `PDKCorpusSuite`, `LocalPDKCorpusValidator`, valid/blocked/failed fixture cases | Available for declared local cases |
-| Standard-view structural inspection | `PDKStandardViews`, `swift-mask-data` readers, SPICE/Liberty text adapters, canonical IR and manifest binding | Available for declared structural facts |
+| Standard-view detailed inspection | `PDKStandardViews`, `swift-mask-data` readers, SPICE/Liberty text adapters, canonical IR and manifest binding | Available for supported mask structure, numeric SPICE model parameters, Liberty timing tables and units |
 | Immutable oracle comparison | `PDKOracleExpectation`, `LocalPDKOracleComparator`, mismatch payload | Available for declared canonical facts |
 | Local qualification gate | `PDKQualificationGate`, digest-bound corpus + oracle evidence | Available for `oracleCorrelated` handoff |
 | Qualification artifact evaluator | `PDKQualificationRequest`, `LocalPDKQualificationEvaluator` | Available for immutable payload/envelope artifacts |
@@ -27,9 +27,11 @@
   Liberty parsers. A raw file without a typed mapping is insufficient evidence
   and blocks validation.
 - LEF/GDSII/OASIS inspection reuses the workspace `swift-mask-data` readers;
-  SPICE/Liberty adapters retain structural model/cell/pin/timing facts. Deep
-  model/table semantics remain open.
-- The retained oracle is a local immutable structural expectation. It is not a
+  SPICE/Liberty adapters retain canonical model parameters, subcircuits, cells,
+  timing arcs, timing table indices/values and unit declarations. Unsupported
+  expressions, incomplete tables and dimension mismatches are blocked. Complete
+  coverage of every vendor-specific model/table construct remains open.
+- The retained oracle is a local immutable detailed expectation. It is not a
   foundry reference tool, and no process-specific qualification is included.
 - The retained corpus is a contract corpus. It does not contain foundry
   process evidence and does not parse every standard-format view.

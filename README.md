@@ -6,11 +6,12 @@ Canonical process-design-kit discovery, identity, asset integrity and validation
 
 The local contract layer is executable for deterministic manifest-driven discovery,
 validation, retained corpus evaluation and parser-backed standard-view
-inspection, immutable oracle comparison and a local qualification gate. The
+inspection, detailed numeric semantics, immutable oracle comparison and a local qualification gate. The
 PDK stage slice is also executable through Xcircuite with immutable artifacts,
 scope-bound tool evidence, human approval and resume coverage. The larger
-platform goal remains open: full model/timing semantics and actual foundry
-approval are separate evidence gates. The workspace now provides typed
+platform goal remains open: complete coverage of every vendor-specific
+model/timing construct and actual foundry approval are separate evidence gates.
+The workspace now provides typed
 process-qualification and release-eligibility contracts in ToolQualification,
 ReleaseEngine and Xcircuite, but this package does not manufacture the
 independent evidence required to pass those gates.
@@ -81,8 +82,9 @@ and failed cases, including manifest-bound standard-view checks. Corpus success
 is evidence of the declared local validator contract only; it does not promote
 the qualification state.
 
-`PDKOracleExpectation` binds canonical standard-view facts to a manifest
-digest. `LocalPDKOracleComparator` returns structured field mismatches, and
+`PDKOracleExpectation` binds canonical standard-view facts, numeric SPICE model
+parameters, Liberty timing tables and unit declarations to a manifest digest.
+`LocalPDKOracleComparator` returns structured field mismatches, and
 `PDKQualificationGate` promotes only a matching local corpus plus oracle pair
 to `oracleCorrelated`. It never emits `processQualified`.
 
@@ -111,15 +113,15 @@ swift build
 ## Test
 
 ```bash
-perl -e 'alarm shift; exec @ARGV' 30 swift test
 perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Package -destination 'platform=macOS'
 ```
 
-The repository's current verification result is 27 tests in 5 Swift Testing
-suites plus a successful Xcode package test. The Xcircuite PDK integration
-slice passes 6 tests in 1 suite with `xcodebuild`; the release-stage adapter
-slice passes 5 tests in 1 suite. The Xcode command may print
-environment-specific IDE warnings while still returning success.
+The repository's current verification result is 32 tests in 5 Swift Testing
+suites. The detailed standard-view suite passes 12 tests with
+`xcodebuild test-without-building` after an Xcode `build-for-testing` build.
+The Xcircuite PDK integration slice passes 6 tests in 1 suite with `xcodebuild`;
+the release-stage adapter slice passes 5 tests in 1 suite. The Xcode command
+may print environment-specific IDE warnings while still returning success.
 
 ## Evidence boundary
 
@@ -139,6 +141,12 @@ Local inspection -> retained corpus -> immutable oracle comparison
 release approval outside this package. This boundary is intentional: a local
 parser or retained fixture cannot establish manufacturing-process trust by
 itself.
+
+SPICE model parameters with unsupported expressions, missing `.end` markers,
+Liberty timing tables with non-numeric values or inconsistent dimensions, and
+timing tables without a declared `time_unit` are blocked. This is a supported
+numeric-semantic subset, not a claim of complete vendor-specific language
+coverage.
 
 See `MILESTONES.md`, `CAPABILITY_REPORT.md`, `DESIGN.md`, `INTERFACES.md` and
 `IMPLEMENTATION_PLAN.md` for the implementation boundary and qualification

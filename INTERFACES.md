@@ -28,8 +28,8 @@ Completeness and semantic validation.
 
 ### PDKStandardViews
 
-Parser-backed canonical structural inspection for LEF, GDSII, OASIS, SPICE and
-Liberty assets.
+Parser-backed canonical inspection for LEF, GDSII, OASIS, SPICE and Liberty
+assets, including the supported detailed numeric semantics.
 
 ### PDKKit
 
@@ -47,7 +47,7 @@ Umbrella API.
 | `LocalPDKValidator` | Verify inputs, manifest identity, assets, hashes and cross-view coverage |
 | `PDKCorpusSuiteValidator` | Validate retained corpus suite shape and safe relative manifest paths |
 | `LocalPDKCorpusValidator` | Execute deterministic valid/blocked/failed corpus cases over `PDKValidating` |
-| `LocalPDKStandardViewInspector` | Parse standard views into canonical structural IR with input integrity checks |
+| `LocalPDKStandardViewInspector` | Parse standard views into canonical detailed IR with input integrity checks |
 | `PDKManifestViewBindingValidator` | Compare canonical view facts with manifest layer/device mappings |
 | `LocalPDKManifestViewInspector` | Resolve a manifest asset, inspect it and return binding evidence |
 | `LocalPDKOracleComparator` | Compare manifest-bound canonical facts against digest-bound immutable expectations |
@@ -67,12 +67,13 @@ validator reproduces the declared blocked or failed outcome.
 `PDKStandardViewInspectionRequest` and
 `PDKManifestViewInspectionRequest` are agent-facing engine requests. Their
 payloads retain parser identity, canonical layer/cell/model/pin/timing facts,
-source artifact references, findings, binding evidence and explicit
-qualification limitations. `PDKOracleExpectation` and
+numeric SPICE model parameters, subcircuits, Liberty cells, timing tables and
+unit declarations, source artifact references, findings, binding evidence and
+explicit qualification limitations. `PDKOracleExpectation` and
 `PDKOracleRequest` bind those facts to a manifest digest; `PDKOracleComparisonPayload`
 records field-level mismatches. `PDKQualificationGate` consumes retained
 corpus and oracle payloads and emits only the local `oracleCorrelated` state.
-It does not claim deep model/table semantics or process qualification.
+It does not claim complete vendor-specific language coverage or process qualification.
 
 
 ## Error contract
@@ -101,5 +102,6 @@ The implemented adapters are `PDKDiscoveryFlowStageExecutor`,
 `PDKStandardViewInspectionFlowStageExecutor`, `PDKOracleFlowStageExecutor` and
 `PDKQualificationFlowStageExecutor`. Each persists the complete result
 envelope under the run's stage `raw` directory and exposes the persisted
-reference as a flow artifact. The final Xcircuite package build remains an
-open verification gate while unrelated dependency compilation is blocked.
+reference as a flow artifact. Xcircuite owns the final package build and
+headless integration verification; PDKKit's own detailed standard-view suite
+is independently reproducible with the package Xcode test bundle.

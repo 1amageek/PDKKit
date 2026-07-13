@@ -9,6 +9,18 @@ import XcircuitePackage
 public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
     private let clock: any PDKStandardViewExecutionClock
 
+    private struct LibertyToken {
+        var value: String
+        var line: Int
+    }
+
+    private struct LibertyNode {
+        var name: String
+        var arguments: [String]
+        var attributes: [String: [String]]
+        var children: [LibertyNode]
+    }
+
     public init(
         clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock()
     ) {
@@ -241,15 +253,17 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         var modelNames: [String] = []
         var modelTypes: [String] = []
         var modelParameterNames: [String] = []
+        var spiceModels: [PDKSpiceModel] = []
+        var spiceSubcircuits: [PDKSpiceSubcircuit] = []
         var subcircuitNames: [String] = []
         var terminalNames: [String] = []
         var cornerNames: [String] = []
-        var openSubcircuits: [String] = []
+        var openSubcircuits: [(name: String, terminals: [String], parameterNames: [String], statementCount: Int)] = []
         var openLibrarySections: [String] = []
         var sawEnd = false
 
         for (lineNumber, line) in lines {
-            let tokens = line.split { $0 == " " || $0 == "\t" }.map(String.init)
+            let tokens = spiceDirectiveTokens(in: line)
             guard let first = tokens.first else { continue }
             switch first.lowercased() {
             case ".model":
@@ -260,9 +274,17 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                         reason: ".model requires a model name and model type"
                     )
                 }
-                modelNames.append(tokens[1])
-                modelTypes.append(tokens[2])
-                modelParameterNames.append(contentsOf: parameterNames(in: tokens.dropFirst(3)))
+                let modelName = tokens[1]
+                let modelType = tokens[2]
+                let parameters = parseSpiceAssignments(in: line)
+                modelNames.append(modelName)
+                modelTypes.append(modelType)
+                modelParameterNames.append(contentsOf: parameters.map(\.name))
+                spiceModels.append(PDKSpiceModel(
+                    name: modelName,
+                    type: modelType,
+                    parameters: parameters
+                ))
             case ".subckt":
                 guard tokens.count >= 3 else {
                     throw PDKStandardViewTextParseError.malformed(
@@ -271,28 +293,54 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                         reason: ".subckt requires a name and at least one terminal"
                     )
                 }
-                subcircuitNames.append(tokens[1])
-                terminalNames.append(contentsOf: tokens.dropFirst(2))
-                openSubcircuits.append(tokens[1])
+                let subcircuitName = tokens[1]
+                let terminalTokens = tokens.dropFirst(2).prefix { token in
+                    let lowercased = token.lowercased()
+                    return lowercased != "params:" && lowercased != "param:" && !token.contains("=")
+                }
+                let terminals = Array(terminalTokens)
+                guard !terminals.isEmpty else {
+                    throw PDKStandardViewTextParseError.malformed(
+                        format: .spice,
+                        line: lineNumber,
+                        reason: ".subckt requires at least one terminal before parameter declarations"
+                    )
+                }
+                let parameterNames = parseSpiceAssignments(in: line).map(\.name)
+                subcircuitNames.append(subcircuitName)
+                terminalNames.append(contentsOf: terminals)
+                openSubcircuits.append((
+                    name: subcircuitName,
+                    terminals: terminals,
+                    parameterNames: parameterNames,
+                    statementCount: 0
+                ))
             case ".ends":
-                guard let openName = openSubcircuits.popLast() else {
+                guard let openSubcircuit = openSubcircuits.popLast() else {
                     throw PDKStandardViewTextParseError.malformed(
                         format: .spice,
                         line: lineNumber,
                         reason: ".ends has no matching .subckt"
                     )
                 }
-                if tokens.count > 1, tokens[1].caseInsensitiveCompare(openName) != .orderedSame {
+                if tokens.count > 1, tokens[1].caseInsensitiveCompare(openSubcircuit.name) != .orderedSame {
                     throw PDKStandardViewTextParseError.malformed(
                         format: .spice,
                         line: lineNumber,
                         reason: ".ends name does not match the open subcircuit"
                     )
                 }
+                spiceSubcircuits.append(PDKSpiceSubcircuit(
+                    name: openSubcircuit.name,
+                    terminals: openSubcircuit.terminals,
+                    parameterNames: openSubcircuit.parameterNames,
+                    statementCount: openSubcircuit.statementCount
+                ))
             case ".lib":
                 if tokens.count > 1 {
-                    let sectionName = tokens.count > 2 ? tokens[tokens.count - 1] : tokens[1]
-                    cornerNames.append(sectionName.trimmingCharacters(in: CharacterSet(charactersIn: "\"'")))
+                    let sectionName = (tokens.count > 2 ? tokens[tokens.count - 1] : tokens[1])
+                        .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+                    cornerNames.append(sectionName)
                     openLibrarySections.append(sectionName)
                 }
             case ".endl":
@@ -303,7 +351,8 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                         reason: ".endl has no matching .lib section"
                     )
                 }
-                if tokens.count > 1, tokens[1].caseInsensitiveCompare(openName) != .orderedSame {
+                if tokens.count > 1, tokens[1].trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+                    .caseInsensitiveCompare(openName) != .orderedSame {
                     throw PDKStandardViewTextParseError.malformed(
                         format: .spice,
                         line: lineNumber,
@@ -311,7 +360,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                     )
                 }
             case ".param":
-                modelParameterNames.append(contentsOf: parameterNames(in: tokens.dropFirst()))
+                modelParameterNames.append(contentsOf: parseSpiceAssignments(in: line).map(\.name))
             case ".func":
                 if tokens.count > 1 {
                     modelParameterNames.append(tokens[1].split(separator: "(", maxSplits: 1).first.map(String.init) ?? tokens[1])
@@ -319,11 +368,14 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             case ".end":
                 sawEnd = true
             default:
+                if !openSubcircuits.isEmpty {
+                    openSubcircuits[openSubcircuits.index(before: openSubcircuits.endIndex)].statementCount += 1
+                }
                 continue
             }
         }
 
-        if let openName = openSubcircuits.last {
+        if let openName = openSubcircuits.last?.name {
             throw PDKStandardViewTextParseError.malformed(
                 format: .spice,
                 line: lines.last?.0 ?? 0,
@@ -345,6 +397,8 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             modelNames: modelNames,
             modelTypes: modelTypes,
             modelParameterNames: modelParameterNames,
+            spiceModels: spiceModels,
+            spiceSubcircuits: spiceSubcircuits,
             pinNames: terminalNames,
             cornerNames: cornerNames,
             elementCount: lines.count,
@@ -353,6 +407,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 "spice.modelTypeCount": String(modelTypes.count),
                 "spice.modelParameterCount": String(modelParameterNames.count),
                 "spice.subcircuitCount": String(subcircuitNames.count),
+                "spice.numericParameterCount": String(spiceModels.flatMap(\.parameters).filter { $0.numericValue != nil }.count),
                 "spice.endSeen": String(sawEnd)
             ]
         )
@@ -366,102 +421,547 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             throw PDKStandardViewTextParseError.invalidEncoding
         }
         let lines = libertyLines(text)
-        var libraryName = ""
-        var cellNames: [String] = []
-        var pinNames: [String] = []
-        var timingArcCount = 0
-        var timingRelatedPinNames: [String] = []
-        var timingTableValueCount = 0
-        var braceDepth = 0
-
-        for (lineNumber, line) in lines {
-            braceDepth += line.filter { $0 == "{" }.count
-            braceDepth -= line.filter { $0 == "}" }.count
-            if braceDepth < 0 {
-                throw PDKStandardViewTextParseError.malformed(
-                    format: .liberty,
-                    line: lineNumber,
-                    reason: "closing brace has no matching opening brace"
-                )
-            }
-            if isDeclaration(line, keyword: "library") {
-                libraryName = try declarationName(
-                    line,
-                    keyword: "library",
-                    format: .liberty,
-                    lineNumber: lineNumber
-                )
-            } else if isDeclaration(line, keyword: "cell") {
-                cellNames.append(try declarationName(
-                    line,
-                    keyword: "cell",
-                    format: .liberty,
-                    lineNumber: lineNumber
-                ))
-            } else if isDeclaration(line, keyword: "pin") {
-                pinNames.append(try declarationName(
-                    line,
-                    keyword: "pin",
-                    format: .liberty,
-                    lineNumber: lineNumber
-                ))
-            } else if isDeclaration(line, keyword: "timing") {
-                timingArcCount += 1
-            } else if let relatedPin = attributeValue(line, name: "related_pin") {
-                timingRelatedPinNames.append(relatedPin)
-            } else if isValuesDeclaration(line) {
-                timingTableValueCount += valuesCount(in: line)
-            }
-        }
-
-        guard !libraryName.isEmpty else {
+        let root = try parseLibertyDocument(text)
+        guard root.name.caseInsensitiveCompare("library") == .orderedSame else {
             throw PDKStandardViewTextParseError.malformed(
                 format: .liberty,
                 line: lines.first?.0 ?? 0,
                 reason: "library declaration is missing"
             )
         }
-        guard !cellNames.isEmpty else {
+        guard let libraryName = root.arguments.first, !libraryName.isEmpty else {
+            throw PDKStandardViewTextParseError.malformed(
+                format: .liberty,
+                line: lines.first?.0 ?? 0,
+                reason: "library declaration has no name"
+            )
+        }
+
+        let cellNodes = root.children.filter { $0.name.caseInsensitiveCompare("cell") == .orderedSame }
+        guard !cellNodes.isEmpty else {
             throw PDKStandardViewTextParseError.malformed(
                 format: .liberty,
                 line: lines.first?.0 ?? 0,
                 reason: "at least one cell declaration is required"
             )
         }
-        guard braceDepth == 0 else {
-            throw PDKStandardViewTextParseError.malformed(
-                format: .liberty,
-                line: lines.last?.0 ?? 0,
-                reason: "liberty braces are unbalanced"
-            )
+
+        var cellNames: [String] = []
+        var pinNames: [String] = []
+        var libertyCells: [PDKLibertyCell] = []
+        var libertyTimingArcs: [PDKLibertyTimingArc] = []
+        var libertyTimingTables: [PDKLibertyTimingTable] = []
+        for cellNode in cellNodes {
+            guard let cellName = cellNode.arguments.first, !cellName.isEmpty else {
+                throw PDKStandardViewTextParseError.malformed(
+                    format: .liberty,
+                    line: lines.first?.0 ?? 0,
+                    reason: "cell declaration has no name"
+                )
+            }
+            let pinNodes = cellNode.children.filter { $0.name.caseInsensitiveCompare("pin") == .orderedSame }
+            let cellPinNames = pinNodes.compactMap { $0.arguments.first }
+            cellNames.append(cellName)
+            pinNames.append(contentsOf: cellPinNames)
+            libertyCells.append(PDKLibertyCell(
+                name: cellName,
+                pinNames: cellPinNames,
+                area: libertyScalar(cellNode.attributes["area"])
+            ))
+
+            for pinNode in pinNodes {
+                guard let pinName = pinNode.arguments.first, !pinName.isEmpty else {
+                    throw PDKStandardViewTextParseError.malformed(
+                        format: .liberty,
+                        line: lines.first?.0 ?? 0,
+                        reason: "pin declaration has no name"
+                    )
+                }
+                let timingNodes = pinNode.children.filter { $0.name.caseInsensitiveCompare("timing") == .orderedSame }
+                for timingNode in timingNodes {
+                    let relatedPinName = libertyAttributeText(timingNode.attributes["related_pin"])
+                    let tables = timingNodesToTables(
+                        cellName: cellName,
+                        pinName: pinName,
+                        relatedPinName: relatedPinName,
+                        timingNode: timingNode
+                    )
+                    let arc = PDKLibertyTimingArc(
+                        cellName: cellName,
+                        pinName: pinName,
+                        relatedPinName: relatedPinName,
+                        timingType: libertyAttributeText(timingNode.attributes["timing_type"]),
+                        timingSense: libertyAttributeText(timingNode.attributes["timing_sense"]),
+                        tables: tables
+                    )
+                    libertyTimingArcs.append(arc)
+                    libertyTimingTables.append(contentsOf: tables)
+                }
+            }
         }
+
+        let timingRelatedPinNames = libertyTimingArcs.compactMap(\.relatedPinName)
+        let cornerNames = [libraryName] + root.children
+            .filter { $0.name.caseInsensitiveCompare("operating_conditions") == .orderedSame }
+            .compactMap { $0.arguments.first }
+        let unitDeclarations = root.attributes.reduce(into: [String: String]()) { result, pair in
+            guard pair.key.contains("unit") else { return }
+            if let value = libertyAttributeText(pair.value) {
+                result[pair.key] = value
+            }
+        }
+        let timingTableValueCount = libertyTimingTables.reduce(0) { $0 + $1.values.count }
+        let completeTimingTableCount = libertyTimingTables.filter(\.hasCompleteNumericSemantics).count
         return PDKStandardViewIR(
             format: .liberty,
             source: reference,
             libraryName: libraryName,
             cellNames: cellNames,
             pinNames: pinNames,
-            cornerNames: [libraryName],
-            timingArcCount: timingArcCount,
+            cornerNames: cornerNames,
+            timingArcCount: libertyTimingArcs.count,
             timingRelatedPinNames: timingRelatedPinNames,
             timingTableValueCount: timingTableValueCount,
+            libertyCells: libertyCells,
+            libertyTimingArcs: libertyTimingArcs,
+            libertyTimingTables: libertyTimingTables,
+            unitDeclarations: unitDeclarations,
             elementCount: lines.count,
             metadata: [
                 "liberty.cellCount": String(cellNames.count),
                 "liberty.pinCount": String(pinNames.count),
-                "liberty.timingArcCount": String(timingArcCount),
+                "liberty.timingArcCount": String(libertyTimingArcs.count),
                 "liberty.timingRelatedPinCount": String(timingRelatedPinNames.count),
-                "liberty.timingTableValueCount": String(timingTableValueCount)
+                "liberty.timingTableCount": String(libertyTimingTables.count),
+                "liberty.timingTableCompleteCount": String(completeTimingTableCount),
+                "liberty.timingTableValueCount": String(timingTableValueCount),
+                "liberty.numericValueCount": String(timingTableValueCount)
             ]
         )
     }
 
-    private func parameterNames<S: Sequence>(in tokens: S) -> [String] where S.Element == String {
-        tokens.compactMap { token in
-            guard let separator = token.firstIndex(of: "=") else { return nil }
-            let name = String(token[..<separator]).trimmingCharacters(in: .whitespacesAndNewlines)
-            return name.isEmpty ? nil : name
+    private func parseLibertyDocument(_ text: String) throws -> LibertyNode {
+        let tokens = try tokenizeLiberty(text)
+        guard !tokens.isEmpty else {
+            throw PDKStandardViewTextParseError.malformed(
+                format: .liberty,
+                line: 1,
+                reason: "the Liberty document is empty"
+            )
         }
+        var index = 0
+        let rootName = tokens[index].value
+        let rootLine = tokens[index].line
+        index += 1
+        let arguments = try parseLibertyArguments(tokens, index: &index)
+        let root = try parseLibertyGroupBody(
+            name: rootName,
+            arguments: arguments,
+            tokens: tokens,
+            index: &index,
+            line: rootLine
+        )
+        guard index == tokens.count else {
+            throw PDKStandardViewTextParseError.malformed(
+                format: .liberty,
+                line: tokens[index].line,
+                reason: "unexpected tokens after the top-level library group"
+            )
+        }
+        return root
+    }
+
+    private func tokenizeLiberty(_ text: String) throws -> [LibertyToken] {
+        let characters = Array(text)
+        let punctuation: Set<Character> = ["(", ")", "{", "}", ":", ";", ","]
+        var tokens: [LibertyToken] = []
+        var index = 0
+        var line = 1
+        while index < characters.count {
+            let character = characters[index]
+            if character.isNewline {
+                line += 1
+                index += 1
+                continue
+            }
+            if character.isWhitespace {
+                index += 1
+                continue
+            }
+            if character == "/", index + 1 < characters.count, characters[index + 1] == "/" {
+                index += 2
+                while index < characters.count, !characters[index].isNewline {
+                    index += 1
+                }
+                continue
+            }
+            if character == "/", index + 1 < characters.count, characters[index + 1] == "*" {
+                let commentLine = line
+                index += 2
+                var closed = false
+                while index < characters.count {
+                    if characters[index].isNewline {
+                        line += 1
+                    }
+                    if characters[index] == "*", index + 1 < characters.count, characters[index + 1] == "/" {
+                        index += 2
+                        closed = true
+                        break
+                    }
+                    index += 1
+                }
+                guard closed else {
+                    throw PDKStandardViewTextParseError.malformed(
+                        format: .liberty,
+                        line: commentLine,
+                        reason: "block comment is not closed"
+                    )
+                }
+                continue
+            }
+            if character == "\"" {
+                let stringLine = line
+                index += 1
+                var value = ""
+                var closed = false
+                while index < characters.count {
+                    let current = characters[index]
+                    if current == "\\", index + 1 < characters.count {
+                        value.append(characters[index + 1])
+                        index += 2
+                        continue
+                    }
+                    if current == "\"" {
+                        index += 1
+                        closed = true
+                        break
+                    }
+                    if current.isNewline {
+                        line += 1
+                    }
+                    value.append(current)
+                    index += 1
+                }
+                guard closed else {
+                    throw PDKStandardViewTextParseError.malformed(
+                        format: .liberty,
+                        line: stringLine,
+                        reason: "quoted string is not closed"
+                    )
+                }
+                tokens.append(LibertyToken(value: value, line: stringLine))
+                continue
+            }
+            if punctuation.contains(character) {
+                tokens.append(LibertyToken(value: String(character), line: line))
+                index += 1
+                continue
+            }
+            let tokenLine = line
+            let start = index
+            while index < characters.count {
+                let current = characters[index]
+                if current.isWhitespace || punctuation.contains(current) || current == "\"" {
+                    break
+                }
+                if current == "/", index + 1 < characters.count,
+                   (characters[index + 1] == "/" || characters[index + 1] == "*") {
+                    break
+                }
+                index += 1
+            }
+            if start == index {
+                index += 1
+            } else {
+                tokens.append(LibertyToken(
+                    value: String(characters[start..<index]),
+                    line: tokenLine
+                ))
+            }
+        }
+        return tokens
+    }
+
+    private func parseLibertyArguments(
+        _ tokens: [LibertyToken],
+        index: inout Int
+    ) throws -> [String] {
+        guard index < tokens.count, tokens[index].value == "(" else {
+            return []
+        }
+        index += 1
+        var arguments: [String] = []
+        while index < tokens.count, tokens[index].value != ")" {
+            if tokens[index].value != "," {
+                arguments.append(tokens[index].value)
+            }
+            index += 1
+        }
+        guard index < tokens.count else {
+            throw PDKStandardViewTextParseError.malformed(
+                format: .liberty,
+                line: tokens.last?.line ?? 1,
+                reason: "parenthesized declaration is not closed"
+            )
+        }
+        index += 1
+        return arguments
+    }
+
+    private func parseLibertyGroupBody(
+        name: String,
+        arguments: [String],
+        tokens: [LibertyToken],
+        index: inout Int,
+        line: Int
+    ) throws -> LibertyNode {
+        guard index < tokens.count, tokens[index].value == "{" else {
+            throw PDKStandardViewTextParseError.malformed(
+                format: .liberty,
+                line: index < tokens.count ? tokens[index].line : line,
+                reason: "group \(name) is missing an opening brace"
+            )
+        }
+        index += 1
+        var attributes: [String: [String]] = [:]
+        var children: [LibertyNode] = []
+        while index < tokens.count, tokens[index].value != "}" {
+            let memberName = tokens[index].value
+            let memberLine = tokens[index].line
+            index += 1
+            let memberArguments = try parseLibertyArguments(tokens, index: &index)
+            if index < tokens.count, tokens[index].value == "{" {
+                let child = try parseLibertyGroupBody(
+                    name: memberName,
+                    arguments: memberArguments,
+                    tokens: tokens,
+                    index: &index,
+                    line: memberLine
+                )
+                children.append(child)
+                continue
+            }
+            if index < tokens.count, tokens[index].value == ":" {
+                index += 1
+                var values: [String] = []
+                while index < tokens.count, tokens[index].value != ";" {
+                    if tokens[index].value == "}" {
+                        throw PDKStandardViewTextParseError.malformed(
+                            format: .liberty,
+                            line: tokens[index].line,
+                            reason: "attribute \(memberName) is not terminated by a semicolon"
+                        )
+                    }
+                    if tokens[index].value != "," {
+                        values.append(tokens[index].value)
+                    }
+                    index += 1
+                }
+                guard index < tokens.count else {
+                    throw PDKStandardViewTextParseError.malformed(
+                        format: .liberty,
+                        line: memberLine,
+                        reason: "attribute \(memberName) is not terminated by a semicolon"
+                    )
+                }
+                index += 1
+                attributes[memberName.lowercased()] = values
+                continue
+            }
+            if index < tokens.count, tokens[index].value == ";" {
+                index += 1
+                attributes[memberName.lowercased()] = memberArguments
+                continue
+            }
+            throw PDKStandardViewTextParseError.malformed(
+                format: .liberty,
+                line: memberLine,
+                reason: "member \(memberName) is neither a group nor an attribute"
+            )
+        }
+        guard index < tokens.count else {
+            throw PDKStandardViewTextParseError.malformed(
+                format: .liberty,
+                line: line,
+                reason: "group \(name) is not closed"
+            )
+        }
+        index += 1
+        return LibertyNode(
+            name: name,
+            arguments: arguments,
+            attributes: attributes,
+            children: children
+        )
+    }
+
+    private func timingNodesToTables(
+        cellName: String,
+        pinName: String,
+        relatedPinName: String?,
+        timingNode: LibertyNode
+    ) -> [PDKLibertyTimingTable] {
+        let tableKinds: Set<String> = [
+            "cell_rise", "cell_fall", "rise_transition", "fall_transition",
+            "rise_constraint", "fall_constraint", "retaining_rise", "retaining_fall",
+            "internal_power", "rise_power", "fall_power"
+        ]
+        return timingNode.children.compactMap { tableNode in
+            let kind = tableNode.name.lowercased()
+            guard tableKinds.contains(kind) else { return nil }
+            let rawIndex1 = libertyListValues(tableNode.attributes["index_1"] ?? tableNode.attributes["index1"] ?? [])
+            let rawIndex2 = libertyListValues(tableNode.attributes["index_2"] ?? tableNode.attributes["index2"] ?? [])
+            let rawIndex3 = libertyListValues(tableNode.attributes["index_3"] ?? tableNode.attributes["index3"] ?? [])
+            let rawValues = libertyListValues(tableNode.attributes["values"] ?? [])
+            return PDKLibertyTimingTable(
+                cellName: cellName,
+                pinName: pinName,
+                relatedPinName: relatedPinName,
+                kind: kind,
+                index1: libertyNumericValues(rawIndex1),
+                index2: libertyNumericValues(rawIndex2),
+                index3: libertyNumericValues(rawIndex3),
+                values: libertyNumericValues(rawValues),
+                rawIndex1: rawIndex1,
+                rawIndex2: rawIndex2,
+                rawIndex3: rawIndex3,
+                rawValues: rawValues
+            )
+        }
+    }
+
+    private func libertyListValues(_ values: [String]) -> [String] {
+        values.flatMap { value in
+            value.split { $0.isWhitespace || $0 == "," }.map(String.init)
+        }
+    }
+
+    private func libertyNumericValues(_ values: [String]) -> [Double] {
+        values.compactMap { value in
+            guard let number = Double(value), number.isFinite else { return nil }
+            return number
+        }
+    }
+
+    private func libertyAttributeText(_ values: [String]?) -> String? {
+        guard let value = values?.first, !value.isEmpty else { return nil }
+        return value
+    }
+
+    private func libertyScalar(_ values: [String]?) -> Double? {
+        guard let value = libertyAttributeText(values),
+              let number = Double(value),
+              number.isFinite else {
+            return nil
+        }
+        return number
+    }
+
+    private func spiceDirectiveTokens(in line: String) -> [String] {
+        line.split { $0.isWhitespace || $0 == "," }
+            .map(String.init)
+            .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "()")) }
+            .filter { !$0.isEmpty }
+    }
+
+    private func parseSpiceAssignments(in line: String) -> [PDKSpiceParameter] {
+        let characters = Array(line)
+        var index = 0
+        var parameters: [PDKSpiceParameter] = []
+        while index < characters.count {
+            guard isSpiceParameterNameCharacter(characters[index]) else {
+                index += 1
+                continue
+            }
+            let nameStart = index
+            while index < characters.count, isSpiceParameterNameCharacter(characters[index]) {
+                index += 1
+            }
+            let name = String(characters[nameStart..<index])
+            while index < characters.count, characters[index].isWhitespace {
+                index += 1
+            }
+            guard index < characters.count, characters[index] == "=" else {
+                continue
+            }
+            index += 1
+            while index < characters.count, characters[index].isWhitespace {
+                index += 1
+            }
+            let valueStart = index
+            if index < characters.count, characters[index] == "{" {
+                var depth = 0
+                while index < characters.count {
+                    if characters[index] == "{" { depth += 1 }
+                    if characters[index] == "}" {
+                        depth -= 1
+                        index += 1
+                        if depth == 0 { break }
+                        continue
+                    }
+                    index += 1
+                }
+            } else {
+                while index < characters.count,
+                      !characters[index].isWhitespace,
+                      characters[index] != ")",
+                      characters[index] != "," {
+                    index += 1
+                }
+            }
+            let rawValue = String(characters[valueStart..<index])
+            guard !rawValue.isEmpty else { continue }
+            parameters.append(makeSpiceParameter(name: name, rawValue: rawValue))
+        }
+        return parameters
+    }
+
+    private func isSpiceParameterNameCharacter(_ character: Character) -> Bool {
+        character.isLetter || character.isNumber || character == "_" || character == "$" || character == "."
+    }
+
+    private func makeSpiceParameter(name: String, rawValue: String) -> PDKSpiceParameter {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let directValue = Double(trimmed), directValue.isFinite {
+            return PDKSpiceParameter(
+                name: name,
+                rawValue: trimmed,
+                numericValue: directValue,
+                isExpression: false
+            )
+        }
+        let lowercased = trimmed.lowercased()
+        let suffixes: [(String, Double)] = [
+            ("meg", 1.0e6),
+            ("mil", 25.4e-6),
+            ("t", 1.0e12),
+            ("g", 1.0e9),
+            ("k", 1.0e3),
+            ("m", 1.0e-3),
+            ("u", 1.0e-6),
+            ("n", 1.0e-9),
+            ("p", 1.0e-12),
+            ("f", 1.0e-15),
+            ("a", 1.0e-18)
+        ]
+        for (suffix, multiplier) in suffixes where lowercased.hasSuffix(suffix) {
+            let numberEnd = trimmed.index(trimmed.endIndex, offsetBy: -suffix.count)
+            let numberText = String(trimmed[..<numberEnd])
+            if let number = Double(numberText), number.isFinite {
+                return PDKSpiceParameter(
+                    name: name,
+                    rawValue: trimmed,
+                    numericValue: number * multiplier,
+                    unitSuffix: String(trimmed[numberEnd...]),
+                    isExpression: false
+                )
+            }
+        }
+        return PDKSpiceParameter(
+            name: name,
+            rawValue: trimmed,
+            isExpression: true
+        )
     }
 
     private func logicalTextLines(_ text: String) -> [(Int, String)] {
@@ -518,82 +1018,6 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             }
         }
         return result
-    }
-
-    private func declarationName(
-        _ line: String,
-        keyword: String,
-        format: PDKStandardViewFormat,
-        lineNumber: Int
-    ) throws -> String {
-        guard let opening = line.firstIndex(of: "("),
-              let closing = line[opening...].firstIndex(of: ")"),
-              opening < closing else {
-            throw PDKStandardViewTextParseError.malformed(
-                format: format,
-                line: lineNumber,
-                reason: "\(keyword) declaration is missing a parenthesized name"
-            )
-        }
-        let name = line[line.index(after: opening)..<closing]
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
-        guard !name.isEmpty else {
-            throw PDKStandardViewTextParseError.malformed(
-                format: format,
-                line: lineNumber,
-                reason: "\(keyword) declaration has an empty name"
-            )
-        }
-        return name
-    }
-
-    private func attributeValue(_ line: String, name: String) -> String? {
-        let lowercased = line.lowercased()
-        guard lowercased.hasPrefix(name),
-              let colon = line.firstIndex(of: ":") else {
-            return nil
-        }
-        let rawValue = line[line.index(after: colon)...]
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .trimmingCharacters(in: CharacterSet(charactersIn: ";"))
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if rawValue.first == "\"", let closing = rawValue.dropFirst().firstIndex(of: "\"") {
-            return String(rawValue[rawValue.index(after: rawValue.startIndex)..<closing])
-        }
-        return rawValue.split(whereSeparator: { $0.isWhitespace }).first.map(String.init)
-    }
-
-    private func isValuesDeclaration(_ line: String) -> Bool {
-        let lowercased = line.lowercased()
-        return (lowercased.hasPrefix("values") && lowercased.dropFirst("values".count).first == " ") ||
-            lowercased.hasPrefix("values(")
-    }
-
-    private func valuesCount(in line: String) -> Int {
-        guard let opening = line.firstIndex(of: "("),
-              let closing = line[opening...].lastIndex(of: ")"),
-              opening < closing else {
-            return 0
-        }
-        let values = line[line.index(after: opening)..<closing]
-            .split { $0.isWhitespace || $0 == "," }
-        return values.filter {
-            let value = String($0).trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
-            return Double(value) != nil
-        }.count
-    }
-
-    private func isDeclaration(_ line: String, keyword: String) -> Bool {
-        let lowercased = line.lowercased()
-        guard lowercased.hasPrefix(keyword) else {
-            return false
-        }
-        guard lowercased.count > keyword.count else {
-            return true
-        }
-        let boundary = lowercased.index(lowercased.startIndex, offsetBy: keyword.count)
-        return lowercased[boundary] == "(" || lowercased[boundary].isWhitespace
     }
 
     private func makeMaskIR(
@@ -686,6 +1110,70 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 suggestedActions: ["repair_cross_view_mapping", "inspect_standard_view_cells"]
             ))
         }
+
+        switch request.format {
+        case .spice:
+            for model in inspection.spiceModels {
+                for parameter in model.parameters where parameter.numericValue == nil {
+                    findings.append(PDKValidationFinding(
+                        severity: .blocker,
+                        code: "pdk.standard-view.spice-parameter-unsupported",
+                        message: "SPICE model parameter \(parameter.name) is not a supported numeric value: \(parameter.rawValue).",
+                        entity: "\(model.name).\(parameter.name)",
+                        suggestedActions: ["resolve_spice_parameter_expression", "use_a_supported_model_view"]
+                    ))
+                }
+            }
+            if inspection.metadata["spice.endSeen"] != "true" {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.standard-view.spice-end-missing",
+                    message: "SPICE input does not contain a terminating .end statement.",
+                    entity: request.assetID,
+                    suggestedActions: ["repair_spice_artifact", "complete_spice_deck"]
+                ))
+            }
+        case .liberty:
+            if !inspection.libertyTimingArcs.isEmpty && inspection.libertyTimingTables.isEmpty {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.standard-view.liberty-timing-table-missing",
+                    message: "Liberty timing arcs are present without any supported timing table values.",
+                    entity: request.assetID,
+                    suggestedActions: ["add_liberty_timing_tables", "use_a_supported_liberty_view"]
+                ))
+            }
+            if !inspection.libertyTimingTables.isEmpty && inspection.unitDeclarations["time_unit"] == nil {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.standard-view.liberty-time-unit-missing",
+                    message: "Liberty timing tables are present without a declared time_unit.",
+                    entity: request.assetID,
+                    suggestedActions: ["declare_liberty_time_unit", "repair_liberty_library_header"]
+                ))
+            }
+            for table in inspection.libertyTimingTables {
+                if !table.hasCompleteNumericSemantics {
+                    findings.append(PDKValidationFinding(
+                        severity: .blocker,
+                        code: "pdk.standard-view.liberty-table-value-unsupported",
+                        message: "Liberty timing table \(table.kind) contains a non-numeric or missing index/value token.",
+                        entity: "\(table.cellName).\(table.pinName).\(table.kind)",
+                        suggestedActions: ["repair_liberty_numeric_table", "use_a_supported_liberty_view"]
+                    ))
+                } else if !table.hasConsistentDimensions {
+                    findings.append(PDKValidationFinding(
+                        severity: .blocker,
+                        code: "pdk.standard-view.liberty-table-dimension-mismatch",
+                        message: "Liberty timing table \(table.kind) value count does not match its index dimensions.",
+                        entity: "\(table.cellName).\(table.pinName).\(table.kind)",
+                        suggestedActions: ["repair_liberty_table_dimensions", "inspect_liberty_indices"]
+                    ))
+                }
+            }
+        case .lef, .gdsii, .oasis:
+            break
+        }
         return findings
     }
 
@@ -712,7 +1200,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             metadata: XcircuiteEngineExecutionMetadata(
                 engineID: "PDKStandardViewInspection",
                 implementationID: "LocalPDKStandardViewInspector",
-                implementationVersion: "1",
+                implementationVersion: "2",
                 startedAt: startedAt,
                 completedAt: clock.now()
             ),
@@ -721,13 +1209,34 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 assetID: request.assetID,
                 inspection: inspection,
                 findings: findings,
-                parserID: "swift-mask-data",
-                parserVersion: "workspace",
+                parserID: parserID(for: request.format),
+                parserVersion: parserVersion(for: request.format),
                 limitations: [
-                    "This inspection proves parsed structural semantics for the selected standard view.",
+                    "This inspection proves the supported canonical structural and detailed numeric semantics for the selected standard view.",
+                    "Unsupported SPICE expressions and incomplete Liberty timing tables are blocked.",
                     "It does not establish foundry qualification or oracle correlation."
                 ]
             )
         )
+    }
+
+    private func parserID(for format: PDKStandardViewFormat) -> String {
+        switch format {
+        case .lef, .gdsii, .oasis:
+            "swift-mask-data.\(format.rawValue)"
+        case .spice:
+            "pdkkit.spice"
+        case .liberty:
+            "pdkkit.liberty"
+        }
+    }
+
+    private func parserVersion(for format: PDKStandardViewFormat) -> String {
+        switch format {
+        case .lef, .gdsii, .oasis:
+            "swift-mask-data-workspace"
+        case .spice, .liberty:
+            "detailed-v1"
+        }
     }
 }

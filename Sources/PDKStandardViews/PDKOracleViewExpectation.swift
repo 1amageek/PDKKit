@@ -11,11 +11,17 @@ public struct PDKOracleViewExpectation: Sendable, Hashable, Codable {
     public var expectedModelNames: [String]?
     public var expectedModelTypes: [String]?
     public var expectedModelParameterNames: [String]?
+    public var expectedSpiceModels: [PDKSpiceModel]?
+    public var expectedSpiceSubcircuits: [PDKSpiceSubcircuit]?
     public var expectedPinNames: [String]?
     public var expectedCornerNames: [String]?
     public var expectedTimingArcCount: Int?
     public var expectedTimingRelatedPinNames: [String]?
     public var expectedTimingTableValueCount: Int?
+    public var expectedLibertyCells: [PDKLibertyCell]?
+    public var expectedLibertyTimingArcs: [PDKLibertyTimingArc]?
+    public var expectedLibertyTimingTables: [PDKLibertyTimingTable]?
+    public var expectedUnitDeclarations: [String: String]?
     public var expectedElementCount: Int?
     public var expectedMetadata: [String: String]?
 
@@ -30,11 +36,17 @@ public struct PDKOracleViewExpectation: Sendable, Hashable, Codable {
         expectedModelNames: [String]? = nil,
         expectedModelTypes: [String]? = nil,
         expectedModelParameterNames: [String]? = nil,
+        expectedSpiceModels: [PDKSpiceModel]? = nil,
+        expectedSpiceSubcircuits: [PDKSpiceSubcircuit]? = nil,
         expectedPinNames: [String]? = nil,
         expectedCornerNames: [String]? = nil,
         expectedTimingArcCount: Int? = nil,
         expectedTimingRelatedPinNames: [String]? = nil,
         expectedTimingTableValueCount: Int? = nil,
+        expectedLibertyCells: [PDKLibertyCell]? = nil,
+        expectedLibertyTimingArcs: [PDKLibertyTimingArc]? = nil,
+        expectedLibertyTimingTables: [PDKLibertyTimingTable]? = nil,
+        expectedUnitDeclarations: [String: String]? = nil,
         expectedElementCount: Int? = nil,
         expectedMetadata: [String: String]? = nil
     ) {
@@ -48,11 +60,17 @@ public struct PDKOracleViewExpectation: Sendable, Hashable, Codable {
         self.expectedModelNames = expectedModelNames
         self.expectedModelTypes = expectedModelTypes
         self.expectedModelParameterNames = expectedModelParameterNames
+        self.expectedSpiceModels = expectedSpiceModels
+        self.expectedSpiceSubcircuits = expectedSpiceSubcircuits
         self.expectedPinNames = expectedPinNames
         self.expectedCornerNames = expectedCornerNames
         self.expectedTimingArcCount = expectedTimingArcCount
         self.expectedTimingRelatedPinNames = expectedTimingRelatedPinNames
         self.expectedTimingTableValueCount = expectedTimingTableValueCount
+        self.expectedLibertyCells = expectedLibertyCells
+        self.expectedLibertyTimingArcs = expectedLibertyTimingArcs
+        self.expectedLibertyTimingTables = expectedLibertyTimingTables
+        self.expectedUnitDeclarations = expectedUnitDeclarations
         self.expectedElementCount = expectedElementCount
         self.expectedMetadata = expectedMetadata
     }

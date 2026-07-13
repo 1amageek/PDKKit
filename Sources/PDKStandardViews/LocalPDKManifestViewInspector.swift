@@ -24,7 +24,27 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         _ request: PDKManifestViewInspectionRequest
     ) async throws -> XcircuiteEngineResultEnvelope<PDKManifestViewInspectionPayload> {
         let startedAt = clock.now()
-        let manifestURL = URL(filePath: request.pdk.manifest.path).standardizedFileURL
+        let manifestURL: URL
+        do {
+            manifestURL = try PDKArtifactURLResolver().resolve(
+                request.pdk.manifest,
+                baseDirectoryPath: request.projectRootPath
+            )
+        } catch {
+            let finding = PDKValidationFinding(
+                severity: .blocker,
+                code: "pdk.standard-view.manifest-path-invalid",
+                message: "PDK manifest reference could not be resolved: \(error.localizedDescription)",
+                entity: request.pdk.manifest.path,
+                suggestedActions: ["provide_project_root", "repair_manifest_reference"]
+            )
+            return makeEnvelope(
+                request: request,
+                startedAt: startedAt,
+                status: .blocked,
+                findings: [finding]
+            )
+        }
         let manifest: PDKManifest
         do {
             let data = try Data(contentsOf: manifestURL)
@@ -221,7 +241,8 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 binding: binding,
                 findings: findings,
                 limitations: [
-                    "Manifest binding verifies declared layer/device coverage against the parsed view.",
+                    "Manifest binding verifies declared layer/device/corner coverage against the parsed detailed view.",
+                    "Detailed numeric semantic blockers remain fail-closed for unsupported SPICE expressions and incomplete Liberty timing tables.",
                     "This result is not a foundry qualification or reference-oracle decision."
                 ]
             )
