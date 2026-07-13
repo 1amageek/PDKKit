@@ -23,9 +23,9 @@ independent evidence required to pass those gates.
 | `PDKCore` | PDK identity and immutable manifest reference |
 | `PDKDiscovery` | Deterministic local PDK discovery without qualification claims |
 | `PDKValidation` | Manifest, input, asset, digest, parser-backed cross-view, retained corpus and local qualification gate |
-| `PDKStandardViews` | Canonical standard-view inspection, manifest binding and immutable oracle comparison |
-| `PDKKit` | Umbrella API and public contract version |
-| `PDKKitCLICore` / `pdkkit` | Deterministic JSON inspection, discovery, validation, corpus, oracle and qualification CLI |
+| `PDKStandardViews` | Canonical standard-view and rule-deck inspection, manifest binding and immutable oracle comparison |
+| `PDKKit` | Umbrella API and public contract version (2) |
+| `PDKKitCLICore` / `pdkkit` | Deterministic JSON inspection, discovery, validation, corpus, standard-view, rule-deck, oracle and qualification CLI |
 
 ## Contract
 
@@ -89,11 +89,24 @@ mapping and identify every mapped layer by name, alias or manufacturing number.
 Use `--no-standard-views` or `--no-rule-decks` only when an agent explicitly
 needs to isolate a contract layer during diagnosis.
 
+`PDKRuleDeckInspectionRequest` and `PDKRuleDeckInspectionPayload` are the
+standalone protocol-first form of that check. `LocalPDKRuleDeckInspector` and
+`pdkkit inspect-rule-deck` expose the same immutable reference, mapped-layer
+evidence and structured findings without requiring a full manifest validation
+run. The adapter intentionally reports grammar limitations instead of claiming
+complete vendor-specific DRC rule semantics.
+
+The public package and CLI contract version is 2. The rule-deck stage is
+identified as `pdk.inspect-rule-deck`; request schema evolution is independent
+from the manifest schema.
+
 `PDKCorpusSuite` and `LocalPDKCorpusValidator` retain expected valid, blocked
 and failed cases. Corpus success is evidence of the declared local validator
-and failed cases, including manifest-bound standard-view checks. Corpus success
-is evidence of the declared local validator contract only; it does not promote
-the qualification state.
+and failed cases, including manifest-bound standard-view and rule-deck checks.
+Rule-deck corpus results retain expected/observed outcomes and finding codes so
+the artifact can be reviewed or resumed by an agent. Corpus success is evidence
+of the declared local validator contract only; it does not promote the
+qualification state.
 
 `PDKOracleExpectation` binds canonical standard-view facts, numeric SPICE model
 parameters, Liberty timing tables and unit declarations to a manifest digest.
@@ -109,6 +122,7 @@ swift run pdkkit discover --root <path> [--root <path> ...] --process-id <id>
 swift run pdkkit validate --manifest <path> --required-role layerMap --pretty
 swift run pdkkit corpus --suite <path> --root <path> --pretty
 swift run pdkkit inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> --pretty
+swift run pdkkit inspect-rule-deck --manifest <path> --asset-id <id> --pretty
 swift run pdkkit oracle --manifest <path> --oracle <path> --pretty
 swift run pdkkit qualify --manifest <path> --corpus <report.json> --oracle <report.json> --pretty
 ```
@@ -129,7 +143,7 @@ swift build
 perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Package -destination 'platform=macOS'
 ```
 
-The repository's current verification result is 35 tests in 5 Swift Testing
+The repository's current verification result is 41 tests in 5 Swift Testing
 suites. The detailed standard-view suite passes 12 tests with
 `xcodebuild test-without-building` after an Xcode `build-for-testing` build.
 The Xcircuite PDK integration slice passes 6 tests in 1 suite with `xcodebuild`;
@@ -160,6 +174,12 @@ Liberty timing tables with non-numeric values or inconsistent dimensions, and
 timing tables without a declared `time_unit` are blocked. This is a supported
 numeric-semantic subset, not a claim of complete vendor-specific language
 coverage.
+
+Validation request schema changes are explicit: the cross-view controls are
+carried by schema version 2, while legacy version 1 requests decode with the
+safe default of validating standard views and rule decks. The manifest-bound
+standard-view requests also advance when project-root resolution is part of
+their reproducibility contract.
 
 See `MILESTONES.md`, `CAPABILITY_REPORT.md`, `DESIGN.md`, `INTERFACES.md` and
 `IMPLEMENTATION_PLAN.md` for the implementation boundary and qualification

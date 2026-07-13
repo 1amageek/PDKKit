@@ -31,6 +31,27 @@ struct PDKEngineTests {
         #expect(envelope.payload.ruleDeckResults.map(\.assetID) == ["rules"])
         #expect(envelope.payload.ruleDeckResults.first?.observedLayerIDs == ["active", "metal1"])
         #expect(envelope.payload.ruleDeckResults.first?.statementCount == 3)
+        #expect(envelope.payload.ruleDeckResults.first?.inspection?.layerEvidence.count == 2)
+    }
+
+    @Test("rule-deck inspection exposes manifest-bound layer evidence")
+    func ruleDeckInspectorExposesLayerEvidence() async throws {
+        let manifestURL = fixtureURL().appending(path: "pdk.json")
+        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let envelope = try await LocalPDKRuleDeckInspector().execute(
+            PDKRuleDeckInspectionRequest(
+                runID: "rule-deck-inspection",
+                inputs: [reference.manifest],
+                pdk: reference,
+                assetID: "rules"
+            )
+        )
+        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
+        #expect(envelope.payload.isValid)
+        #expect(envelope.payload.statementCount == 3)
+        #expect(envelope.payload.observedLayerIDs == ["active", "metal1"])
+        #expect(envelope.payload.layerEvidence.allSatisfy { !$0.matchedTokens.isEmpty })
+        #expect(envelope.artifacts.map(\.artifactID) == ["rules"])
     }
 
     @Test("relative manifest and input references use the explicit project root")
@@ -180,6 +201,65 @@ struct PDKEngineTests {
         })
     }
 
+    @Test("rule-deck comments cannot satisfy mapped layer evidence")
+    func ruleDeckCommentsDoNotSatisfyLayerEvidence() async throws {
+        let isolatedFixture = try makeIsolatedFixture()
+        defer {
+            do {
+                try FileManager.default.removeItem(at: isolatedFixture)
+            } catch {
+                Issue.record("Failed to remove comment validation fixture: \(error)")
+            }
+        }
+        let manifestURL = isolatedFixture.appending(path: "pdk.json")
+        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        try Data("/* ACTIVE M1 */\nRULESET fixture-180nm\n".utf8)
+            .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
+
+        let envelope = try await LocalPDKRuleDeckInspector().execute(
+            PDKRuleDeckInspectionRequest(
+                runID: "rule-deck-comment-block",
+                inputs: [reference.manifest],
+                pdk: reference,
+                assetID: "rules"
+            )
+        )
+        #expect(envelope.status == .blocked)
+        #expect(envelope.payload.observedLayerIDs.isEmpty)
+        #expect(envelope.payload.findings.contains {
+            $0.code == "pdk.validation.rule-deck-layer-missing"
+        })
+    }
+
+    @Test("rule-deck inspection fails on unterminated block comments")
+    func ruleDeckUnterminatedCommentFails() async throws {
+        let isolatedFixture = try makeIsolatedFixture()
+        defer {
+            do {
+                try FileManager.default.removeItem(at: isolatedFixture)
+            } catch {
+                Issue.record("Failed to remove unterminated comment fixture: \(error)")
+            }
+        }
+        let manifestURL = isolatedFixture.appending(path: "pdk.json")
+        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        try Data("RULESET fixture-180nm\nLAYER ACTIVE 1\nLAYER M1 10\n/* unterminated\n".utf8)
+            .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
+
+        let envelope = try await LocalPDKRuleDeckInspector().execute(
+            PDKRuleDeckInspectionRequest(
+                runID: "rule-deck-comment-failure",
+                inputs: [reference.manifest],
+                pdk: reference,
+                assetID: "rules"
+            )
+        )
+        #expect(envelope.status == .failed)
+        #expect(envelope.payload.findings.contains {
+            $0.code == "pdk.validation.rule-deck-comment-unclosed"
+        })
+    }
+
     @Test("discovery is deterministic and does not claim qualification")
     func discoveryFindsFixture() async throws {
         let request = PDKDiscoveryRequest(
@@ -221,6 +301,69 @@ struct PDKEngineTests {
         #expect(validCase.standardViewResults.count == 3)
         #expect(validCase.standardViewResults.allSatisfy { $0.passed })
         #expect(validCase.standardViewResults.map(\.format) == ["lef", "liberty", "spice"])
+        #expect(validCase.ruleDeckResults.count == 1)
+        #expect(validCase.ruleDeckResults.first?.passed == true)
+    }
+
+    @Test("legacy corpus schema remains readable without rule-deck checks")
+    func legacyCorpusSchemaRemainsReadable() throws {
+        let suiteData = try Data(contentsOf: fixtureRootURL().appending(path: "pdk-corpus.json"))
+        var object = try #require(JSONSerialization.jsonObject(with: suiteData) as? [String: Any])
+        object["schemaVersion"] = 1
+        var cases = try #require(object["cases"] as? [[String: Any]])
+        for index in cases.indices {
+            cases[index].removeValue(forKey: "ruleDeckChecks")
+        }
+        object["cases"] = cases
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+        let suite = try PDKCorpusSuiteCodec().decode(data: legacyData)
+        let report = PDKCorpusSuiteValidator().validate(suite)
+        #expect(report.isValid)
+        #expect(suite.schemaVersion == 1)
+        #expect(suite.cases.first(where: { $0.caseID == "retained-fixture-is-valid" })?.ruleDeckChecks.isEmpty == true)
+    }
+
+    @Test("corpus retains a blocked rule-deck result")
+    func corpusRetainsBlockedRuleDeckResult() async throws {
+        let isolatedFixture = try makeIsolatedFixture()
+        defer {
+            do {
+                try FileManager.default.removeItem(at: isolatedFixture)
+            } catch {
+                Issue.record("Failed to remove blocked corpus fixture: \(error)")
+            }
+        }
+        try Data("RULESET fixture-180nm\n".utf8)
+            .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
+        let suite = PDKCorpusSuite(
+            suiteID: "rule-deck-blocked-suite",
+            processID: "fixture-180nm",
+            version: "2026.1",
+            cases: [PDKCorpusCase(
+                caseID: "blocked-rule-deck",
+                manifestPath: "pdk.json",
+                expectedOutcome: .blocked,
+                requiredAssetRoles: [.ruleDeck],
+                ruleDeckChecks: [PDKCorpusRuleDeckCheck(
+                    assetID: "rules",
+                    expectedOutcome: .blocked,
+                    expectedFindingCodes: ["pdk.validation.rule-deck-layer-missing"]
+                )]
+            )]
+        )
+        let suiteURL = isolatedFixture.appending(path: "suite.json")
+        try PDKCorpusSuiteCodec().encode(suite).write(to: suiteURL, options: [.atomic])
+        let envelope = try await LocalPDKCorpusValidator().execute(
+            PDKCorpusValidationRequest(
+                runID: "blocked-rule-deck-corpus",
+                suitePath: suiteURL.path,
+                rootPath: isolatedFixture.path
+            )
+        )
+        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
+        #expect(envelope.payload.isValid)
+        #expect(envelope.payload.caseResults.first?.ruleDeckResults.first?.passed == true)
+        #expect(envelope.payload.caseResults.first?.ruleDeckResults.first?.observedOutcome == .blocked)
     }
 
     @Test("qualification evaluator consumes immutable corpus and oracle payload artifacts")
@@ -318,6 +461,17 @@ struct PDKEngineTests {
         let requestData = try encoder.encode(request)
         let decodedRequest = try JSONDecoder().decode(PDKValidationRequest.self, from: requestData)
         #expect(decodedRequest == request)
+        #expect(request.schemaVersion == PDKValidationRequest.currentSchemaVersion)
+
+        var legacyObject = try #require(JSONSerialization.jsonObject(with: requestData) as? [String: Any])
+        legacyObject["schemaVersion"] = 1
+        legacyObject.removeValue(forKey: "validateStandardViews")
+        legacyObject.removeValue(forKey: "validateRuleDecks")
+        let legacyData = try JSONSerialization.data(withJSONObject: legacyObject)
+        let decodedLegacyRequest = try JSONDecoder().decode(PDKValidationRequest.self, from: legacyData)
+        #expect(decodedLegacyRequest.schemaVersion == 1)
+        #expect(decodedLegacyRequest.validateStandardViews)
+        #expect(decodedLegacyRequest.validateRuleDecks)
 
         let payload = PDKValidationPayload(isValid: false, missingRequirements: ["models"])
         let payloadData = try encoder.encode(payload)

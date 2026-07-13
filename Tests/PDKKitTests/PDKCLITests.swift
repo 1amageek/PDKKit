@@ -91,6 +91,25 @@ struct PDKCLITests {
         #expect(ruleDeckDisabledResults.isEmpty)
     }
 
+    @Test("inspect-rule-deck exposes typed layer evidence")
+    func inspectRuleDeckExposesLayerEvidence() async throws {
+        let result = await PDKKitCLI.invoke(arguments: [
+            "inspect-rule-deck",
+            "--manifest", fixtureURL().appending(path: "pdk.json").path,
+            "--asset-id", "rules"
+        ])
+        #expect(result.exitCode == 0)
+        let data = try #require(result.standardOutput.data(using: .utf8))
+        let object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(object["command"] as? String == "inspect-rule-deck")
+        #expect(object["status"] as? String == "completed")
+        let payload = try #require(object["payload"] as? [String: Any])
+        #expect(payload["isValid"] as? Bool == true)
+        #expect(payload["observedLayerIDs"] as? [String] == ["active", "metal1"])
+        let evidence = try #require(payload["layerEvidence"] as? [[String: Any]])
+        #expect(evidence.count == 2)
+    }
+
     @Test("oracle compares immutable standard-view expectations")
     func oracleComparesFixture() async {
         let result = await PDKKitCLI.invoke(arguments: [

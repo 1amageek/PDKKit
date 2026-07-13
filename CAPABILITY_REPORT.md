@@ -13,13 +13,13 @@
 | PVT/RC/EM/reliability corner model | `PDKCornerDefinition` and scope export | Available when declared |
 | Cross-view mapping coverage | layer/device/corner coverage checks | Blocked when mappings are absent |
 | Manifest-bound cross-view semantic validation | `LocalPDKValidator` invokes the manifest-bound LEF/GDSII/OASIS/SPICE/Liberty inspectors and retains `standardViewResults` | Available for declared mappings; parser failures and semantic blockers fail closed |
-| Rule-deck semantic validation | `ruleDeck` mapping, UTF-8/text statement check and mapped-layer evidence in `ruleDeckResults` | Available for declared rule decks; missing layer evidence blocks |
-| Retained corpus evaluation | `PDKCorpusSuite`, `LocalPDKCorpusValidator`, valid/blocked/failed fixture cases | Available for declared local cases |
+| Rule-deck semantic validation | `PDKRuleDeckInspecting`, `LocalPDKRuleDeckInspector`, `PDKRuleDeckInspectionPayload`, `ruleDeckResults` and `pdkkit inspect-rule-deck` | Available for declared text rule decks; grammar limitations and missing layer evidence block |
+| Retained corpus evaluation | `PDKCorpusSuite`, `LocalPDKCorpusValidator`, standard-view and rule-deck case results, valid/blocked/failed fixture cases | Available for declared local cases; schema v2 accepts legacy v1 suites |
 | Standard-view detailed inspection | `PDKStandardViews`, `swift-mask-data` readers, SPICE/Liberty text adapters, canonical IR and manifest binding | Available for supported mask structure, numeric SPICE model parameters, Liberty timing tables and units |
 | Immutable oracle comparison | `PDKOracleExpectation`, `LocalPDKOracleComparator`, mismatch payload | Available for declared canonical facts |
 | Local qualification gate | `PDKQualificationGate`, digest-bound corpus + oracle evidence | Available for `oracleCorrelated` handoff |
 | Qualification artifact evaluator | `PDKQualificationRequest`, `LocalPDKQualificationEvaluator` | Available for immutable payload/envelope artifacts |
-| Deterministic JSON API surface | `pdkkit inspect/discover/validate/corpus/inspect-view/oracle/qualify` | Available |
+| Deterministic JSON API surface | `pdkkit inspect/discover/validate/corpus/inspect-view/inspect-rule-deck/oracle/qualify` | Available |
 | Xcircuite stage execution | six PDK adapters, immutable envelopes, agent-facing runtime specs and approval/resume flow | Available for the PDK integration slice; release adapter contract is available across the workspace |
 
 ## Explicit limitations

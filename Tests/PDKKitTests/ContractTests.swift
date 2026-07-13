@@ -9,10 +9,11 @@ import Testing
 struct ContractTests {
     @Test("contract version starts at one")
     func contractVersion() {
-        #expect(PDKKitAPI.contractVersion == 1)
-        #expect(PDKKitCLICoreAPI.contractVersion == 1)
+        #expect(PDKKitAPI.contractVersion == 2)
+        #expect(PDKKitCLICoreAPI.contractVersion == 2)
         #expect(PDKKitAPI.manifestSchemaVersion == PDKManifest.currentSchemaVersion)
         #expect(PDKKitAPI.corpusValidationStageID == "pdk.validate-corpus")
         #expect(PDKKitAPI.standardViewInspectionStageID == "pdk.inspect-standard-view")
+        #expect(PDKKitAPI.ruleDeckInspectionStageID == "pdk.inspect-rule-deck")
     }
 }

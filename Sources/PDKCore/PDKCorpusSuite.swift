@@ -1,7 +1,7 @@
 import Foundation
 
 public struct PDKCorpusSuite: Sendable, Hashable, Codable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var suiteID: String

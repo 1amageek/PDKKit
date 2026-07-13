@@ -5,7 +5,7 @@ public struct PDKCorpusSuiteValidator: Sendable {
 
     public func validate(_ suite: PDKCorpusSuite) -> PDKCorpusSuiteValidationReport {
         var findings: [PDKValidationFinding] = []
-        if suite.schemaVersion != PDKCorpusSuite.currentSchemaVersion {
+        if suite.schemaVersion < 1 || suite.schemaVersion > PDKCorpusSuite.currentSchemaVersion {
             findings.append(blocker(
                 "pdk.corpus.unsupported-schema-version",
                 "Corpus suite schema version is not the current supported version.",
@@ -77,6 +77,24 @@ public struct PDKCorpusSuiteValidator: Sendable {
                     findings.append(blocker(
                         "pdk.corpus.empty-standard-view-finding-code",
                         "Expected standard-view finding codes must not be empty.",
+                        corpusCase.caseID
+                    ))
+                }
+            }
+            var ruleDeckKeys = Set<String>()
+            for check in corpusCase.ruleDeckChecks {
+                requireNonEmpty(check.assetID, field: "ruleDeckAssetID", entity: corpusCase.caseID, findings: &findings)
+                if !ruleDeckKeys.insert(check.assetID).inserted {
+                    findings.append(blocker(
+                        "pdk.corpus.duplicate-rule-deck-check",
+                        "Rule-deck checks must not repeat the same asset.",
+                        corpusCase.caseID
+                    ))
+                }
+                for code in check.expectedFindingCodes where code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    findings.append(blocker(
+                        "pdk.corpus.empty-rule-deck-finding-code",
+                        "Expected rule-deck finding codes must not be empty.",
                         corpusCase.caseID
                     ))
                 }

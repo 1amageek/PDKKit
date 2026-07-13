@@ -9,7 +9,8 @@ design qualification.
 flowchart LR
   M0[Baseline and contracts] --> M1[Manifest and immutable references]
   M1 --> M2[Semantic coverage validation]
-  M2 --> M3[Retained PDK corpus]
+  M2 --> M2b[Rule-deck adapter and schema evolution]
+  M2b --> M3[Retained PDK corpus]
   M3 --> M4a[M4a LEF/GDSII/OASIS]
   M4a --> M4b[M4b SPICE/Liberty]
   M4b --> M5[Immutable oracle correlation]
@@ -26,7 +27,8 @@ flowchart LR
 | M0 | Protocol-first package products, typed requests/results, deterministic CLI | Complete | `swift build`, contract tests, CLI output tests |
 | M1 | Versioned manifest, migration, immutable manifest/asset references and SHA-256 checks | Complete | migration tests, positive and tampered-asset tests |
 | M2 | Layer/device/corner/cross-view coverage and blocked unavailable semantics | Complete at manifest, parser-backed declared-view and rule-deck layer level | validator findings, standard-view/rule-deck results and negative-path fixtures |
-| M3 | Retained corpus suite schema, deterministic case evaluator and machine-readable corpus report | Complete for contract evidence | corpus fixture, positive/blocked cases, deterministic report tests |
+| M2b | Protocol-first rule-deck inspection, per-layer evidence and validation request schema evolution | Complete for text integrity, statements and mapped-layer evidence | standalone request/payload, CLI, comment-filtered negative test, schema v1 compatibility |
+| M3 | Retained corpus suite schema, deterministic case evaluator and machine-readable corpus report | Complete for contract evidence; schema v2 retains rule-deck checks | corpus fixture, positive/blocked cases, standard-view/rule-deck result artifacts and deterministic report tests |
 | M4 | Standard-view semantic adapters across the declared PDK views | Complete for the supported canonical semantics and validation integration | Complete vendor-specific language coverage remains a separate gate |
 | M4a | Parser-backed LEF, GDSII and OASIS canonical inspection plus manifest binding | Complete for selected mask views | parser tests, malformed-input findings, manifest binding and CLI evidence |
 | M4b | SPICE and Liberty detailed numeric inspection and manifest binding | Complete for the supported canonical numeric subset | Complete vendor-specific language coverage remains open |
@@ -78,6 +80,22 @@ blocker.
 Rule-deck assets are handled as a separate text-semantic adapter. A mapped deck
 must be readable UTF-8 text with at least one statement and evidence for every
 mapped manufacturing layer; otherwise `ruleDeckResults` reports a typed blocker.
+
+M2b now exposes that adapter independently as `PDKRuleDeckInspecting`. The
+result retains the immutable source reference, statement count and per-layer
+matched-token/statement-index evidence. `pdkkit inspect-rule-deck` and
+manifest validation consume the same implementation. Validation request schema
+version 2 carries the standard-view and rule-deck controls; version 1 requests
+remain readable with semantic checks enabled by default.
+
+This milestone does not claim support for vendor-specific geometric rule
+grammar. Such semantics require a native or external backend with its own
+process-scoped qualification evidence.
+
+The retained corpus also carries `ruleDeckChecks` and per-case
+`ruleDeckResults`, so a corpus report no longer reduces rule-deck evidence to a
+top-level pass/fail. Corpus suite schema version 2 is backward-readable for
+version 1 suites, which decode with no rule-deck checks.
 
 ## Exit gates and ownership
 

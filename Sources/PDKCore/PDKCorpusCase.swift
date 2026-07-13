@@ -8,6 +8,7 @@ public struct PDKCorpusCase: Sendable, Hashable, Codable {
     public var requiredAssetRoles: [PDKAssetRole]
     public var validateCrossViews: Bool
     public var standardViewChecks: [PDKCorpusStandardViewCheck]
+    public var ruleDeckChecks: [PDKCorpusRuleDeckCheck]
     public var metadata: [String: String]
 
     public init(
@@ -18,6 +19,7 @@ public struct PDKCorpusCase: Sendable, Hashable, Codable {
         requiredAssetRoles: [PDKAssetRole] = [],
         validateCrossViews: Bool = true,
         standardViewChecks: [PDKCorpusStandardViewCheck] = [],
+        ruleDeckChecks: [PDKCorpusRuleDeckCheck] = [],
         metadata: [String: String] = [:]
     ) {
         self.caseID = caseID
@@ -29,6 +31,7 @@ public struct PDKCorpusCase: Sendable, Hashable, Codable {
         self.standardViewChecks = standardViewChecks.sorted {
             ($0.assetID, $0.format) < ($1.assetID, $1.format)
         }
+        self.ruleDeckChecks = ruleDeckChecks.sorted { $0.assetID < $1.assetID }
         self.metadata = metadata
     }
 
@@ -42,6 +45,7 @@ public struct PDKCorpusCase: Sendable, Hashable, Codable {
             requiredAssetRoles: try container.decodeIfPresent([PDKAssetRole].self, forKey: .requiredAssetRoles) ?? [],
             validateCrossViews: try container.decodeIfPresent(Bool.self, forKey: .validateCrossViews) ?? true,
             standardViewChecks: try container.decodeIfPresent([PDKCorpusStandardViewCheck].self, forKey: .standardViewChecks) ?? [],
+            ruleDeckChecks: try container.decodeIfPresent([PDKCorpusRuleDeckCheck].self, forKey: .ruleDeckChecks) ?? [],
             metadata: try container.decodeIfPresent([String: String].self, forKey: .metadata) ?? [:]
         )
     }
@@ -54,6 +58,7 @@ public struct PDKCorpusCase: Sendable, Hashable, Codable {
         case requiredAssetRoles
         case validateCrossViews
         case standardViewChecks
+        case ruleDeckChecks
         case metadata
     }
 }

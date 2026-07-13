@@ -44,6 +44,9 @@ public enum PDKKitCLI {
         case "inspect-view":
             if commandArguments.contains("--help") { return helpResult(inspectViewHelp) }
             return try await PDKKitInspectViewCommand().execute(options: PDKKitInspectViewCommand.Options(arguments: commandArguments))
+        case "inspect-rule-deck":
+            if commandArguments.contains("--help") { return helpResult(inspectRuleDeckHelp) }
+            return try await PDKKitInspectRuleDeckCommand().execute(options: PDKKitInspectRuleDeckCommand.Options(arguments: commandArguments))
         case "oracle":
             if commandArguments.contains("--help") { return helpResult(oracleHelp) }
             return try await PDKKitOracleCommand().execute(options: PDKKitOracleCommand.Options(arguments: commandArguments))
@@ -79,6 +82,7 @@ public enum PDKKitCLI {
       pdkkit discover --root <path> [--root <path> ...] [--process-id <id>] [--pretty]
       pdkkit corpus --suite <path> --root <path> [--run-id <id>] [--pretty]
       pdkkit inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> [--run-id <id>] [--pretty]
+      pdkkit inspect-rule-deck --manifest <path> --asset-id <id> [--run-id <id>] [--pretty]
       pdkkit oracle --manifest <path> --oracle <path> [--run-id <id>] [--pretty]
       pdkkit qualify --manifest <path> --corpus <path> --oracle <path> [--run-id <id>] [--pretty]
 
@@ -111,6 +115,11 @@ public enum PDKKitCLI {
     static let inspectViewHelp = """
     OVERVIEW: Parse a standard-view asset and bind its semantics to a PDK manifest.
     USAGE: pdkkit inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> [--run-id <id>] [--pretty]
+    """
+
+    static let inspectRuleDeckHelp = """
+    OVERVIEW: Parse a rule-deck asset and bind mapped layer evidence to a PDK manifest.
+    USAGE: pdkkit inspect-rule-deck --manifest <path> --asset-id <id> [--run-id <id>] [--pretty]
     """
 
     static let oracleHelp = """

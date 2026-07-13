@@ -12,6 +12,7 @@ public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
     public var observedFindingCodes: [String]
     public var missingExpectedFindingCodes: [String]
     public var standardViewResults: [PDKCorpusStandardViewResult]
+    public var ruleDeckResults: [PDKCorpusRuleDeckResult]
     public var manifestReference: XcircuiteFileReference?
 
     public init(
@@ -24,6 +25,7 @@ public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
         observedFindingCodes: [String],
         missingExpectedFindingCodes: [String],
         standardViewResults: [PDKCorpusStandardViewResult] = [],
+        ruleDeckResults: [PDKCorpusRuleDeckResult] = [],
         manifestReference: XcircuiteFileReference? = nil
     ) {
         self.caseID = caseID
@@ -35,6 +37,7 @@ public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
         self.observedFindingCodes = observedFindingCodes
         self.missingExpectedFindingCodes = missingExpectedFindingCodes
         self.standardViewResults = standardViewResults
+        self.ruleDeckResults = ruleDeckResults
         self.manifestReference = manifestReference
     }
 
@@ -49,6 +52,7 @@ public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
         observedFindingCodes = try container.decodeIfPresent([String].self, forKey: .observedFindingCodes) ?? []
         missingExpectedFindingCodes = try container.decodeIfPresent([String].self, forKey: .missingExpectedFindingCodes) ?? []
         standardViewResults = try container.decodeIfPresent([PDKCorpusStandardViewResult].self, forKey: .standardViewResults) ?? []
+        ruleDeckResults = try container.decodeIfPresent([PDKCorpusRuleDeckResult].self, forKey: .ruleDeckResults) ?? []
         manifestReference = try container.decodeIfPresent(XcircuiteFileReference.self, forKey: .manifestReference)
     }
 
@@ -62,6 +66,7 @@ public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
         case observedFindingCodes
         case missingExpectedFindingCodes
         case standardViewResults
+        case ruleDeckResults
         case manifestReference
     }
 }

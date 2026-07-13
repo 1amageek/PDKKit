@@ -1,5 +1,6 @@
 import Foundation
 import PDKCore
+import PDKStandardViews
 import XcircuitePackage
 
 public struct PDKRuleDeckValidationResult: Sendable, Hashable, Codable {
@@ -10,6 +11,7 @@ public struct PDKRuleDeckValidationResult: Sendable, Hashable, Codable {
     public var expectedLayerIDs: [String]
     public var observedLayerIDs: [String]
     public var statementCount: Int
+    public var inspection: PDKRuleDeckInspectionPayload?
     public var findings: [PDKValidationFinding]
 
     public init(
@@ -20,6 +22,7 @@ public struct PDKRuleDeckValidationResult: Sendable, Hashable, Codable {
         expectedLayerIDs: [String] = [],
         observedLayerIDs: [String] = [],
         statementCount: Int = 0,
+        inspection: PDKRuleDeckInspectionPayload? = nil,
         findings: [PDKValidationFinding] = []
     ) {
         self.assetID = assetID
@@ -29,6 +32,7 @@ public struct PDKRuleDeckValidationResult: Sendable, Hashable, Codable {
         self.expectedLayerIDs = expectedLayerIDs
         self.observedLayerIDs = observedLayerIDs
         self.statementCount = statementCount
+        self.inspection = inspection
         self.findings = findings
     }
 }

@@ -13,13 +13,14 @@ open.
 1. Manifest schema and digest validation
 2. Discovery providers
 3. Cross-view consistency validation
-4. Retained PDK corpus contract and deterministic evaluator
-5. M4a parser-backed LEF/GDSII/OASIS inspection and manifest binding
-6. M4b SPICE/Liberty detailed numeric inspection and manifest binding
-7. Immutable reference-oracle correlation
-8. Local qualification gate and evidence handoff
-9. Process-scoped ToolQualification integration
-10. Xcircuite runtime, review and resume evidence
+4. Rule-deck adapter contract and validation request schema evolution
+5. Retained PDK corpus contract and deterministic evaluator
+6. M4a parser-backed LEF/GDSII/OASIS inspection and manifest binding
+7. M4b SPICE/Liberty detailed numeric inspection and manifest binding
+8. Immutable reference-oracle correlation
+9. Local qualification gate and evidence handoff
+10. Process-scoped ToolQualification integration
+11. Xcircuite runtime, review and resume evidence
 
 ## Implemented slices
 
@@ -40,6 +41,13 @@ open.
   standard-view mapping.
 - Rule-deck assets now use a typed text-semantic result that verifies UTF-8,
   non-empty statements and mapped manufacturing-layer evidence.
+- Rule-deck inspection is now an independent `PDKRuleDeckInspecting` adapter
+  with immutable source references, per-layer evidence and
+  `pdkkit inspect-rule-deck`; `LocalPDKValidator` injects the same protocol.
+- Validation request schema version 2 explicitly carries the standard-view and
+  rule-deck controls while preserving version 1 decode defaults.
+- Corpus schema version 2 carries `ruleDeckChecks` and per-case
+  `ruleDeckResults`; version 1 suites remain readable with an empty collection.
 - M5 immutable manifest-digest-bound oracle expectations, canonical field comparison, structured mismatch blockers and `pdkkit oracle`.
 - M6 `PDKQualificationGate` and `pdkkit qualify`, which require matching retained corpus and oracle evidence and stop at `oracleCorrelated`.
 - M7 six PDK FlowStageExecutor adapters with immutable stage-envelope

@@ -21,6 +21,9 @@
         { "assetID": "cells", "format": "lef" },
         { "assetID": "liberty-view", "format": "liberty" },
         { "assetID": "spice-view", "format": "spice" }
+      ],
+      "ruleDeckChecks": [
+        { "assetID": "rules", "expectedOutcome": "valid" }
       ]
     }
   ],
@@ -29,7 +32,7 @@
     "qualification": "unverified"
   },
   "processID": "fixture-180nm",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "suiteID": "pdkkit-fixture-suite",
   "version": "2026.1"
 }

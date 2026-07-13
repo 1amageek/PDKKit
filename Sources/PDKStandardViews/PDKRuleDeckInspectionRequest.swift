@@ -2,15 +2,14 @@ import Foundation
 import PDKCore
 import XcircuitePackage
 
-public struct PDKManifestViewInspectionRequest: XcircuiteEngineRequest {
-    public static let currentSchemaVersion = 2
+public struct PDKRuleDeckInspectionRequest: XcircuiteEngineRequest {
+    public static let currentSchemaVersion = 1
 
     public var schemaVersion: Int
     public var runID: String
     public var inputs: [XcircuiteFileReference]
     public var pdk: PDKReference
     public var assetID: String
-    public var format: PDKStandardViewFormat
     public var requireNonEmpty: Bool
     public var projectRootPath: String?
 
@@ -19,7 +18,6 @@ public struct PDKManifestViewInspectionRequest: XcircuiteEngineRequest {
         inputs: [XcircuiteFileReference],
         pdk: PDKReference,
         assetID: String,
-        format: PDKStandardViewFormat,
         requireNonEmpty: Bool = true,
         projectRootPath: String? = nil
     ) {
@@ -28,7 +26,6 @@ public struct PDKManifestViewInspectionRequest: XcircuiteEngineRequest {
         self.inputs = inputs
         self.pdk = pdk
         self.assetID = assetID
-        self.format = format
         self.requireNonEmpty = requireNonEmpty
         self.projectRootPath = projectRootPath
     }

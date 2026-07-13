@@ -1,5 +1,5 @@
 import Foundation
 
 public enum PDKKitCLICoreAPI {
-    public static let contractVersion = 1
+    public static let contractVersion = 2
 }

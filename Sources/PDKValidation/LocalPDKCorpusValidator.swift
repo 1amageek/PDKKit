@@ -10,6 +10,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
     private let referenceBuilder: PDKManifestReferenceBuilder
     private let validator: any PDKValidating
     private let standardViewInspector: any PDKManifestViewInspecting
+    private let ruleDeckInspector: any PDKRuleDeckInspecting
 
     public init(
         clock: any PDKValidationExecutionClock = SystemPDKValidationExecutionClock(),
@@ -17,7 +18,8 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         suiteValidator: PDKCorpusSuiteValidator = PDKCorpusSuiteValidator(),
         referenceBuilder: PDKManifestReferenceBuilder = PDKManifestReferenceBuilder(),
         validator: any PDKValidating = LocalPDKValidator(),
-        standardViewInspector: any PDKManifestViewInspecting = LocalPDKManifestViewInspector()
+        standardViewInspector: any PDKManifestViewInspecting = LocalPDKManifestViewInspector(),
+        ruleDeckInspector: any PDKRuleDeckInspecting = LocalPDKRuleDeckInspector()
     ) {
         self.clock = clock
         self.suiteCodec = suiteCodec
@@ -25,6 +27,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         self.referenceBuilder = referenceBuilder
         self.validator = validator
         self.standardViewInspector = standardViewInspector
+        self.ruleDeckInspector = ruleDeckInspector
     }
 
     public func execute(
@@ -195,6 +198,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                 envelope.diagnostics.map(\.code) + envelope.payload.findings.map(\.code)
             )
             var standardViewResults: [PDKCorpusStandardViewResult] = []
+            var ruleDeckResults: [PDKCorpusRuleDeckResult] = []
             if envelope.status == .completed {
                 for check in corpusCase.standardViewChecks {
                     let standardResult: PDKCorpusStandardViewResult
@@ -236,11 +240,40 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                     observedFindingCodes.formUnion(standardResult.observedFindingCodes)
                 }
             }
+            for check in corpusCase.ruleDeckChecks {
+                let deckResult: PDKCorpusRuleDeckResult
+                let inspectionRequest = PDKRuleDeckInspectionRequest(
+                    runID: runID + ":" + corpusCase.caseID + ":" + check.assetID + ":rule-deck",
+                    inputs: [reference.manifest],
+                    pdk: reference,
+                    assetID: check.assetID
+                )
+                do {
+                    let inspectionEnvelope = try await ruleDeckInspector.execute(inspectionRequest)
+                    let codes = Set(
+                        inspectionEnvelope.diagnostics.map(\.code) + inspectionEnvelope.payload.findings.map(\.code)
+                    )
+                    deckResult = ruleDeckResult(
+                        check,
+                        observedOutcome: outcome(for: inspectionEnvelope.status),
+                        observedFindingCodes: codes.sorted()
+                    )
+                } catch {
+                    deckResult = ruleDeckResult(
+                        check,
+                        observedOutcome: .failed,
+                        observedFindingCodes: ["pdk.corpus.rule-deck-execution-failed"]
+                    )
+                }
+                ruleDeckResults.append(deckResult)
+                observedFindingCodes.formUnion(deckResult.observedFindingCodes)
+            }
             return caseResult(
                 corpusCase,
                 observedOutcome: observedOutcome,
                 observedFindingCodes: observedFindingCodes.sorted(),
                 standardViewResults: standardViewResults,
+                ruleDeckResults: ruleDeckResults,
                 manifestReference: reference.manifest
             )
         } catch {
@@ -258,6 +291,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         observedOutcome: PDKCorpusExpectedOutcome,
         observedFindingCodes: [String],
         standardViewResults: [PDKCorpusStandardViewResult] = [],
+        ruleDeckResults: [PDKCorpusRuleDeckResult] = [],
         manifestReference: XcircuiteFileReference? = nil
     ) -> PDKCorpusCaseResult {
         let expectedCodes = Set(corpusCase.expectedFindingCodes)
@@ -270,11 +304,13 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
             observedOutcome: observedOutcome,
             passed: corpusCase.expectedOutcome == observedOutcome &&
                 missingCodes.isEmpty &&
-                standardViewResults.allSatisfy(\.passed),
+                standardViewResults.allSatisfy(\.passed) &&
+                ruleDeckResults.allSatisfy(\.passed),
             expectedFindingCodes: corpusCase.expectedFindingCodes,
             observedFindingCodes: observedFindingCodes.sorted(),
             missingExpectedFindingCodes: missingCodes,
             standardViewResults: standardViewResults,
+            ruleDeckResults: ruleDeckResults,
             manifestReference: manifestReference
         )
     }
@@ -289,6 +325,24 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         return PDKCorpusStandardViewResult(
             assetID: check.assetID,
             format: check.format,
+            expectedOutcome: check.expectedOutcome,
+            observedOutcome: observedOutcome,
+            passed: check.expectedOutcome == observedOutcome && expectedCodes.isSubset(of: observedCodes),
+            expectedFindingCodes: check.expectedFindingCodes,
+            observedFindingCodes: observedCodes.sorted(),
+            missingExpectedFindingCodes: expectedCodes.subtracting(observedCodes).sorted()
+        )
+    }
+
+    private func ruleDeckResult(
+        _ check: PDKCorpusRuleDeckCheck,
+        observedOutcome: PDKCorpusExpectedOutcome,
+        observedFindingCodes: [String]
+    ) -> PDKCorpusRuleDeckResult {
+        let expectedCodes = Set(check.expectedFindingCodes)
+        let observedCodes = Set(observedFindingCodes)
+        return PDKCorpusRuleDeckResult(
+            assetID: check.assetID,
             expectedOutcome: check.expectedOutcome,
             observedOutcome: observedOutcome,
             passed: check.expectedOutcome == observedOutcome && expectedCodes.isSubset(of: observedCodes),

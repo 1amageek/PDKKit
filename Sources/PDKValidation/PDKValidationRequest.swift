@@ -3,7 +3,7 @@ import XcircuitePackage
 import PDKCore
 
 public struct PDKValidationRequest: XcircuiteEngineRequest {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var runID: String

@@ -28,8 +28,8 @@ Completeness and semantic validation.
 
 ### PDKStandardViews
 
-Parser-backed canonical inspection for LEF, GDSII, OASIS, SPICE and Liberty
-assets, including the supported detailed numeric semantics.
+Parser-backed canonical inspection for LEF, GDSII, OASIS, SPICE, Liberty and
+rule-deck assets, including the supported detailed numeric semantics.
 
 ### PDKKit
 
@@ -50,6 +50,8 @@ Umbrella API.
 | `LocalPDKStandardViewInspector` | Parse standard views into canonical detailed IR with input integrity checks |
 | `PDKManifestViewBindingValidator` | Compare canonical view facts with manifest layer/device mappings |
 | `LocalPDKManifestViewInspector` | Resolve a manifest asset, inspect it and return binding evidence |
+| `PDKRuleDeckInspecting` | Inspect a manifest-bound rule-deck asset through a typed request/payload contract |
+| `LocalPDKRuleDeckInspector` | Verify rule-deck integrity, executable statements and mapped-layer evidence |
 | `LocalPDKOracleComparator` | Compare manifest-bound canonical facts against digest-bound immutable expectations |
 | `PDKQualificationGate` | Require matching retained corpus and oracle evidence for `oracleCorrelated` |
 | `LocalPDKQualificationEvaluator` | Load immutable corpus/oracle payload artifacts and return a qualification envelope |
@@ -60,13 +62,17 @@ Umbrella API.
 status, parser-backed payload and PDK digest. Both reports retain the PDK digest
 and explicitly preserve the `unverified` qualification state.
 `ruleDeckResults` retains rule-deck text integrity, mapped layer coverage,
-statement counts and typed findings.
+statement counts, per-layer token/statement evidence and typed findings. The
+same payload is returned by `inspect-rule-deck` and embedded in manifest
+validation results.
 
 `PDKCorpusValidationRequest` points to a suite and a bounded corpus root.
 `PDKCorpusValidationPayload` contains one result per case, expected and
 observed outcomes, finding codes, missing expected codes and corpus
-limitations. Expected negative cases are successful corpus cases when the
-validator reproduces the declared blocked or failed outcome.
+limitations. Each case can retain standard-view and rule-deck check results.
+Expected negative cases are successful corpus cases when the validator
+reproduces the declared blocked or failed outcome. Corpus schema version 2
+adds rule-deck checks while decoding version 1 suites without them.
 
 `PDKStandardViewInspectionRequest` and
 `PDKManifestViewInspectionRequest` are agent-facing engine requests. Their
@@ -78,6 +84,11 @@ explicit qualification limitations. `PDKOracleExpectation` and
 records field-level mismatches. `PDKQualificationGate` consumes retained
 corpus and oracle payloads and emits only the local `oracleCorrelated` state.
 It does not claim complete vendor-specific language coverage or process qualification.
+
+`PDKRuleDeckInspectionRequest` is an agent-facing request for a single mapped
+rule-deck asset. Its payload retains the immutable source reference, statement
+count, expected/observed layer IDs, per-layer evidence and explicit grammar
+limitations.
 
 
 ## Error contract
