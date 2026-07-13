@@ -22,7 +22,7 @@ independent evidence required to pass those gates.
 |---|---|
 | `PDKCore` | PDK identity and immutable manifest reference |
 | `PDKDiscovery` | Deterministic local PDK discovery without qualification claims |
-| `PDKValidation` | Manifest, input, asset, digest, cross-view, retained corpus and local qualification gate |
+| `PDKValidation` | Manifest, input, asset, digest, parser-backed cross-view, retained corpus and local qualification gate |
 | `PDKStandardViews` | Canonical standard-view inspection, manifest binding and immutable oracle comparison |
 | `PDKKit` | Umbrella API and public contract version |
 | `PDKKitCLICore` / `pdkkit` | Deterministic JSON inspection, discovery, validation, corpus, oracle and qualification CLI |
@@ -76,6 +76,19 @@ Raw asset presence is not treated as semantic proof. Missing mappings, missing
 assets, digest mismatches and unavailable semantics produce structured blocked
 diagnostics instead of a false pass.
 
+`pdkkit validate` now executes every declared LEF, GDSII/OASIS, SPICE and
+Liberty mapping through the same manifest-bound inspectors used by
+`inspect-view`. The payload retains one `standardViewResults` entry per mapped
+view, including parser provenance, canonical facts, binding findings and the
+completed/blocked/failed status. This makes manifest validation and standalone
+inspection consume the same cross-view evidence.
+
+Declared rule-deck assets are validated through `ruleDeckResults`: the deck
+must be readable UTF-8 text, contain statements, have a `ruleDeck` layer
+mapping and identify every mapped layer by name, alias or manufacturing number.
+Use `--no-standard-views` or `--no-rule-decks` only when an agent explicitly
+needs to isolate a contract layer during diagnosis.
+
 `PDKCorpusSuite` and `LocalPDKCorpusValidator` retain expected valid, blocked
 and failed cases. Corpus success is evidence of the declared local validator
 and failed cases, including manifest-bound standard-view checks. Corpus success
@@ -116,7 +129,7 @@ swift build
 perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Package -destination 'platform=macOS'
 ```
 
-The repository's current verification result is 32 tests in 5 Swift Testing
+The repository's current verification result is 35 tests in 5 Swift Testing
 suites. The detailed standard-view suite passes 12 tests with
 `xcodebuild test-without-building` after an Xcode `build-for-testing` build.
 The Xcircuite PDK integration slice passes 6 tests in 1 suite with `xcodebuild`;

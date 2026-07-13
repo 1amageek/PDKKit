@@ -75,7 +75,7 @@ public enum PDKKitCLI {
 
     USAGE:
       pdkkit inspect --manifest <path> [--pretty]
-      pdkkit validate --manifest <path> [--run-id <id>] [--required-role <role>] [--no-cross-view] [--pretty]
+      pdkkit validate --manifest <path> [--run-id <id>] [--required-role <role>] [--no-cross-view] [--no-standard-views] [--no-rule-decks] [--pretty]
       pdkkit discover --root <path> [--root <path> ...] [--process-id <id>] [--pretty]
       pdkkit corpus --suite <path> --root <path> [--run-id <id>] [--pretty]
       pdkkit inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> [--run-id <id>] [--pretty]
@@ -95,7 +95,7 @@ public enum PDKKitCLI {
 
     static let validateHelp = """
     OVERVIEW: Validate one PDK manifest, its assets, hashes and cross-view contract.
-    USAGE: pdkkit validate --manifest <path> [--run-id <id>] [--required-role <role>] [--no-cross-view] [--pretty]
+    USAGE: pdkkit validate --manifest <path> [--run-id <id>] [--required-role <role>] [--no-cross-view] [--no-standard-views] [--no-rule-decks] [--pretty]
     """
 
     static let discoverHelp = """

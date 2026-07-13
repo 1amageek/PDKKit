@@ -10,8 +10,8 @@
 | Public package products | Complete | Package.swift, PDKCore/Discovery/Validation/Kit/CLI products |
 | Shared Xcircuite request/result contract | Complete | Codable, Hashable, Sendable requests and result payloads |
 | Contract build | Passed | `swift build` |
-| Contract test | Passed | 32 PDKKit Swift Testing cases across 5 suites; detailed standard-view xcodebuild suite 12/12 |
-| Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, semantic validation, standard-view IR, oracle comparison and qualification gate |
+| Contract test | Passed | 35 PDKKit Swift Testing cases across 5 suites; cross-view/rule-deck validation included |
+| Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, parser-backed cross-view semantic validation, standard-view IR, oracle comparison and qualification gate |
 | CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `oracle`, `qualify` |
 | Standard-view semantics | Supported detailed M4a/M4b subset complete | LEF/GDSII/OASIS structure plus numeric SPICE model parameters, subcircuits, Liberty cells/timing tables/units; unsupported constructs block execution |
 | Fixture corpus | M3/M4 contract-complete | Retained valid, blocked and failed corpus cases plus manifest-bound LEF/SPICE/Liberty checks |
@@ -32,7 +32,7 @@
 | Asset resolution and hashing | Implemented | Root-bounded resolution, SHA-256 and byte-count checks | Positive/negative tests | Not qualified |
 | Layer and device semantics | Implemented | Typed layers, purposes, terminals and extraction recognition | Retained fixture | Not qualified |
 | Corner model | Implemented | PVT plus RC/EM/reliability references and view mappings | Retained fixture | Not qualified |
-| Cross-view validation | Implemented | Manifest mapping coverage and unavailable-semantics blockers | Retained fixture | Not qualified |
+| Cross-view validation | Implemented | Manifest mapping coverage plus parser-backed LEF/GDSII/OASIS/SPICE/Liberty `standardViewResults` and rule-deck `ruleDeckResults` | Valid and semantic-blocked fixtures | Not qualified |
 | Qualification scope export | Implemented | Capability report and unverified qualification scope | Retained fixture | Not qualified |
 
 ## Goal progression
@@ -66,6 +66,11 @@ The package goal is complete only when every P0 function has a concrete backend,
 - Complete vendor-specific model/timing language coverage remains a separate
   gate; unsupported expressions, incomplete tables, absent mappings and oracle
   mismatches are blocked rather than passed.
+- The manifest validation path now runs every declared standard-view mapping
+  through the same parser-backed inspector used by `inspect-view`; its result
+  collection is evidence, not process qualification.
+- Rule-deck assets now require mapped layer evidence and retain statement and
+  integrity results; absent rule-deck semantics are blocked.
 - LEF/GDSII/OASIS inspection is backed by the workspace `swift-mask-data`
   parser. SPICE and Liberty detailed numeric model/timing facts are inspected
   by PDKKit-owned text adapters; complete vendor-specific semantic coverage is

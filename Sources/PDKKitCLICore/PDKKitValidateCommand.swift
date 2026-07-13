@@ -9,6 +9,8 @@ struct PDKKitValidateCommand: Sendable {
         var runID: String
         var requiredAssetRoles: [PDKAssetRole]
         var validateCrossViews: Bool
+        var validateStandardViews: Bool
+        var validateRuleDecks: Bool
         var pretty: Bool
 
         init(arguments: [String]) throws {
@@ -16,6 +18,8 @@ struct PDKKitValidateCommand: Sendable {
             var runID = "pdk-validation"
             var requiredAssetRoles: [PDKAssetRole] = []
             var validateCrossViews = true
+            var validateStandardViews = true
+            var validateRuleDecks = true
             var pretty = false
             var cursor = PDKKitCLIArgumentCursor(arguments: arguments)
             while let argument = cursor.next() {
@@ -29,6 +33,8 @@ struct PDKKitValidateCommand: Sendable {
                     }
                     requiredAssetRoles.append(role)
                 case "--no-cross-view": validateCrossViews = false
+                case "--no-standard-views": validateStandardViews = false
+                case "--no-rule-decks": validateRuleDecks = false
                 case "--pretty": pretty = true
                 default: throw PDKKitCLIError.invalidArguments("Unknown argument for validate: \(argument)")
                 }
@@ -40,6 +46,8 @@ struct PDKKitValidateCommand: Sendable {
             self.runID = runID
             self.requiredAssetRoles = requiredAssetRoles
             self.validateCrossViews = validateCrossViews
+            self.validateStandardViews = validateStandardViews
+            self.validateRuleDecks = validateRuleDecks
             self.pretty = pretty
         }
     }
@@ -57,7 +65,9 @@ struct PDKKitValidateCommand: Sendable {
             inputs: [reference.manifest],
             pdk: reference,
             requiredAssetRoles: options.requiredAssetRoles,
-            validateCrossViews: options.validateCrossViews
+            validateCrossViews: options.validateCrossViews,
+            validateStandardViews: options.validateStandardViews,
+            validateRuleDecks: options.validateRuleDecks
         )
         let envelope = try await LocalPDKValidator().execute(request)
         let output = PDKKitValidationOutput(

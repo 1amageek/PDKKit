@@ -26,6 +26,11 @@ struct PDKEngineTests {
         #expect(envelope.payload.qualificationScope?.pdkDigest == reference.digest)
         #expect(envelope.payload.capabilityReport?.qualificationState == .unverified)
         #expect(envelope.payload.capabilityReport?.capabilities.contains { $0.capabilityID == "cross-view.mapping" } == true)
+        #expect(envelope.payload.standardViewResults.map(\.assetID) == ["cells", "layout", "liberty-view", "spice-view"])
+        #expect(envelope.payload.standardViewResults.allSatisfy { $0.status == .completed && $0.payload.isValid })
+        #expect(envelope.payload.ruleDeckResults.map(\.assetID) == ["rules"])
+        #expect(envelope.payload.ruleDeckResults.first?.observedLayerIDs == ["active", "metal1"])
+        #expect(envelope.payload.ruleDeckResults.first?.statementCount == 3)
     }
 
     @Test("relative manifest and input references use the explicit project root")
@@ -106,6 +111,73 @@ struct PDKEngineTests {
         let envelope = try await LocalPDKValidator().execute(request)
         #expect(envelope.status == .blocked)
         #expect(envelope.diagnostics.contains { $0.code == "pdk.validation.required-asset-unavailable" })
+        #expect(envelope.payload.standardViewResults.contains {
+            $0.assetID == "spice-view" && $0.status == .blocked
+        })
+    }
+
+    @Test("manifest validation blocks unsupported cross-view semantics")
+    func standardViewSemanticFailureBlocksValidation() async throws {
+        let isolatedFixture = try makeIsolatedFixture()
+        defer {
+            do {
+                try FileManager.default.removeItem(at: isolatedFixture)
+            } catch {
+                Issue.record("Failed to remove semantic validation fixture: \(error)")
+            }
+        }
+        let manifestURL = isolatedFixture.appending(path: "pdk.json")
+        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        try Data(".lib tt\n.model nmos_180n nmos level={vto + delta}\n.endl tt\n.end\n".utf8)
+            .write(to: isolatedFixture.appending(path: "models.spice"), options: [.atomic])
+
+        let envelope = try await LocalPDKValidator().execute(
+            PDKValidationRequest(
+                runID: "validation-semantic-block",
+                inputs: [reference.manifest],
+                pdk: reference,
+                requiredAssetRoles: [.model]
+            )
+        )
+        #expect(envelope.status == .blocked, "\(envelope.diagnostics)")
+        #expect(envelope.payload.standardViewResults.contains {
+            $0.assetID == "spice-view" && $0.status == .blocked
+        })
+        #expect(envelope.payload.findings.contains {
+            $0.code == "pdk.standard-view.spice-parameter-unsupported"
+        })
+    }
+
+    @Test("manifest validation blocks a rule deck without mapped layer evidence")
+    func ruleDeckSemanticFailureBlocksValidation() async throws {
+        let isolatedFixture = try makeIsolatedFixture()
+        defer {
+            do {
+                try FileManager.default.removeItem(at: isolatedFixture)
+            } catch {
+                Issue.record("Failed to remove rule-deck validation fixture: \(error)")
+            }
+        }
+        let manifestURL = isolatedFixture.appending(path: "pdk.json")
+        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        try Data("RULESET fixture-180nm\n".utf8)
+            .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
+
+        let envelope = try await LocalPDKValidator().execute(
+            PDKValidationRequest(
+                runID: "validation-rule-deck-block",
+                inputs: [reference.manifest],
+                pdk: reference,
+                requiredAssetRoles: [.ruleDeck]
+            )
+        )
+        #expect(envelope.status == .blocked, "\(envelope.diagnostics)")
+        #expect(envelope.payload.ruleDeckResults.contains {
+            $0.assetID == "rules" && $0.status == .blocked
+        })
+        #expect(envelope.payload.findings.contains {
+            $0.code == "pdk.validation.rule-deck-layer-missing"
+        })
     }
 
     @Test("discovery is deterministic and does not claim qualification")

@@ -12,6 +12,8 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
     public var pdk: PDKReference
     public var requiredAssetRoles: [PDKAssetRole]
     public var validateCrossViews: Bool
+    public var validateStandardViews: Bool
+    public var validateRuleDecks: Bool
     public var projectRootPath: String?
 
     public init(
@@ -20,6 +22,8 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
         pdk: PDKReference,
         requiredAssetRoles: [PDKAssetRole] = [],
         validateCrossViews: Bool = true,
+        validateStandardViews: Bool = true,
+        validateRuleDecks: Bool = true,
         projectRootPath: String? = nil
     ) {
         self.schemaVersion = Self.currentSchemaVersion
@@ -28,6 +32,8 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
         self.pdk = pdk
         self.requiredAssetRoles = requiredAssetRoles
         self.validateCrossViews = validateCrossViews
+        self.validateStandardViews = validateStandardViews
+        self.validateRuleDecks = validateRuleDecks
         self.projectRootPath = projectRootPath
     }
 
@@ -39,6 +45,8 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
         pdk = try container.decode(PDKReference.self, forKey: .pdk)
         requiredAssetRoles = try container.decodeIfPresent([PDKAssetRole].self, forKey: .requiredAssetRoles) ?? []
         validateCrossViews = try container.decodeIfPresent(Bool.self, forKey: .validateCrossViews) ?? true
+        validateStandardViews = try container.decodeIfPresent(Bool.self, forKey: .validateStandardViews) ?? true
+        validateRuleDecks = try container.decodeIfPresent(Bool.self, forKey: .validateRuleDecks) ?? true
         projectRootPath = try container.decodeIfPresent(String.self, forKey: .projectRootPath)
     }
 
@@ -49,6 +57,8 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
         case pdk
         case requiredAssetRoles
         case validateCrossViews
+        case validateStandardViews
+        case validateRuleDecks
         case projectRootPath
     }
 }

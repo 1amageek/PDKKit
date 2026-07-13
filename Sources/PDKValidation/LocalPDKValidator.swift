@@ -1,5 +1,6 @@
 import Foundation
 import PDKCore
+import PDKStandardViews
 import XcircuitePackage
 
 public struct LocalPDKValidator: PDKValidating {
@@ -7,24 +8,27 @@ public struct LocalPDKValidator: PDKValidating {
     private let assetResolver: any PDKAssetResolving
     private let digestor: any PDKDigesting
     private let manifestValidator: PDKManifestValidator
+    private let standardViewInspector: any PDKManifestViewInspecting
 
     public init(
         clock: any PDKValidationExecutionClock = SystemPDKValidationExecutionClock(),
         assetResolver: any PDKAssetResolving = LocalPDKAssetResolver(),
         digestor: any PDKDigesting = SHA256PDKDigestor(),
-        manifestValidator: PDKManifestValidator = PDKManifestValidator()
+        manifestValidator: PDKManifestValidator = PDKManifestValidator(),
+        standardViewInspector: any PDKManifestViewInspecting = LocalPDKManifestViewInspector()
     ) {
         self.clock = clock
         self.assetResolver = assetResolver
         self.digestor = digestor
         self.manifestValidator = manifestValidator
+        self.standardViewInspector = standardViewInspector
     }
 
     public func execute(
         _ request: PDKValidationRequest
     ) async throws -> XcircuiteEngineResultEnvelope<PDKValidationPayload> {
         let startedAt = clock.now()
-        let validationResult: ValidationResult
+        var validationResult: ValidationResult
         do {
             let manifestURL = try PDKArtifactURLResolver().resolve(
                 request.pdk.manifest,
@@ -40,6 +44,24 @@ public struct LocalPDKValidator: PDKValidating {
                 suggestedActions: ["provide_project_root", "repair_manifest_reference"]
             )
             validationResult = result(status: .blocked, findings: [finding], request: request)
+        }
+        if request.validateStandardViews,
+           let manifest = validationResult.manifest,
+           validationResult.status != .failed {
+            validationResult = await validateStandardViews(
+                manifest: manifest,
+                request: request,
+                initialResult: validationResult
+            )
+        }
+        if request.validateRuleDecks,
+           let manifest = validationResult.manifest,
+           validationResult.status != .failed {
+            validationResult = validateRuleDecks(
+                manifest: manifest,
+                resolvedAssets: validationResult.resolvedAssets,
+                initialResult: validationResult
+            )
         }
         let completedAt = clock.now()
         let metadata = XcircuiteEngineExecutionMetadata(
@@ -61,6 +83,8 @@ public struct LocalPDKValidator: PDKValidating {
                 missingRequirements: validationResult.missingRequirements,
                 findings: validationResult.findings,
                 resolvedAssets: validationResult.resolvedAssets,
+                standardViewResults: validationResult.standardViewResults,
+                ruleDeckResults: validationResult.ruleDeckResults,
                 qualificationScope: validationResult.qualificationScope,
                 capabilityReport: validationResult.capabilityReport
             )
@@ -223,8 +247,274 @@ public struct LocalPDKValidator: PDKValidating {
             resolvedAssets: resolvedAssets,
             request: request,
             qualificationScope: scope,
-            capabilityReport: capabilityReport
+            capabilityReport: capabilityReport,
+            manifest: decoded.manifest
         )
+    }
+
+    private func validateStandardViews(
+        manifest: PDKManifest,
+        request: PDKValidationRequest,
+        initialResult: ValidationResult
+    ) async -> ValidationResult {
+        var result = initialResult
+        let mappings = manifest.crossViewMappings.compactMap { mapping -> (String, PDKStandardViewFormat)? in
+            guard let format = standardViewFormat(for: mapping.view) else { return nil }
+            return (mapping.assetID, format)
+        }.sorted {
+            ($0.0, $0.1.rawValue) < ($1.0, $1.1.rawValue)
+        }
+        var seen = Set<String>()
+        for (assetID, format) in mappings {
+            let key = assetID + ":" + format.rawValue
+            guard seen.insert(key).inserted else { continue }
+            let inspectionRequest = PDKManifestViewInspectionRequest(
+                runID: request.runID + ":" + assetID + ":" + format.rawValue,
+                inputs: [request.pdk.manifest],
+                pdk: request.pdk,
+                assetID: assetID,
+                format: format,
+                projectRootPath: request.projectRootPath
+            )
+            do {
+                let envelope = try await standardViewInspector.execute(inspectionRequest)
+                result.standardViewResults.append(PDKStandardViewValidationResult(
+                    assetID: assetID,
+                    format: format,
+                    status: envelope.status,
+                    payload: envelope.payload
+                ))
+                result.findings.append(contentsOf: envelope.payload.findings)
+                switch envelope.status {
+                case .failed:
+                    result.status = .failed
+                case .cancelled:
+                    if result.status != .failed { result.status = .cancelled }
+                case .blocked:
+                    if result.status == .completed { result.status = .blocked }
+                case .completed:
+                    if !envelope.payload.isValid, result.status == .completed {
+                        result.status = .blocked
+                    }
+                }
+            } catch {
+                let finding = PDKValidationFinding(
+                    severity: .error,
+                    code: "pdk.validation.standard-view-execution-failed",
+                    message: "Manifest-bound standard-view validation failed: " + error.localizedDescription,
+                    entity: key,
+                    suggestedActions: ["inspect_standard_view_artifact", "rerun_pdk_validation"]
+                )
+                result.findings.append(finding)
+                result.standardViewResults.append(PDKStandardViewValidationResult(
+                    assetID: assetID,
+                    format: format,
+                    status: .failed,
+                    payload: PDKManifestViewInspectionPayload(
+                        isValid: false,
+                        assetID: assetID,
+                        pdkDigest: request.pdk.digest,
+                        findings: [finding],
+                        limitations: ["The manifest-bound standard-view inspector did not return a result."]
+                    )
+                ))
+                result.status = .failed
+            }
+        }
+        result.standardViewResults.sort {
+            ($0.assetID, $0.format.rawValue) < ($1.assetID, $1.format.rawValue)
+        }
+        result.diagnostics = result.findings.map(PDKValidationDiagnosticMapper.map)
+        result.missingRequirements = result.findings
+            .filter { $0.severity == .blocker }
+            .compactMap(\.entity)
+            .sorted()
+        return result
+    }
+
+    private func standardViewFormat(for view: PDKViewKind) -> PDKStandardViewFormat? {
+        switch view {
+        case .lef: .lef
+        case .gdsii: .gdsii
+        case .oasis: .oasis
+        case .spice: .spice
+        case .liberty: .liberty
+        case .layerMap, .ruleDeck, .extraction, .other: nil
+        }
+    }
+
+    private func validateRuleDecks(
+        manifest: PDKManifest,
+        resolvedAssets: [PDKResolvedAsset],
+        initialResult: ValidationResult
+    ) -> ValidationResult {
+        var result = initialResult
+        let ruleDeckAssets = manifest.assets
+            .filter { $0.role == .ruleDeck }
+            .sorted { $0.assetID < $1.assetID }
+        for asset in ruleDeckAssets {
+            let mapping = manifest.crossViewMappings.first {
+                $0.view == .ruleDeck && $0.assetID == asset.assetID
+            }
+            let expectedLayerIDs = mapping?.layerIDs ?? []
+            var findings: [PDKValidationFinding] = []
+            guard let resolved = resolvedAssets.first(where: { $0.assetID == asset.assetID }) else {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.validation.rule-deck-asset-unavailable",
+                    message: "Rule-deck asset could not be resolved.",
+                    entity: asset.assetID,
+                    suggestedActions: ["restore_rule_deck", "repair_manifest_relative_path"]
+                ))
+                result.ruleDeckResults.append(PDKRuleDeckValidationResult(
+                    assetID: asset.assetID,
+                    status: .blocked,
+                    isValid: false,
+                    expectedLayerIDs: expectedLayerIDs,
+                    findings: findings
+                ))
+                result.findings.append(contentsOf: findings)
+                if result.status == .completed { result.status = .blocked }
+                continue
+            }
+            guard let mapping else {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.validation.rule-deck-mapping-missing",
+                    message: "Declared rule-deck asset has no layer cross-view mapping.",
+                    entity: asset.assetID,
+                    suggestedActions: ["add_rule_deck_mapping", "declare_rule_deck_layers"]
+                ))
+                result.ruleDeckResults.append(PDKRuleDeckValidationResult(
+                    assetID: asset.assetID,
+                    status: .blocked,
+                    isValid: false,
+                    reference: resolved.reference,
+                    expectedLayerIDs: expectedLayerIDs,
+                    findings: findings
+                ))
+                result.findings.append(contentsOf: findings)
+                if result.status == .completed { result.status = .blocked }
+                continue
+            }
+
+            let data: Data
+            do {
+                data = try Data(contentsOf: URL(filePath: resolved.reference.path))
+            } catch {
+                findings.append(PDKValidationFinding(
+                    severity: .error,
+                    code: "pdk.validation.rule-deck-unreadable",
+                    message: "Rule-deck asset could not be read: " + error.localizedDescription,
+                    entity: asset.assetID,
+                    suggestedActions: ["restore_rule_deck", "check_file_permissions"]
+                ))
+                result.ruleDeckResults.append(PDKRuleDeckValidationResult(
+                    assetID: asset.assetID,
+                    status: .failed,
+                    isValid: false,
+                    reference: resolved.reference,
+                    expectedLayerIDs: mapping.layerIDs,
+                    findings: findings
+                ))
+                result.findings.append(contentsOf: findings)
+                result.status = .failed
+                continue
+            }
+            guard let text = String(data: data, encoding: .utf8) else {
+                findings.append(PDKValidationFinding(
+                    severity: .error,
+                    code: "pdk.validation.rule-deck-invalid-encoding",
+                    message: "Rule-deck asset is not valid UTF-8 text.",
+                    entity: asset.assetID,
+                    suggestedActions: ["repair_rule_deck_encoding", "use_a_text_rule_deck"]
+                ))
+                result.ruleDeckResults.append(PDKRuleDeckValidationResult(
+                    assetID: asset.assetID,
+                    status: .failed,
+                    isValid: false,
+                    reference: resolved.reference,
+                    expectedLayerIDs: mapping.layerIDs,
+                    findings: findings
+                ))
+                result.findings.append(contentsOf: findings)
+                result.status = .failed
+                continue
+            }
+
+            let statements = text.split(whereSeparator: { $0.isNewline }).compactMap { rawLine -> String? in
+                let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !line.isEmpty,
+                      !line.hasPrefix("#"),
+                      !line.hasPrefix("//"),
+                      !line.hasPrefix("*") else { return nil }
+                return line
+            }
+            if statements.isEmpty {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.validation.rule-deck-empty",
+                    message: "Rule-deck asset contains no executable text statements.",
+                    entity: asset.assetID,
+                    suggestedActions: ["restore_rule_deck", "populate_rule_deck_statements"]
+                ))
+            }
+            let tokens = ruleDeckTokens(in: statements.joined(separator: " "))
+            let expectedLayerDefinitions = mapping.layerIDs.compactMap { layerID in
+                manifest.layers.first { $0.layerID == layerID }
+            }
+            let observedLayerIDs = expectedLayerDefinitions.compactMap { layer -> String? in
+                let candidates = [layer.name] + layer.aliases + [String(layer.number)]
+                return candidates.contains(where: { candidate in
+                    tokens.contains { $0.caseInsensitiveCompare(candidate) == .orderedSame }
+                }) ? layer.layerID : nil
+            }.sorted()
+            let missingLayerIDs = mapping.layerIDs.filter { !observedLayerIDs.contains($0) }
+            if !missingLayerIDs.isEmpty {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.validation.rule-deck-layer-missing",
+                    message: "Rule-deck text does not identify mapped layers: " + missingLayerIDs.joined(separator: ", "),
+                    entity: asset.assetID,
+                    suggestedActions: ["declare_rule_deck_layers", "repair_rule_deck_mapping"]
+                ))
+            }
+            let hasBlocker = findings.contains { $0.severity == .blocker }
+            let hasError = findings.contains { $0.severity == .error }
+            let status: XcircuiteEngineExecutionStatus = hasBlocker ? .blocked : hasError ? .failed : .completed
+            result.ruleDeckResults.append(PDKRuleDeckValidationResult(
+                assetID: asset.assetID,
+                status: status,
+                isValid: status == .completed,
+                reference: resolved.reference,
+                expectedLayerIDs: mapping.layerIDs.sorted(),
+                observedLayerIDs: observedLayerIDs,
+                statementCount: statements.count,
+                findings: findings
+            ))
+            result.findings.append(contentsOf: findings)
+            switch status {
+            case .failed:
+                result.status = .failed
+            case .blocked:
+                if result.status == .completed { result.status = .blocked }
+            case .completed, .cancelled:
+                break
+            }
+        }
+        result.ruleDeckResults.sort { $0.assetID < $1.assetID }
+        result.diagnostics = result.findings.map(PDKValidationDiagnosticMapper.map)
+        result.missingRequirements = result.findings
+            .filter { $0.severity == .blocker }
+            .compactMap(\.entity)
+            .sorted()
+        return result
+    }
+
+    private func ruleDeckTokens(in text: String) -> [String] {
+        text.split { character in
+            character.isWhitespace || [",", ":", "(", ")", "=", ";"].contains(character)
+        }.map(String.init)
     }
 
     private func validateCrossViews(
@@ -301,6 +591,7 @@ public struct LocalPDKValidator: PDKValidating {
             (.gdsii, .gdsii),
             (.oasis, .oasis),
             (.liberty, .liberty),
+            (.ruleDeck, .ruleDeck),
         ]
         for (role, view) in roleToView {
             let requiredAssetIDs = Set(manifest.assets.filter { $0.role == role }.map(\.assetID))
@@ -427,7 +718,10 @@ public struct LocalPDKValidator: PDKValidating {
         resolvedAssets: [PDKResolvedAsset] = [],
         request: PDKValidationRequest,
         qualificationScope: PDKQualificationScope? = nil,
-        capabilityReport: PDKCapabilityReport? = nil
+        capabilityReport: PDKCapabilityReport? = nil,
+        manifest: PDKManifest? = nil,
+        standardViewResults: [PDKStandardViewValidationResult] = [],
+        ruleDeckResults: [PDKRuleDeckValidationResult] = []
     ) -> ValidationResult {
         let diagnostics = findings.map(PDKValidationDiagnosticMapper.map)
         let missingRequirements = findings
@@ -440,8 +734,11 @@ public struct LocalPDKValidator: PDKValidating {
             findings: findings,
             missingRequirements: missingRequirements,
             resolvedAssets: resolvedAssets,
+            standardViewResults: standardViewResults,
+            ruleDeckResults: ruleDeckResults,
             qualificationScope: qualificationScope,
-            capabilityReport: capabilityReport
+            capabilityReport: capabilityReport,
+            manifest: manifest
         )
     }
 }
@@ -452,6 +749,9 @@ private struct ValidationResult: Sendable {
     var findings: [PDKValidationFinding]
     var missingRequirements: [String]
     var resolvedAssets: [PDKResolvedAsset]
+    var standardViewResults: [PDKStandardViewValidationResult]
+    var ruleDeckResults: [PDKRuleDeckValidationResult]
     var qualificationScope: PDKQualificationScope?
     var capabilityReport: PDKCapabilityReport?
+    var manifest: PDKManifest?
 }

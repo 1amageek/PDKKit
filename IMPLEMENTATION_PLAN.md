@@ -35,6 +35,11 @@ open.
   engineering-suffix normalization, subcircuits, cells, timing arcs, timing
   table dimensions/values and unit declarations plus manifest binding and
   unsupported-semantics regression cases.
+- Cross-view validation now invokes the same manifest-bound standard-view
+  inspectors from `LocalPDKValidator` and persists one typed result per declared
+  standard-view mapping.
+- Rule-deck assets now use a typed text-semantic result that verifies UTF-8,
+  non-empty statements and mapped manufacturing-layer evidence.
 - M5 immutable manifest-digest-bound oracle expectations, canonical field comparison, structured mismatch blockers and `pdkkit oracle`.
 - M6 `PDKQualificationGate` and `pdkkit qualify`, which require matching retained corpus and oracle evidence and stop at `oracleCorrelated`.
 - M7 six PDK FlowStageExecutor adapters with immutable stage-envelope
@@ -69,6 +74,15 @@ mapping matches the observed layers/devices. Unsupported expressions, incomplete
 tables, inconsistent dimensions and missing timing units are blocked. This gate
 does not claim complete vendor-specific language coverage, reference-oracle
 correlation or foundry qualification.
+
+`PDKValidationPayload.standardViewResults` is deterministic by asset and format.
+Every declared LEF, GDSII/OASIS, SPICE and Liberty mapping is executed through
+the manifest-bound inspector when `validateStandardViews` is enabled (the
+default). A parser failure or semantic blocker changes the validation result to
+`failed` or `blocked`; it cannot be omitted by a hash-only manifest pass.
+`ruleDeckResults` applies the same fail-closed policy to declared rule decks;
+missing mapping, unreadable text, empty statements or missing layer evidence are
+structured blockers.
 
 ## M5/M6 evidence gate
 

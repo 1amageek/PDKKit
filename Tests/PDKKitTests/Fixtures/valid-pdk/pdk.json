@@ -42,7 +42,8 @@
     { "mappingID": "spice-device-view", "view": "spice", "assetID": "spice-view", "deviceIDs": ["nmos"], "cornerIDs": ["tt-1v8-25c"] },
     { "mappingID": "lef-cell-view", "view": "lef", "assetID": "cells", "deviceIDs": ["nmos"] },
     { "mappingID": "gds-layout-view", "view": "gdsii", "assetID": "layout", "layerIDs": ["active", "metal1"] },
-    { "mappingID": "liberty-device-view", "view": "liberty", "assetID": "liberty-view", "deviceIDs": ["nmos"], "cornerIDs": ["tt-1v8-25c"] }
+    { "mappingID": "liberty-device-view", "view": "liberty", "assetID": "liberty-view", "deviceIDs": ["nmos"], "cornerIDs": ["tt-1v8-25c"] },
+    { "mappingID": "rule-deck-view", "view": "ruleDeck", "assetID": "rules", "layerIDs": ["active", "metal1"] }
   ],
   "metadata": { "units": "micron", "source": "retained-fixture" }
 }

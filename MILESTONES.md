@@ -25,9 +25,9 @@ flowchart LR
 |---|---|---|---|
 | M0 | Protocol-first package products, typed requests/results, deterministic CLI | Complete | `swift build`, contract tests, CLI output tests |
 | M1 | Versioned manifest, migration, immutable manifest/asset references and SHA-256 checks | Complete | migration tests, positive and tampered-asset tests |
-| M2 | Layer/device/corner/cross-view coverage and blocked unavailable semantics | Complete at manifest-contract level | validator findings and negative-path fixtures |
+| M2 | Layer/device/corner/cross-view coverage and blocked unavailable semantics | Complete at manifest, parser-backed declared-view and rule-deck layer level | validator findings, standard-view/rule-deck results and negative-path fixtures |
 | M3 | Retained corpus suite schema, deterministic case evaluator and machine-readable corpus report | Complete for contract evidence | corpus fixture, positive/blocked cases, deterministic report tests |
-| M4 | Standard-view semantic adapters across the declared PDK views | Complete for the supported canonical semantics | Complete vendor-specific language coverage remains a separate gate |
+| M4 | Standard-view semantic adapters across the declared PDK views | Complete for the supported canonical semantics and validation integration | Complete vendor-specific language coverage remains a separate gate |
 | M4a | Parser-backed LEF, GDSII and OASIS canonical inspection plus manifest binding | Complete for selected mask views | parser tests, malformed-input findings, manifest binding and CLI evidence |
 | M4b | SPICE and Liberty detailed numeric inspection and manifest binding | Complete for the supported canonical numeric subset | Complete vendor-specific language coverage remains open |
 | M5 | Immutable reference-oracle comparison and mismatch classification | Complete for local detailed oracle contract | manifest-bound expectation, numeric field mismatch blocker, CLI and regression fixture |
@@ -68,6 +68,16 @@ gate fails closed for unsupported expressions, missing SPICE termination,
 non-numeric Liberty values, inconsistent table dimensions and missing timing
 units. This closes the supported numeric subset; it does not imply complete
 coverage of all vendor extensions.
+
+The validation path now invokes those same manifest-bound inspectors for every
+declared LEF, GDSII/OASIS, SPICE and Liberty mapping. The resulting
+`standardViewResults` are retained in the validation payload, so a manifest
+validation pass cannot silently omit a mapped parser failure or semantic
+blocker.
+
+Rule-deck assets are handled as a separate text-semantic adapter. A mapped deck
+must be readable UTF-8 text with at least one statement and evidence for every
+mapped manufacturing layer; otherwise `ruleDeckResults` reports a typed blocker.
 
 ## Exit gates and ownership
 

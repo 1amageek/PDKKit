@@ -44,7 +44,7 @@ Umbrella API.
 | `LocalPDKAssetResolver` | Resolve manifest-relative assets within the manifest root and hash bytes |
 | `PDKManifestValidator` | Validate typed identity, layer, device, corner and mapping semantics |
 | `LocalPDKDiscoverer` | Discover candidate manifests without qualification claims |
-| `LocalPDKValidator` | Verify inputs, manifest identity, assets, hashes and cross-view coverage |
+| `LocalPDKValidator` | Verify inputs, manifest identity, assets, hashes, parser-backed cross-view semantics and coverage |
 | `PDKCorpusSuiteValidator` | Validate retained corpus suite shape and safe relative manifest paths |
 | `LocalPDKCorpusValidator` | Execute deterministic valid/blocked/failed corpus cases over `PDKValidating` |
 | `LocalPDKStandardViewInspector` | Parse standard views into canonical detailed IR with input integrity checks |
@@ -55,8 +55,12 @@ Umbrella API.
 | `LocalPDKQualificationEvaluator` | Load immutable corpus/oracle payload artifacts and return a qualification envelope |
 
 `PDKValidationPayload` exposes findings, resolved immutable references, a
-`PDKQualificationScope` and a `PDKCapabilityReport`. Both reports retain the
-PDK digest and explicitly preserve the `unverified` qualification state.
+`standardViewResults` collection, a `PDKQualificationScope` and a
+`PDKCapabilityReport`. Each standard-view result retains its format, execution
+status, parser-backed payload and PDK digest. Both reports retain the PDK digest
+and explicitly preserve the `unverified` qualification state.
+`ruleDeckResults` retains rule-deck text integrity, mapped layer coverage,
+statement counts and typed findings.
 
 `PDKCorpusValidationRequest` points to a suite and a bounded corpus root.
 `PDKCorpusValidationPayload` contains one result per case, expected and

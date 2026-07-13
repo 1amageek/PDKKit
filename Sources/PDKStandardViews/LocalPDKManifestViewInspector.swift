@@ -148,12 +148,22 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         let mapping = manifest.crossViewMappings.first {
             $0.assetID == request.assetID && $0.view == request.format.manifestView
         }
-        let expectedLayerNames = mapping?.layerIDs.compactMap { layerID in
-            manifest.layers.first { $0.layerID == layerID }?.name
+        let mappedLayerDefinitions = mapping?.layerIDs.compactMap { layerID in
+            manifest.layers.first { $0.layerID == layerID }
         } ?? []
-        let expectedPhysicalLayerNumbers = mapping?.layerIDs.compactMap { layerID in
-            manifest.layers.first { $0.layerID == layerID }?.number
-        } ?? []
+        let expectedLayerNames: [String]
+        let expectedPhysicalLayerNumbers: [Int]
+        switch request.format {
+        case .lef:
+            expectedLayerNames = mappedLayerDefinitions.map(\.name)
+            expectedPhysicalLayerNumbers = []
+        case .gdsii, .oasis:
+            expectedLayerNames = []
+            expectedPhysicalLayerNumbers = mappedLayerDefinitions.map(\.number)
+        case .spice, .liberty:
+            expectedLayerNames = []
+            expectedPhysicalLayerNumbers = []
+        }
         let mappedDeviceIDs: [String] = mapping?.deviceIDs ?? []
         let expectedCellNames: [String] = mappedDeviceIDs.flatMap { deviceID in
             guard let device = manifest.devices.first(where: { $0.deviceID == deviceID }) else {
