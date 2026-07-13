@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import PDKCore
 
 struct PDKKitInspectCommand: Sendable {
@@ -40,7 +41,11 @@ struct PDKKitInspectCommand: Sendable {
         }
         let digest: String
         do {
-            digest = try SHA256PDKDigestor().digest(data: data)
+            let location = try ArtifactLocation(fileURL: URL(filePath: options.manifestPath).standardizedFileURL)
+            let artifact = try LocalArtifactReferencer().reference(
+                ArtifactLocator(location: location, kind: .technology, format: .json)
+            )
+            digest = artifact.digest.hexadecimalValue
         } catch {
             throw PDKKitCLIError.internalError("Failed to hash manifest: \(error)")
         }

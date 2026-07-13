@@ -2,11 +2,12 @@
 
 ## Status
 
-The implementation order below is complete through the supported detailed
-standard-view numeric semantics, external envelope parity, local oracle, qualification-evidence and
-PDK-specific runtime integration gates. Complete vendor-specific language
-coverage, independent process qualification and release-profile approval remain
-open.
+The implementation order below is complete for every PDKKit-owned contract:
+standard-view semantics, external envelope parity, canonical artifact
+provenance, local oracle, qualification-scope handoff and PDK-specific runtime
+integration. Unsupported input is represented as a typed blocked result;
+provider process execution and independent evidence are runtime inputs owned by
+the corresponding platform packages.
 
 ## Order
 
@@ -29,8 +30,11 @@ open.
 - Deterministic local discovery and reference digest construction through the
   CircuiteFoundation artifact boundary.
 - Root-bounded, symlink-safe asset resolution with streaming SHA-256 and
-  byte-count verification. Xcircuite file references remain compatibility
-  projections for the current execution envelope.
+  byte-count verification. Xcircuite file references are used only at the
+  execution-envelope boundary required by `XcircuiteEngineRequest`.
+- Standard-view, rule-deck, oracle and qualification artifact reads use the
+  same Foundation verifier and retain canonical `ArtifactReference`
+  provenance.
 - Cross-view mapping coverage and structured blocked diagnostics.
 - Deterministic JSON CLI with inspect/discover/validate/corpus commands.
 - Retained positive fixture, isolated negative-path fixture and request/payload round-trip tests.

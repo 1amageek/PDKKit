@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import Testing
 import XcircuitePackage
 @testable import PDKCore
@@ -140,6 +141,7 @@ struct PDKExternalBackendTests {
         #expect(valid.payload.isValid)
         #expect(valid.payload.pdkDigest == pdk.digest)
         #expect(valid.payload.observedLayerIDs == ["active", "metal1"])
+        #expect(valid.payload.sourceArtifact?.digest.algorithm == .sha256)
 
         var wrongDigest = localEnvelope
         wrongDigest.payload.pdkDigest = "wrong-pdk-digest"
@@ -164,6 +166,49 @@ struct PDKExternalBackendTests {
         })
     }
 
+    @Test("external rule-deck results require canonical artifact identity")
+    func externalRuleDeckCanonicalArtifactMismatchIsBlocked() async throws {
+        let fixture = fixtureURL()
+        let manifestURL = fixture.appending(path: "pdk.json")
+        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let request = PDKRuleDeckInspectionRequest(
+            runID: "external-rule-deck-artifact",
+            inputs: [pdk.manifest],
+            pdk: pdk,
+            assetID: "rules",
+            projectRootPath: fixture.path
+        )
+        var tampered = try await LocalPDKRuleDeckInspector().execute(request)
+        tampered.payload.sourceArtifact = nil
+
+        let envelope = try await ExternalPDKRuleDeckInspector(
+            provider: StaticRuleDeckResultProvider(data: try JSONEncoder().encode(tampered))
+        ).execute(request)
+
+        #expect(envelope.status == .blocked)
+        #expect(envelope.payload.findings.contains {
+            $0.code == "pdk.external.rule-deck-contract-mismatch"
+        })
+    }
+
+    @Test("external standard-view results require canonical artifact identity")
+    func externalStandardViewCanonicalArtifactMismatchIsBlocked() async throws {
+        let request = try standardViewRequest()
+        var tampered = try await LocalPDKStandardViewInspector().execute(request)
+        var inspection = try #require(tampered.payload.inspection)
+        inspection.sourceArtifact = nil
+        tampered.payload.inspection = inspection
+
+        let envelope = try await ExternalPDKStandardViewInspector(
+            provider: StaticStandardViewResultProvider(data: try JSONEncoder().encode(tampered))
+        ).execute(request)
+
+        #expect(envelope.status == .blocked)
+        #expect(envelope.payload.findings.contains {
+            $0.code == "pdk.external.standard-view-contract-mismatch"
+        })
+    }
+
     private func standardViewRequest() throws -> PDKStandardViewInspectionRequest {
         let fixture = fixtureURL()
         let fileURL = fixture.appending(path: "cells.lef")
@@ -173,7 +218,7 @@ struct PDKExternalBackendTests {
             path: fileURL.path,
             kind: .technology,
             format: .lef,
-            sha256: try SHA256PDKDigestor().digest(data: data),
+            sha256: try SHA256ContentDigester().digest(data: data, using: .sha256).hexadecimalValue,
             byteCount: Int64(data.count)
         )
         return PDKStandardViewInspectionRequest(

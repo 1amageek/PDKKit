@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import PDKCore
 import PDKStandardViews
 import XcircuitePackage
@@ -83,6 +84,31 @@ public struct LocalPDKQualificationEvaluator: PDKQualificationExecuting {
                 reason: error.localizedDescription
             )
         }
+        let artifact: ArtifactReference
+        do {
+            artifact = try PDKFoundationArtifactBridge.artifactReference(
+                for: reference,
+                resolvedURL: url
+            )
+        } catch {
+            throw PDKQualificationArtifactError.integrity(
+                path: url.path,
+                reason: "Artifact identity could not be constructed: \(error.localizedDescription)"
+            )
+        }
+        let integrity = LocalArtifactVerifier().verify(artifact)
+        guard integrity.isVerified else {
+            throw PDKQualificationArtifactError.integrity(
+                path: url.path,
+                reason: integrity.issues.map { $0.code.rawValue }.joined(separator: ", ")
+            )
+        }
+        guard artifact.byteCount <= UInt64(Int64.max) else {
+            throw PDKQualificationArtifactError.integrity(
+                path: url.path,
+                reason: "byte count cannot be represented by the qualification artifact contract"
+            )
+        }
         let data: Data
         do {
             data = try Data(contentsOf: url)
@@ -92,34 +118,7 @@ public struct LocalPDKQualificationEvaluator: PDKQualificationExecuting {
                 reason: error.localizedDescription
             )
         }
-        guard let expectedDigest = reference.sha256, !expectedDigest.isEmpty else {
-            throw PDKQualificationArtifactError.integrity(
-                path: url.path,
-                reason: "SHA-256 digest is missing"
-            )
-        }
-        guard let expectedByteCount = reference.byteCount else {
-            throw PDKQualificationArtifactError.integrity(
-                path: url.path,
-                reason: "byte count is missing"
-            )
-        }
-        let actualDigest: String
-        do {
-            actualDigest = try SHA256PDKDigestor().digest(data: data)
-        } catch {
-            throw PDKQualificationArtifactError.integrity(
-                path: url.path,
-                reason: "SHA-256 digest could not be computed: \(error.localizedDescription)"
-            )
-        }
-        guard actualDigest.caseInsensitiveCompare(expectedDigest) == .orderedSame else {
-            throw PDKQualificationArtifactError.integrity(
-                path: url.path,
-                reason: "SHA-256 digest does not match the reference"
-            )
-        }
-        guard Int64(data.count) == expectedByteCount else {
+        guard Int64(data.count) == Int64(artifact.byteCount) else {
             throw PDKQualificationArtifactError.integrity(
                 path: url.path,
                 reason: "byte count does not match the reference"

@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import PDKCore
 import PDKStandardViews
 import XcircuitePackage
@@ -76,14 +77,23 @@ struct PDKKitOracleCommand: Sendable {
             throw PDKKitCLIError.unreadableFile(path: url.path, reason: "file does not exist")
         }
         do {
-            let data = try Data(contentsOf: url)
+            let location = try ArtifactLocation(fileURL: url)
+            let artifact = try LocalArtifactReferencer().reference(
+                ArtifactLocator(location: location, kind: .technology, format: .json)
+            )
+            guard artifact.byteCount <= UInt64(Int64.max) else {
+                throw PDKKitCLIError.unreadableFile(
+                    path: url.path,
+                    reason: "file byte count cannot be represented by the execution envelope"
+                )
+            }
             return XcircuiteFileReference(
                 artifactID: "pdk-oracle",
                 path: url.path,
                 kind: .technology,
                 format: .json,
-                sha256: try SHA256PDKDigestor().digest(data: data),
-                byteCount: Int64(data.count)
+                sha256: artifact.digest.hexadecimalValue,
+                byteCount: Int64(artifact.byteCount)
             )
         } catch {
             throw PDKKitCLIError.unreadableFile(path: url.path, reason: error.localizedDescription)

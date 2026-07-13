@@ -4,13 +4,13 @@ Canonical process-design-kit discovery, identity, asset integrity and validation
 
 ## Status
 
-The local contract layer is executable for deterministic manifest-driven discovery,
+The PDKKit-owned contract layer is complete and executable for deterministic manifest-driven discovery,
 validation, retained corpus evaluation and parser-backed standard-view
-inspection, detailed numeric semantics, immutable oracle comparison and a local qualification gate. The
+inspection, detailed numeric semantics, immutable Foundation-backed artifact provenance, oracle comparison and a local qualification gate. The
 PDK stage slice is also executable through Xcircuite with immutable artifacts,
 scope-bound tool evidence, human approval and resume coverage. The larger
-platform goal remains open: complete coverage of every vendor-specific
-model/timing construct and actual foundry approval are separate evidence gates.
+platform goal requires separate provider evidence and foundry approval; PDKKit
+represents unsupported vendor-specific constructs as explicit blocked results.
 External standard-view and rule-deck backends can now return the same typed
 result envelopes as the local inspectors. The adapters fail closed on envelope
 schema, run, asset, format, source-reference and PDK-digest mismatches; they do not execute or
@@ -39,7 +39,7 @@ Every executing product uses:
 - `XcircuiteEngineResultEnvelope<Payload>` for status, diagnostics, artifacts and execution metadata;
 - protocol-first dependency injection;
 - immutable artifact identities from CircuiteFoundation, projected to
-  `XcircuiteFileReference` for the current execution envelope;
+  `XcircuiteFileReference` only where required by the current execution envelope;
 - explicit blocked, failed and cancelled states.
 
 The artifact boundary has two representations with different authority:
@@ -49,13 +49,15 @@ flowchart LR
   Intent["PDKAssetReference\nartifact intent"] --> Locator["CircuiteFoundation\nArtifactLocator"]
   Locator --> Referencer["LocalArtifactReferencer\nstreaming SHA-256"]
   Referencer --> Identity["ArtifactReference\nimmutable verified identity"]
-  Identity --> Compatibility["XcircuiteFileReference\nexecution-envelope projection"]
+  Identity --> Envelope["XcircuiteFileReference\nexecution envelope"]
 ```
 
 `ArtifactReference` is the integrity source of truth inside PDKCore. The
 Xcircuite projection is retained for the current request/result envelope and
 is validated from the Foundation identity; it does not replace the canonical
-artifact contract.
+artifact contract. Standard-view IR, rule-deck inspection payloads and oracle
+comparison payloads retain the same canonical identity, so every PDKKit-owned
+artifact consumer observes one integrity boundary.
 
 External providers conform to `PDKExternalStandardViewResultProviding` or
 `PDKExternalRuleDeckResultProviding` and return JSON-encoded
@@ -172,7 +174,7 @@ swift build
 perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Package -destination 'platform=macOS'
 ```
 
-The repository's current verification result is 50 tests in 6 Swift Testing
+The repository's current verification result is 52 tests in 6 Swift Testing
 suites. The detailed standard-view suite passes 12 tests with
 `xcodebuild test-without-building` after an Xcode `build-for-testing` build.
 The Xcircuite PDK integration slice passes 6 tests in 1 suite with `xcodebuild`;

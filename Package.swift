@@ -59,6 +59,7 @@ let package = Package(
         .target(
             name: "PDKValidation",
             dependencies: [
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
                 .product(name: "XcircuitePackage", package: "XcircuitePackage"),
                 "PDKCore",
                 "PDKStandardViews",
@@ -67,6 +68,7 @@ let package = Package(
         .target(
             name: "PDKStandardViews",
             dependencies: [
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
                 "PDKCore",
                 .product(name: "LayoutIR", package: "swift-mask-data"),
                 .product(name: "GDSII", package: "swift-mask-data"),

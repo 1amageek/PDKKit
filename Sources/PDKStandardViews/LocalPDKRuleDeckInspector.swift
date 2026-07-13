@@ -1,20 +1,21 @@
 import Foundation
+import CircuiteFoundation
 import PDKCore
 import XcircuitePackage
 
 public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     private let clock: any PDKStandardViewExecutionClock
     private let assetResolver: any PDKAssetResolving
-    private let digestor: any PDKDigesting
+    private let digester: any ContentDigesting
 
     public init(
         clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock(),
         assetResolver: any PDKAssetResolving = LocalPDKAssetResolver(),
-        digestor: any PDKDigesting = SHA256PDKDigestor()
+        digester: any ContentDigesting = SHA256ContentDigester()
     ) {
         self.clock = clock
         self.assetResolver = assetResolver
-        self.digestor = digestor
+        self.digester = digester
     }
 
     public func execute(
@@ -44,22 +45,27 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
 
         let manifest: PDKManifest
         do {
-            let data = try Data(contentsOf: manifestURL)
-            let actualDigest = try digestor.digest(data: data)
-            guard actualDigest == request.pdk.digest else {
+            let manifestArtifact = try PDKFoundationArtifactBridge.artifactReference(
+                for: request.pdk.manifest,
+                resolvedURL: manifestURL
+            )
+            let integrity = LocalArtifactVerifier(digester: digester).verify(manifestArtifact)
+            guard integrity.isVerified else {
+                let issue = integrity.issues.first
                 return makeEnvelope(
                     request: request,
                     startedAt: startedAt,
                     status: .blocked,
                     findings: [finding(
                         severity: .blocker,
-                        code: "pdk.rule-deck.manifest-digest-mismatch",
-                        message: "PDK manifest bytes do not match the PDK reference digest.",
+                        code: "pdk.rule-deck.manifest-integrity-failed",
+                        message: "PDK manifest integrity could not be verified: \(issue?.code.rawValue ?? "unknown").",
                         entity: manifestURL.path,
                         actions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
                     )]
                 )
             }
+            let data = try Data(contentsOf: manifestURL)
             manifest = try PDKManifestCodec.decode(data: data).manifest
         } catch let error as PDKManifestError {
             return makeEnvelope(
@@ -154,6 +160,25 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             )
         }
 
+        let sourceArtifact: ArtifactReference
+        do {
+            sourceArtifact = try resolved.foundationArtifactReference()
+        } catch {
+            return makeEnvelope(
+                request: request,
+                startedAt: startedAt,
+                status: .failed,
+                reference: resolved.reference,
+                findings: [finding(
+                    severity: .error,
+                    code: "pdk.validation.rule-deck-integrity-failed",
+                    message: "The rule-deck artifact could not be projected into the canonical artifact identity: \(error.localizedDescription)",
+                    entity: request.assetID,
+                    actions: ["rebuild_input_reference", "restore_immutable_artifact"]
+                )]
+            )
+        }
+
         let data: Data
         do {
             data = try Data(contentsOf: URL(filePath: resolved.path))
@@ -163,6 +188,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 startedAt: startedAt,
                 status: .failed,
                 reference: resolved.reference,
+                sourceArtifact: sourceArtifact,
                 findings: [finding(
                     severity: .error,
                     code: "pdk.validation.rule-deck-unreadable",
@@ -178,6 +204,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 startedAt: startedAt,
                 status: .failed,
                 reference: resolved.reference,
+                sourceArtifact: sourceArtifact,
                 findings: [finding(
                     severity: .error,
                     code: "pdk.validation.rule-deck-invalid-encoding",
@@ -269,6 +296,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             startedAt: startedAt,
             status: status,
             reference: resolved.reference,
+            sourceArtifact: sourceArtifact,
             statementCount: statements.count,
             expectedLayerIDs: mapping.layerIDs.sorted(),
             observedLayerIDs: observedLayerIDs,
@@ -383,6 +411,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         startedAt: Date,
         status: XcircuiteEngineExecutionStatus,
         reference: XcircuiteFileReference? = nil,
+        sourceArtifact: ArtifactReference? = nil,
         statementCount: Int = 0,
         expectedLayerIDs: [String] = [],
         observedLayerIDs: [String] = [],
@@ -407,6 +436,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 assetID: request.assetID,
                 pdkDigest: request.pdk.digest,
                 reference: reference,
+                sourceArtifact: sourceArtifact,
                 statementCount: statementCount,
                 expectedLayerIDs: expectedLayerIDs,
                 observedLayerIDs: observedLayerIDs,

@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import GDSII
 import LayoutIR
 import OASIS
@@ -31,7 +32,7 @@ struct PDKStandardViewTests {
             path: "oracle.json",
             kind: .technology,
             format: .json,
-            sha256: try SHA256PDKDigestor().digest(data: oracleData),
+            sha256: try SHA256ContentDigester().digest(data: oracleData, using: .sha256).hexadecimalValue,
             byteCount: Int64(oracleData.count)
         )
 
@@ -78,7 +79,7 @@ struct PDKStandardViewTests {
             path: mismatchURL.path,
             kind: .technology,
             format: .json,
-            sha256: try SHA256PDKDigestor().digest(data: data),
+            sha256: try SHA256ContentDigester().digest(data: data, using: .sha256).hexadecimalValue,
             byteCount: Int64(data.count)
         )
 
@@ -121,6 +122,8 @@ struct PDKStandardViewTests {
         #expect(envelope.payload.isValid)
         #expect(envelope.payload.inspection?.inspection?.layerNames.contains("M1") == true)
         #expect(envelope.payload.inspection?.inspection?.cellNames.contains("nmos") == true)
+        #expect(envelope.payload.inspection?.inspection?.sourceArtifact?.digest.algorithm == .sha256)
+        #expect(envelope.payload.inspection?.inspection?.sourceArtifact?.byteCount ?? 0 > 0)
         #expect(envelope.payload.binding?.mappingID == "lef-cell-view")
         #expect(envelope.payload.binding?.isValid == true)
         #expect(envelope.payload.binding?.missingCellNames.isEmpty == true)
@@ -145,6 +148,7 @@ struct PDKStandardViewTests {
             )
             let envelope = try await LocalPDKManifestViewInspector().execute(request)
             #expect(envelope.status == .completed, "\(envelope.diagnostics)")
+            #expect(envelope.payload.inspection?.inspection?.sourceArtifact != nil)
             #expect(envelope.payload.binding?.isValid == true)
             #expect(envelope.payload.binding?.missingCellNames.isEmpty == true)
             #expect(envelope.payload.binding?.missingCornerNames.isEmpty == true)
@@ -286,7 +290,7 @@ struct PDKStandardViewTests {
                 path: fileURL.path,
                 kind: .layout,
                 format: fileFormat,
-                sha256: try SHA256PDKDigestor().digest(data: data),
+                sha256: try SHA256ContentDigester().digest(data: data, using: .sha256).hexadecimalValue,
                 byteCount: Int64(data.count)
             )
             let request = PDKStandardViewInspectionRequest(
@@ -325,7 +329,7 @@ struct PDKStandardViewTests {
             path: fileURL.path,
             kind: .layout,
             format: .gdsii,
-            sha256: try SHA256PDKDigestor().digest(data: data),
+            sha256: try SHA256ContentDigester().digest(data: data, using: .sha256).hexadecimalValue,
             byteCount: Int64(data.count)
         )
         let request = PDKStandardViewInspectionRequest(
@@ -396,7 +400,7 @@ struct PDKStandardViewTests {
                 path: fileURL.path,
                 kind: .model,
                 format: fileFormat,
-                sha256: try SHA256PDKDigestor().digest(data: data),
+                sha256: try SHA256ContentDigester().digest(data: data, using: .sha256).hexadecimalValue,
                 byteCount: Int64(data.count)
             )
             let request = PDKStandardViewInspectionRequest(
@@ -445,7 +449,7 @@ struct PDKStandardViewTests {
             path: fileURL.path,
             kind: .model,
             format: format.fileFormat,
-            sha256: try SHA256PDKDigestor().digest(data: data),
+            sha256: try SHA256ContentDigester().digest(data: data, using: .sha256).hexadecimalValue,
             byteCount: Int64(data.count)
         )
         return try await LocalPDKStandardViewInspector().execute(

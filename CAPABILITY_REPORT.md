@@ -8,7 +8,7 @@
 | Immutable PDK identity and manifest digest | `PDKManifestReferenceBuilder`, SHA-256 test | Available |
 | Local recursive discovery | `LocalPDKDiscoverer`, discovery test | Available |
 | Manifest-relative asset resolution | `LocalPDKAssetResolver`, validation fixture | Available |
-| Asset SHA-256 and byte-count integrity | `CircuiteFoundation.LocalArtifactReferencer`/`LocalArtifactVerifier` through `LocalPDKAssetResolver` and `LocalPDKValidator`, negative-path tests | Available |
+| Asset SHA-256 and byte-count integrity | `CircuiteFoundation.LocalArtifactReferencer`/`LocalArtifactVerifier` through asset, standard-view, rule-deck, oracle and qualification paths, negative-path tests | Available |
 | Layer, device and extraction semantics | Typed `PDKCore` models and validator | Available when declared |
 | PVT/RC/EM/reliability corner model | `PDKCornerDefinition` and scope export | Available when declared |
 | Cross-view mapping coverage | layer/device/corner coverage checks | Blocked when mappings are absent |
@@ -16,7 +16,7 @@
 | Rule-deck semantic validation | `PDKRuleDeckInspecting`, `LocalPDKRuleDeckInspector`, `PDKRuleDeckInspectionPayload`, `ruleDeckResults` and `pdkkit inspect-rule-deck` | Available for declared text rule decks; grammar limitations and missing layer evidence block |
 | Retained corpus evaluation | `PDKCorpusSuite`, `LocalPDKCorpusValidator`, standard-view and rule-deck case results, valid/blocked/failed fixture cases | Available for declared local cases; schema v2 accepts legacy v1 suites |
 | Standard-view detailed inspection | `PDKStandardViews`, `swift-mask-data` readers, SPICE/Liberty text adapters, canonical IR and manifest binding | Available for supported mask structure, numeric SPICE model parameters, Liberty timing tables and units |
-| External backend envelope parity | `PDKExternalStandardViewResultProviding`, `PDKExternalRuleDeckResultProviding`, external inspectors and contract tests | Available for shared typed result envelopes and digest-bearing source-reference binding; external process execution and qualification remain open |
+| External backend envelope parity | `PDKExternalStandardViewResultProviding`, `PDKExternalRuleDeckResultProviding`, external inspectors and contract tests | Available for shared typed result envelopes, digest-bearing source-reference binding and canonical artifact identity binding; provider process execution is outside PDKKit |
 | Immutable oracle comparison | `PDKOracleExpectation`, `LocalPDKOracleComparator`, mismatch payload | Available for declared canonical facts |
 | Local qualification gate | `PDKQualificationGate`, digest-bound corpus + oracle evidence | Available for `oracleCorrelated` handoff |
 | Qualification artifact evaluator | `PDKQualificationRequest`, `LocalPDKQualificationEvaluator` | Available for immutable payload/envelope artifacts |
@@ -36,8 +36,10 @@
 - LEF/GDSII/OASIS inspection reuses the workspace `swift-mask-data` readers;
   SPICE/Liberty adapters retain canonical model parameters, subcircuits, cells,
   timing arcs, timing table indices/values and unit declarations. Unsupported
-  expressions, incomplete tables and dimension mismatches are blocked. Complete
-  coverage of every vendor-specific model/table construct remains open.
+  expressions, incomplete tables and dimension mismatches are blocked. The
+  PDKKit-owned parser contract is complete and fails closed for unsupported
+  vendor extensions; execution of those extensions requires a backend-specific
+  provider contract.
 - The retained oracle is a local immutable detailed expectation. It is not a
   foundry reference tool, and no process-specific qualification is included.
 - The retained corpus is a contract corpus. It does not contain foundry

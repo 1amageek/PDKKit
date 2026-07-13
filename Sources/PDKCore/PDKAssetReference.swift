@@ -38,17 +38,6 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
         self.metadata = metadata
     }
 
-    public var fileReference: XcircuiteFileReference {
-        XcircuiteFileReference(
-            artifactID: assetID,
-            path: path,
-            kind: kind,
-            format: format,
-            sha256: sha256,
-            byteCount: byteCount
-        )
-    }
-
     /// Returns the Foundation intent for this asset before it is materialized.
     public func artifactLocator() throws -> ArtifactLocator {
         ArtifactLocator(

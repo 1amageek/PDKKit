@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import PDKCore
 import XcircuitePackage
 
@@ -124,6 +125,30 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                     actual: Self.referenceDescription(actualReference)
                 )
             }
+            guard let sourceArtifact = payload.sourceArtifact else {
+                throw PDKExternalInspectionError.canonicalArtifactMismatch(
+                    expected: "digest-bearing CircuiteFoundation ArtifactReference",
+                    actual: "<missing>"
+                )
+            }
+            let expectedArtifact: ArtifactReference
+            do {
+                expectedArtifact = try PDKFoundationArtifactBridge.artifactReference(
+                    for: expectedReference
+                )
+            } catch {
+                throw PDKExternalInspectionError.inputReferenceUnavailable(error.localizedDescription)
+            }
+            guard sourceArtifact.id == expectedArtifact.id,
+                  sourceArtifact.digest == expectedArtifact.digest,
+                  sourceArtifact.byteCount == expectedArtifact.byteCount,
+                  sourceArtifact.locator.kind == expectedArtifact.locator.kind,
+                  sourceArtifact.locator.format == expectedArtifact.locator.format else {
+                throw PDKExternalInspectionError.canonicalArtifactMismatch(
+                    expected: Self.artifactDescription(expectedArtifact),
+                    actual: Self.artifactDescription(sourceArtifact)
+                )
+            }
         }
     }
 
@@ -141,6 +166,16 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         }
         let manifestData: Data
         do {
+            let manifestArtifact = try PDKFoundationArtifactBridge.artifactReference(
+                for: request.pdk.manifest,
+                resolvedURL: manifestURL
+            )
+            let integrity = LocalArtifactVerifier().verify(manifestArtifact)
+            guard integrity.isVerified else {
+                throw PDKExternalInspectionError.inputReferenceUnavailable(
+                    "PDK manifest integrity failed: " + integrity.issues.map { $0.code.rawValue }.joined(separator: ", ")
+                )
+            }
             manifestData = try Data(contentsOf: manifestURL)
         } catch {
             throw PDKExternalInspectionError.inputReferenceUnavailable(
@@ -148,12 +183,6 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             )
         }
         do {
-            let digest = try SHA256PDKDigestor().digest(data: manifestData)
-            guard digest == request.pdk.digest else {
-                throw PDKExternalInspectionError.inputReferenceUnavailable(
-                    "PDK manifest digest does not match the requested PDK reference"
-                )
-            }
             let manifest = try PDKManifestCodec.decode(data: manifestData).manifest
             guard let asset = manifest.assets.first(where: { $0.assetID == request.assetID }) else {
                 throw PDKExternalInspectionError.inputReferenceUnavailable(
@@ -171,7 +200,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     private func isTrustBoundaryError(_ error: PDKExternalInspectionError) -> Bool {
         switch error {
         case .schemaVersionMismatch, .runIDMismatch, .assetIDMismatch, .pdkDigestMismatch,
-             .inputReferenceMismatch, .inputReferenceUnavailable:
+             .inputReferenceMismatch, .canonicalArtifactMismatch, .inputReferenceUnavailable:
             true
         case .invalidJSON, .standardViewFormatMismatch, .completedPayloadInvalid:
             false
@@ -186,6 +215,16 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             reference.format.rawValue,
             reference.sha256 ?? "<missing-sha256>",
             reference.byteCount.map(String.init) ?? "<missing-byte-count>",
+        ].joined(separator: "|")
+    }
+
+    private static func artifactDescription(_ reference: ArtifactReference) -> String {
+        [
+            reference.id.rawValue,
+            reference.locator.kind.rawValue,
+            reference.locator.format.rawValue,
+            reference.digest.hexadecimalValue,
+            String(reference.byteCount),
         ].joined(separator: "|")
     }
 

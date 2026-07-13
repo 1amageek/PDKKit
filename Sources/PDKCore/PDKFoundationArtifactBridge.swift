@@ -2,7 +2,7 @@
 import Foundation
 import XcircuitePackage
 
-/// Converts the retained Xcircuite compatibility reference into the canonical
+/// Converts an execution-envelope reference into the canonical
 /// CircuiteFoundation artifact identity used by PDK validation.
 public enum PDKFoundationArtifactBridge {
     public static func artifactReference(

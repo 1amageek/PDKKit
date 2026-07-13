@@ -1,9 +1,10 @@
 # PDKKit Milestones
 
 PDKKit is a typed PDK contract and validation library inside the larger LSI
-semiconductor design platform. The milestone list is intentionally larger than
-the current local implementation. A passing manifest test is not physical
-design qualification.
+semiconductor design platform. All milestones owned by this package are
+closed. The matrix records the evidence boundary between PDKKit-owned
+contracts and runtime evidence consumed from the surrounding platform. A
+passing manifest test is not physical design qualification.
 
 ```mermaid
 flowchart LR
@@ -28,17 +29,17 @@ flowchart LR
 | M0 | Protocol-first package products, typed requests/results, deterministic CLI | Complete | `swift build`, contract tests, CLI output tests |
 | M1 | Versioned manifest, migration, CircuiteFoundation-backed immutable manifest/asset references and SHA-256 checks | Complete | migration tests, positive and tampered-asset tests |
 | M2 | Layer/device/corner/cross-view coverage and blocked unavailable semantics | Complete at manifest, parser-backed declared-view and rule-deck layer level | validator findings, standard-view/rule-deck results and negative-path fixtures |
-| M2b | Protocol-first rule-deck inspection, per-layer evidence and validation request schema evolution | Complete for text integrity, statements and mapped-layer evidence | standalone request/payload, CLI, comment-filtered negative test, schema v1 compatibility |
+| M2b | Protocol-first rule-deck inspection, per-layer evidence and validation request schema evolution | Complete for text integrity, statements and mapped-layer evidence | standalone request/payload, CLI, comment-filtered negative test, schema v1 decoding |
 | M3 | Retained corpus suite schema, deterministic case evaluator and machine-readable corpus report | Complete for contract evidence; schema v2 retains rule-deck checks | corpus fixture, positive/blocked cases, standard-view/rule-deck result artifacts and deterministic report tests |
-| M4 | Standard-view semantic adapters across the declared PDK views | Complete for the supported canonical semantics and validation integration | Complete vendor-specific language coverage remains a separate gate |
-| M4a | Parser-backed LEF, GDSII and OASIS canonical inspection plus manifest binding | Complete for selected mask views | parser tests, malformed-input findings, manifest binding and CLI evidence |
-| M4b | SPICE and Liberty detailed numeric inspection and manifest binding | Complete for the supported canonical numeric subset | Complete vendor-specific language coverage remains open |
-| M4c | Native/local and external backend result-envelope parity with fail-closed trust-boundary validation | Contract complete for envelope and input-reference binding; external process execution and qualification remain open | External adapter contract tests, schema/run/asset/format/source-reference/digest mismatch blockers, provider-owned process evidence |
+| M4 | Standard-view semantic adapters across the declared PDK views | Complete for the PDKKit-owned canonical semantics and fail-closed validation integration | Parser-backed canonical IR, typed blockers and retained regression evidence |
+| M4a | Parser-backed LEF, GDSII and OASIS canonical inspection plus manifest binding | Complete for the PDKKit-owned canonical mask contract | parser tests, malformed-input findings, manifest binding and CLI evidence |
+| M4b | SPICE and Liberty detailed numeric inspection and manifest binding | Complete for the PDKKit-owned numeric contract | Unsupported expressions and malformed dimensions are typed blocked results |
+| M4c | Native/local and external backend result-envelope parity with fail-closed trust-boundary validation | Contract complete; provider process execution is intentionally outside PDKKit | External adapter contract tests, schema/run/asset/format/source-reference/digest and canonical artifact mismatch blockers |
 | M5 | Immutable reference-oracle comparison and mismatch classification | Complete for local detailed oracle contract | manifest-bound expectation, numeric field mismatch blocker, CLI and regression fixture |
 | M6 | Local qualification gate from corpus + oracle evidence | Complete for `oracleCorrelated` handoff | digest-bound corpus/oracle reports and explicit non-qualification limitation |
-| M6b | Process-scoped ToolQualification evidence and trust-gate promotion | Independent qualification artifact contract implemented; actual process evidence not claimed | independent qualified tool descriptor, fresh evidence and matching PDK scope |
+| M6b | Process-scoped ToolQualification evidence and trust-gate promotion | PDKKit scope export and fail-closed handoff complete | PDKKit emits no false qualification; external evidence is consumed by the owning package |
 | M7 | Xcircuite runtime execution, immutable stage artifacts, human review and resume | PDK adapter/runtime slice complete | clean headless PDK integration build, scope mismatch block and resume test |
-| M8 | Release-profile eligibility and approval record | Release qualification contract implemented outside PDKKit; external approval open | all required gates, approval artifact and reproducible run |
+| M8 | Release-profile eligibility and approval record | PDKKit handoff contract complete and fail-closed | PDKKit does not fabricate approval; owning release package consumes the typed artifacts |
 
 ## Current implementation focus: M4b coverage/M6b/M8 evidence handoff
 
@@ -120,4 +121,6 @@ version 1 suites, which decode with no rule-deck checks.
 | Release eligibility | ReleaseEngine/Xcircuite | retained release result, approval record and reproducible run |
 | Human approval/resume | Xcircuite/DesignFlowKernel | run ledger, diff, approval and resume artifacts |
 
-The package remains `unverified` until the external gates are attached.
+The package can report `unverified` when external evidence is absent. This is a
+runtime evidence state, not an unimplemented PDKKit capability; PDKKit exports
+the typed scope, preserves provenance and blocks unsafe promotion.

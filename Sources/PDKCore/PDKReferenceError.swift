@@ -31,7 +31,7 @@ public enum PDKReferenceError: Error, Sendable, Equatable, LocalizedError {
         case .invalidManifestByteCount:
             "PDK manifest byte count must be non-negative."
         case .manifestByteCountOverflow:
-            "PDK manifest byte count cannot be represented by the compatibility reference."
+            "PDK manifest byte count cannot be represented by the execution envelope."
         case .manifestDigestMismatch(let expected, let actual):
             "PDK manifest digest mismatch; expected \(expected), received \(actual)."
         }

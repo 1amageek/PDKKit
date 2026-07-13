@@ -1,9 +1,11 @@
 import Foundation
+import CircuiteFoundation
 import XcircuitePackage
 
 public struct PDKStandardViewIR: Sendable, Hashable, Codable {
     public var format: PDKStandardViewFormat
     public var source: XcircuiteFileReference
+    public var sourceArtifact: ArtifactReference?
     public var libraryName: String
     public var layerNames: [String]
     public var physicalLayerNumbers: [Int]
@@ -29,6 +31,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
     public init(
         format: PDKStandardViewFormat,
         source: XcircuiteFileReference,
+        sourceArtifact: ArtifactReference? = nil,
         libraryName: String,
         layerNames: [String] = [],
         physicalLayerNumbers: [Int] = [],
@@ -53,6 +56,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
     ) {
         self.format = format
         self.source = source
+        self.sourceArtifact = sourceArtifact
         self.libraryName = libraryName
         self.layerNames = Self.sortedUnique(layerNames)
         self.physicalLayerNumbers = Array(Set(physicalLayerNumbers)).sorted()
@@ -86,6 +90,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
         self.init(
             format: try container.decode(PDKStandardViewFormat.self, forKey: .format),
             source: try container.decode(XcircuiteFileReference.self, forKey: .source),
+            sourceArtifact: try container.decodeIfPresent(ArtifactReference.self, forKey: .sourceArtifact),
             libraryName: try container.decode(String.self, forKey: .libraryName),
             layerNames: try container.decodeIfPresent([String].self, forKey: .layerNames) ?? [],
             physicalLayerNumbers: try container.decodeIfPresent([Int].self, forKey: .physicalLayerNumbers) ?? [],
@@ -117,6 +122,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
     private enum CodingKeys: String, CodingKey {
         case format
         case source
+        case sourceArtifact
         case libraryName
         case layerNames
         case physicalLayerNumbers

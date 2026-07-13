@@ -59,9 +59,16 @@ treated as foundry qualification.
 `artifactLocator()` projection uses `CircuiteFoundation.ArtifactLocator`.
 `LocalPDKAssetResolver` materializes that intent through
 `LocalArtifactReferencer`, producing a streaming SHA-256 and an immutable
-`ArtifactReference` before it creates the retained Xcircuite compatibility
-reference. The compatibility reference remains in the execution envelope
-until the envelope migration is completed; it is not the integrity authority.
+`ArtifactReference` before it creates the Xcircuite execution-envelope
+reference required by `XcircuiteEngineRequest`; it is not the integrity
+authority.
+
+The same boundary applies to standard-view, rule-deck, oracle and
+qualification artifact reads. Local inspectors verify declared artifacts
+through `LocalArtifactVerifier`, and canonical `ArtifactReference` values are
+retained in standard-view IR, rule-deck payloads and oracle comparison
+payloads. The removed legacy digesting helpers are not part of the public
+implementation; all digesting uses CircuiteFoundation directly.
 
 `PDKQualificationGate` may emit `oracleCorrelated` only when the retained
 corpus and immutable oracle reports are both valid and share the selected PDK

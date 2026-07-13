@@ -8,6 +8,7 @@ public enum PDKExternalInspectionError: Error, Sendable, Equatable, LocalizedErr
     case standardViewFormatMismatch(expected: PDKStandardViewFormat, actual: PDKStandardViewFormat)
     case pdkDigestMismatch(expected: String, actual: String)
     case inputReferenceMismatch(expected: String, actual: String)
+    case canonicalArtifactMismatch(expected: String, actual: String)
     case inputReferenceUnavailable(String)
     case completedPayloadInvalid(String)
 
@@ -27,6 +28,8 @@ public enum PDKExternalInspectionError: Error, Sendable, Equatable, LocalizedErr
             "External rule-deck result PDK digest \(actual) does not match expected digest \(expected)."
         case .inputReferenceMismatch(let expected, let actual):
             "External inspection source reference \(actual) does not match the requested input reference \(expected)."
+        case .canonicalArtifactMismatch(let expected, let actual):
+            "External inspection canonical artifact \(actual) does not match the requested artifact \(expected)."
         case .inputReferenceUnavailable(let reason):
             "External inspection input reference could not be verified: " + reason
         case .completedPayloadInvalid(let reason):

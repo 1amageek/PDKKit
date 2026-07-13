@@ -10,7 +10,7 @@ public protocol DomainExecuting: Sendable {
 }
 ```
 
-Requests carry a schema version, run ID and typed compatibility envelope
+Requests carry a schema version, run ID and typed execution envelope
 references. PDKCore resolves those inputs through the corresponding
 CircuiteFoundation `ArtifactReference` before consuming bytes. Payloads
 contain domain metrics only. Diagnostics and artifacts belong to the shared
@@ -71,6 +71,9 @@ status, parser-backed payload and PDK digest. Both reports retain the PDK digest
 and explicitly preserve the `unverified` qualification state.
 Each `PDKResolvedAsset` also exposes `foundationArtifactReference()`, the
 canonical immutable identity used by downstream boundary code.
+`PDKStandardViewIR.sourceArtifact`, `PDKRuleDeckInspectionPayload.sourceArtifact`
+and `PDKOracleComparisonPayload.oracleArtifact` retain the canonical
+CircuiteFoundation identity alongside the execution-envelope reference.
 `ruleDeckResults` retains rule-deck text integrity, mapped layer coverage,
 statement counts, per-layer token/statement evidence and typed findings. The
 same payload is returned by `inspect-rule-deck` and embedded in manifest

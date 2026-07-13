@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import Testing
 import XcircuitePackage
 @testable import PDKCore
@@ -419,7 +420,7 @@ struct PDKEngineTests {
             path: "corpus.json",
             kind: .report,
             format: .json,
-            sha256: try SHA256PDKDigestor().digest(data: corpusData),
+            sha256: try SHA256ContentDigester().digest(data: corpusData, using: .sha256).hexadecimalValue,
             byteCount: Int64(corpusData.count)
         )
         let oracleReference = XcircuiteFileReference(
@@ -427,7 +428,7 @@ struct PDKEngineTests {
             path: "oracle.json",
             kind: .report,
             format: .json,
-            sha256: try SHA256PDKDigestor().digest(data: oracleData),
+            sha256: try SHA256ContentDigester().digest(data: oracleData, using: .sha256).hexadecimalValue,
             byteCount: Int64(oracleData.count)
         )
 

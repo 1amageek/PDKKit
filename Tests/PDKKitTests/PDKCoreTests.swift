@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import CircuiteFoundation
 import XcircuitePackage
 @testable import PDKCore
 
@@ -40,7 +41,7 @@ struct PDKCoreTests {
 
     @Test("computes a stable lowercase SHA-256 digest")
     func digestIsStable() throws {
-        let digest = try SHA256PDKDigestor().digest(data: Data("PDKKit".utf8))
+        let digest = try SHA256ContentDigester().digest(data: Data("PDKKit".utf8), using: .sha256).hexadecimalValue
         #expect(digest == "951825a4fd0dac93935d2498d902f7c2d19ab55ef8344bba73366aa2a9cfbe2c")
     }
 

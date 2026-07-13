@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import PDKCore
 import XcircuitePackage
 
@@ -47,13 +48,20 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         }
         let manifest: PDKManifest
         do {
-            let data = try Data(contentsOf: manifestURL)
-            let actualDigest = try SHA256PDKDigestor().digest(data: data)
-            guard actualDigest == request.pdk.digest else {
+            let manifestArtifact = try PDKFoundationArtifactBridge.artifactReference(
+                for: request.pdk.manifest,
+                resolvedURL: manifestURL
+            )
+            let integrity = LocalArtifactVerifier().verify(manifestArtifact)
+            guard integrity.isVerified else {
+                let issue = integrity.issues.first
+                let code = issue?.code == .digestMismatch
+                    ? "pdk.standard-view.manifest-digest-mismatch"
+                    : "pdk.standard-view.manifest-integrity-failed"
                 let finding = PDKValidationFinding(
                     severity: .blocker,
-                    code: "pdk.standard-view.manifest-digest-mismatch",
-                    message: "PDK manifest bytes do not match the PDK reference digest.",
+                    code: code,
+                    message: "PDK manifest integrity verification failed: \(issue?.code.rawValue ?? "unknown").",
                     entity: manifestURL.path,
                     suggestedActions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
                 )
@@ -64,6 +72,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                     findings: [finding]
                 )
             }
+            let data = try Data(contentsOf: manifestURL)
             manifest = try PDKManifestCodec.decode(data: data).manifest
         } catch let error as PDKManifestError {
             let finding = PDKValidationFinding(

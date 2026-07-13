@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import PDKCore
 import XcircuitePackage
 
@@ -39,9 +40,24 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 )]
             )
         }
-        let data: Data
+        let oracleArtifact: ArtifactReference
         do {
-            data = try Data(contentsOf: oracleURL)
+            oracleArtifact = try PDKFoundationArtifactBridge.artifactReference(
+                for: request.oracle,
+                resolvedURL: oracleURL
+            )
+            let integrity = LocalArtifactVerifier().verify(oracleArtifact)
+            let integrityFindings = findings(for: integrity, entity: request.oracle.path)
+            guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
+                return makeEnvelope(
+                    request: request,
+                    startedAt: startedAt,
+                    status: .blocked,
+                    oracleID: "unavailable",
+                    oracleArtifact: oracleArtifact,
+                    findings: integrityFindings
+                )
+            }
         } catch {
             return makeEnvelope(
                 request: request,
@@ -58,16 +74,27 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
             )
         }
 
-        var integrityFindings = verifyIntegrity(data: data, reference: request.oracle)
-        guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
+        let data: Data
+        do {
+            data = try Data(contentsOf: oracleURL)
+        } catch {
             return makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
                 oracleID: "unavailable",
-                findings: integrityFindings
+                oracleArtifact: oracleArtifact,
+                findings: [PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.oracle.input-unreadable",
+                    message: "Oracle expectation could not be read: \(error.localizedDescription)",
+                    entity: oracleURL.path,
+                    suggestedActions: ["restore_oracle_expectation", "check_file_permissions"]
+                )]
             )
         }
+
+        var integrityFindings: [PDKValidationFinding] = []
 
         let expectation: PDKOracleExpectation
         do {
@@ -85,6 +112,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 startedAt: startedAt,
                 status: .failed,
                 oracleID: "unavailable",
+                oracleArtifact: oracleArtifact,
                 findings: integrityFindings
             )
         }
@@ -96,6 +124,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 startedAt: startedAt,
                 status: .blocked,
                 oracleID: expectation.oracleID,
+                oracleArtifact: oracleArtifact,
                 findings: findings
             )
         }
@@ -178,66 +207,34 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
             startedAt: startedAt,
             status: status,
             oracleID: expectation.oracleID,
+            oracleArtifact: oracleArtifact,
             findings: findings,
             comparisons: comparisons
         )
     }
 
-    private func verifyIntegrity(
-        data: Data,
-        reference: XcircuiteFileReference
+    private func findings(
+        for integrity: ArtifactIntegrity,
+        entity: String
     ) -> [PDKValidationFinding] {
-        var findings: [PDKValidationFinding] = []
-        guard let expectedDigest = reference.sha256, !expectedDigest.isEmpty else {
-            findings.append(PDKValidationFinding(
-                severity: .blocker,
-                code: "pdk.oracle.digest-missing",
-                message: "Oracle expectation must carry a SHA-256 digest.",
-                entity: reference.path,
-                suggestedActions: ["rebuild_oracle_reference"]
-            ))
-            return findings
-        }
-        guard let expectedByteCount = reference.byteCount else {
-            findings.append(PDKValidationFinding(
-                severity: .blocker,
-                code: "pdk.oracle.byte-count-missing",
-                message: "Oracle expectation must carry a byte count.",
-                entity: reference.path,
-                suggestedActions: ["rebuild_oracle_reference"]
-            ))
-            return findings
-        }
-        do {
-            let actualDigest = try SHA256PDKDigestor().digest(data: data)
-            if actualDigest != expectedDigest.lowercased() {
-                findings.append(PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.oracle.digest-mismatch",
-                    message: "Oracle expectation bytes do not match the recorded SHA-256 digest.",
-                    entity: reference.path,
-                    suggestedActions: ["rebuild_oracle_reference", "restore_immutable_artifact"]
-                ))
+        integrity.issues.map { issue in
+            let code: String
+            switch issue.code {
+            case .digestMismatch:
+                code = "pdk.oracle.digest-mismatch"
+            case .byteCountMismatch:
+                code = "pdk.oracle.byte-count-mismatch"
+            default:
+                code = "pdk.oracle.hash-failed"
             }
-        } catch {
-            findings.append(PDKValidationFinding(
-                severity: .error,
-                code: "pdk.oracle.hash-failed",
-                message: "Oracle expectation could not be hashed: \(error.localizedDescription)",
-                entity: reference.path,
-                suggestedActions: ["check_file_permissions"]
-            ))
-        }
-        if Int64(data.count) != expectedByteCount {
-            findings.append(PDKValidationFinding(
+            return PDKValidationFinding(
                 severity: .blocker,
-                code: "pdk.oracle.byte-count-mismatch",
-                message: "Oracle expectation bytes do not match the recorded byte count.",
-                entity: reference.path,
+                code: code,
+                message: "Oracle expectation integrity verification failed: \(issue.code.rawValue).",
+                entity: entity,
                 suggestedActions: ["rebuild_oracle_reference", "restore_immutable_artifact"]
-            ))
+            )
         }
-        return findings
     }
 
     private func validateExpectation(
@@ -363,6 +360,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         startedAt: Date,
         status: XcircuiteEngineExecutionStatus,
         oracleID: String,
+        oracleArtifact: ArtifactReference? = nil,
         findings: [PDKValidationFinding],
         comparisons: [PDKOracleViewComparison] = []
     ) -> XcircuiteEngineResultEnvelope<PDKOracleComparisonPayload> {
@@ -383,6 +381,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 isValid: status == .completed,
                 oracleID: oracleID,
                 pdkDigest: request.pdk.digest,
+                oracleArtifact: oracleArtifact,
                 comparisons: comparisons,
                 findings: findings,
                 limitations: [

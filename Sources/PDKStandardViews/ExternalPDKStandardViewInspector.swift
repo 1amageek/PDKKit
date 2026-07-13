@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import PDKCore
 import XcircuitePackage
 
@@ -109,6 +110,30 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                     actual: Self.referenceDescription(inspection.source)
                 )
             }
+            guard let sourceArtifact = inspection.sourceArtifact else {
+                throw PDKExternalInspectionError.canonicalArtifactMismatch(
+                    expected: "digest-bearing CircuiteFoundation ArtifactReference",
+                    actual: "<missing>"
+                )
+            }
+            let expectedArtifact: ArtifactReference
+            do {
+                expectedArtifact = try PDKFoundationArtifactBridge.artifactReference(
+                    for: inspection.source
+                )
+            } catch {
+                throw PDKExternalInspectionError.inputReferenceUnavailable(error.localizedDescription)
+            }
+            guard sourceArtifact.id == expectedArtifact.id,
+                  sourceArtifact.digest == expectedArtifact.digest,
+                  sourceArtifact.byteCount == expectedArtifact.byteCount,
+                  sourceArtifact.locator.kind == expectedArtifact.locator.kind,
+                  sourceArtifact.locator.format == expectedArtifact.locator.format else {
+                throw PDKExternalInspectionError.canonicalArtifactMismatch(
+                    expected: Self.artifactDescription(expectedArtifact),
+                    actual: Self.artifactDescription(sourceArtifact)
+                )
+            }
         }
         if status == .completed {
             guard payload.isValid, payload.inspection != nil else {
@@ -122,7 +147,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
     private func isTrustBoundaryError(_ error: PDKExternalInspectionError) -> Bool {
         switch error {
         case .schemaVersionMismatch, .runIDMismatch, .assetIDMismatch, .standardViewFormatMismatch, .pdkDigestMismatch,
-             .inputReferenceMismatch, .inputReferenceUnavailable:
+             .inputReferenceMismatch, .canonicalArtifactMismatch, .inputReferenceUnavailable:
             true
         case .invalidJSON, .completedPayloadInvalid:
             false
@@ -137,6 +162,16 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
             reference.format.rawValue,
             reference.sha256 ?? "<missing-sha256>",
             reference.byteCount.map(String.init) ?? "<missing-byte-count>",
+        ].joined(separator: "|")
+    }
+
+    private static func artifactDescription(_ reference: ArtifactReference) -> String {
+        [
+            reference.id.rawValue,
+            reference.locator.kind.rawValue,
+            reference.locator.format.rawValue,
+            reference.digest.hexadecimalValue,
+            String(reference.byteCount),
         ].joined(separator: "|")
     }
 

@@ -1,4 +1,5 @@
 import Foundation
+import CircuiteFoundation
 import GDSII
 import LEF
 import LayoutIR
@@ -87,12 +88,85 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             )
         }
 
+        let sourceArtifact: ArtifactReference
+        do {
+            sourceArtifact = try PDKFoundationArtifactBridge.artifactReference(
+                for: input,
+                resolvedURL: inputURL
+            )
+            let integrity = LocalArtifactVerifier().verify(sourceArtifact)
+            let integrityFindings = findings(for: integrity, entity: input.path)
+            guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
+                return makeEnvelope(
+                    request: request,
+                    startedAt: startedAt,
+                    status: .blocked,
+                    findings: integrityFindings,
+                    artifacts: [input]
+                )
+            }
+        } catch let error as PDKFoundationArtifactError {
+            let finding: PDKValidationFinding
+            let status: XcircuiteEngineExecutionStatus
+            switch error {
+            case .missingDigest:
+                finding = PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.standard-view.digest-missing",
+                    message: error.localizedDescription,
+                    entity: input.path,
+                    suggestedActions: ["rebuild_input_reference"]
+                )
+                status = .blocked
+            case .missingByteCount:
+                finding = PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.standard-view.byte-count-missing",
+                    message: error.localizedDescription,
+                    entity: input.path,
+                    suggestedActions: ["rebuild_input_reference"]
+                )
+                status = .blocked
+            default:
+                finding = PDKValidationFinding(
+                    severity: .error,
+                    code: "pdk.standard-view.integrity-failed",
+                    message: error.localizedDescription,
+                    entity: input.path,
+                    suggestedActions: ["rebuild_input_reference", "check_file_permissions"]
+                )
+                status = .failed
+            }
+            return makeEnvelope(
+                request: request,
+                startedAt: startedAt,
+                status: status,
+                findings: [finding],
+                artifacts: [input]
+            )
+        } catch {
+            let finding = PDKValidationFinding(
+                severity: .error,
+                code: "pdk.standard-view.integrity-failed",
+                message: "The standard-view artifact could not be represented or verified: \(error.localizedDescription)",
+                entity: input.path,
+                suggestedActions: ["rebuild_input_reference", "check_file_permissions"]
+            )
+            return makeEnvelope(
+                request: request,
+                startedAt: startedAt,
+                status: .failed,
+                findings: [finding],
+                artifacts: [input]
+            )
+        }
+
         let data: Data
         do {
             data = try Data(contentsOf: inputURL)
         } catch {
             let finding = PDKValidationFinding(
-                severity: .blocker,
+                severity: .error,
                 code: "pdk.standard-view.input-unreadable",
                 message: "The standard-view artifact could not be read: \(error.localizedDescription)",
                 entity: inputURL.path,
@@ -101,25 +175,16 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             return makeEnvelope(
                 request: request,
                 startedAt: startedAt,
-                status: .blocked,
+                status: .failed,
                 findings: [finding],
                 artifacts: [input]
             )
         }
 
-        var findings = verifyIntegrity(data: data, reference: input)
-        guard !findings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
-            return makeEnvelope(
-                request: request,
-                startedAt: startedAt,
-                status: .blocked,
-                findings: findings,
-                artifacts: [input]
-            )
-        }
-
+        var findings: [PDKValidationFinding] = []
         do {
-            let inspection = try parse(data: data, reference: input, format: request.format)
+            var inspection = try parse(data: data, reference: input, format: request.format)
+            inspection.sourceArtifact = sourceArtifact
             findings.append(contentsOf: semanticFindings(inspection: inspection, request: request))
             let hasBlocker = findings.contains { $0.severity == .blocker }
             let status: XcircuiteEngineExecutionStatus = hasBlocker ? .blocked : .completed
@@ -150,62 +215,46 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         }
     }
 
-    private func verifyIntegrity(
-        data: Data,
-        reference: XcircuiteFileReference
+    private func findings(
+        for integrity: ArtifactIntegrity,
+        entity: String
     ) -> [PDKValidationFinding] {
-        var findings: [PDKValidationFinding] = []
-        guard let expectedDigest = reference.sha256, !expectedDigest.isEmpty else {
-            findings.append(PDKValidationFinding(
-                severity: .blocker,
-                code: "pdk.standard-view.digest-missing",
-                message: "Standard-view input must carry a SHA-256 digest.",
-                entity: reference.path,
-                suggestedActions: ["rebuild_input_reference"]
-            ))
-            return findings
-        }
-        guard let expectedByteCount = reference.byteCount else {
-            findings.append(PDKValidationFinding(
-                severity: .blocker,
-                code: "pdk.standard-view.byte-count-missing",
-                message: "Standard-view input must carry a byte count.",
-                entity: reference.path,
-                suggestedActions: ["rebuild_input_reference"]
-            ))
-            return findings
-        }
-
-        do {
-            let actualDigest = try SHA256PDKDigestor().digest(data: data)
-            if actualDigest != expectedDigest.lowercased() {
-                findings.append(PDKValidationFinding(
+        integrity.issues.map { issue in
+            switch issue.code {
+            case .missingFile:
+                PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.standard-view.input-missing",
+                    message: "Standard-view input artifact is missing.",
+                    entity: entity,
+                    suggestedActions: ["restore_standard_view_artifact"]
+                )
+            case .byteCountMismatch:
+                PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.standard-view.byte-count-mismatch",
+                    message: "Standard-view input bytes do not match the recorded byte count.",
+                    entity: entity,
+                    suggestedActions: ["rebuild_input_reference", "restore_immutable_artifact"]
+                )
+            case .digestMismatch:
+                PDKValidationFinding(
                     severity: .blocker,
                     code: "pdk.standard-view.digest-mismatch",
                     message: "Standard-view input bytes do not match the recorded SHA-256 digest.",
-                    entity: reference.path,
+                    entity: entity,
                     suggestedActions: ["rebuild_input_reference", "restore_immutable_artifact"]
-                ))
+                )
+            case .notRegularFile, .unreadableFile, .invalidLocation, .unsupportedDigestAlgorithm:
+                PDKValidationFinding(
+                    severity: .error,
+                    code: "pdk.standard-view.digest-failed",
+                    message: "Standard-view input integrity could not be verified: \(issue.code.rawValue).",
+                    entity: entity,
+                    suggestedActions: ["check_file_permissions", "restore_standard_view_artifact"]
+                )
             }
-        } catch {
-            findings.append(PDKValidationFinding(
-                severity: .error,
-                code: "pdk.standard-view.digest-failed",
-                message: "Standard-view input could not be hashed: \(error.localizedDescription)",
-                entity: reference.path,
-                suggestedActions: ["check_file_permissions"]
-            ))
         }
-        if Int64(data.count) != expectedByteCount {
-            findings.append(PDKValidationFinding(
-                severity: .blocker,
-                code: "pdk.standard-view.byte-count-mismatch",
-                message: "Standard-view input bytes do not match the recorded byte count.",
-                entity: reference.path,
-                suggestedActions: ["rebuild_input_reference", "restore_immutable_artifact"]
-            ))
-        }
-        return findings
     }
 
     private func parse(

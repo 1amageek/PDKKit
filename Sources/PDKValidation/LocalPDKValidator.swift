@@ -7,7 +7,7 @@ import XcircuitePackage
 public struct LocalPDKValidator: PDKValidating {
     private let clock: any PDKValidationExecutionClock
     private let assetResolver: any PDKAssetResolving
-    private let digestor: any PDKDigesting
+    private let contentDigester: any ContentDigesting
     private let manifestValidator: PDKManifestValidator
     private let standardViewInspector: any PDKManifestViewInspecting
     private let ruleDeckInspector: any PDKRuleDeckInspecting
@@ -15,14 +15,14 @@ public struct LocalPDKValidator: PDKValidating {
     public init(
         clock: any PDKValidationExecutionClock = SystemPDKValidationExecutionClock(),
         assetResolver: any PDKAssetResolving = LocalPDKAssetResolver(),
-        digestor: any PDKDigesting = SHA256PDKDigestor(),
+        contentDigester: any ContentDigesting = SHA256ContentDigester(),
         manifestValidator: PDKManifestValidator = PDKManifestValidator(),
         standardViewInspector: any PDKManifestViewInspecting = LocalPDKManifestViewInspector(),
         ruleDeckInspector: any PDKRuleDeckInspecting = LocalPDKRuleDeckInspector()
     ) {
         self.clock = clock
         self.assetResolver = assetResolver
-        self.digestor = digestor
+        self.contentDigester = contentDigester
         self.manifestValidator = manifestValidator
         self.standardViewInspector = standardViewInspector
         self.ruleDeckInspector = ruleDeckInspector
@@ -156,27 +156,11 @@ public struct LocalPDKValidator: PDKValidating {
             ))
         }
 
-        do {
-            let data = try Data(contentsOf: manifestURL)
-            let actualDigest = try digestor.digest(data: data)
-            if request.pdk.digest != actualDigest {
-                findings.append(PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.validation.manifest-digest-mismatch",
-                    message: "PDK reference digest does not match the manifest bytes.",
-                    entity: manifestURL.path,
-                    suggestedActions: ["rebuild_pdk_reference", "check_immutable_artifact"]
-                ))
-            }
-        } catch {
-            findings.append(PDKValidationFinding(
-                severity: .error,
-                code: "pdk.validation.manifest-read-failed",
-                message: "PDK manifest bytes could not be read for digest verification: \(error.localizedDescription)",
-                entity: manifestURL.path,
-                suggestedActions: ["check_file_permissions"]
-            ))
-        }
+        validateManifestIntegrity(
+            request: request,
+            manifestURL: manifestURL,
+            findings: &findings
+        )
 
         for role in request.requiredAssetRoles where !decoded.manifest.assets.contains(where: { $0.role == role }) {
             findings.append(PDKValidationFinding(
@@ -583,7 +567,7 @@ public struct LocalPDKValidator: PDKValidating {
                     for: input,
                     resolvedURL: url
                 )
-                let integrity = LocalArtifactVerifier().verify(
+                let integrity = LocalArtifactVerifier(digester: contentDigester).verify(
                     foundationReference,
                     relativeTo: nil
                 )
@@ -632,6 +616,46 @@ public struct LocalPDKValidator: PDKValidating {
                     suggestedActions: ["check_file_permissions", "rebuild_input_reference"]
                 ))
             }
+        }
+    }
+
+    private func validateManifestIntegrity(
+        request: PDKValidationRequest,
+        manifestURL: URL,
+        findings: inout [PDKValidationFinding]
+    ) {
+        do {
+            let artifact = try PDKFoundationArtifactBridge.artifactReference(
+                for: request.pdk.manifest,
+                resolvedURL: manifestURL
+            )
+            let integrity = LocalArtifactVerifier(digester: contentDigester).verify(artifact)
+            for issue in integrity.issues {
+                let code: String
+                switch issue.code {
+                case .digestMismatch:
+                    code = "pdk.validation.manifest-digest-mismatch"
+                case .byteCountMismatch:
+                    code = "pdk.validation.manifest-byte-count-mismatch"
+                default:
+                    code = "pdk.validation.manifest-integrity-failed"
+                }
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: code,
+                    message: "PDK manifest integrity verification failed: \(issue.code.rawValue).",
+                    entity: manifestURL.path,
+                    suggestedActions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
+                ))
+            }
+        } catch {
+            findings.append(PDKValidationFinding(
+                severity: .blocker,
+                code: "pdk.validation.manifest-integrity-failed",
+                message: "PDK manifest could not be represented or verified at the Foundation boundary: \(error.localizedDescription)",
+                entity: manifestURL.path,
+                suggestedActions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
+            ))
         }
     }
 
