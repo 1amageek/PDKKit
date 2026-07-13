@@ -6,15 +6,14 @@
 public protocol DomainExecuting: Sendable {
     func execute(
         _ request: DomainRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<DomainPayload>
+    ) async throws -> DomainResult
 }
 ```
 
-Requests carry a schema version, run ID and typed execution envelope
-references. PDKCore resolves those inputs through the corresponding
-CircuiteFoundation `ArtifactReference` before consuming bytes. Payloads
-contain domain metrics only. Diagnostics and artifacts belong to the shared
-envelope.
+Requests carry a schema version, run ID and Foundation artifact locators.
+PDKCore resolves those inputs to immutable `ArtifactReference` values before
+consuming bytes. Domain result types carry their own diagnostics, artifacts
+and execution provenance; no generic result envelope is required.
 
 ## Products
 
@@ -56,13 +55,13 @@ Umbrella API.
 | `LocalPDKManifestViewInspector` | Resolve a manifest asset, inspect it and return binding evidence |
 | `PDKRuleDeckInspecting` | Inspect a manifest-bound rule-deck asset through a typed request/payload contract |
 | `LocalPDKRuleDeckInspector` | Verify rule-deck integrity, executable statements and mapped-layer evidence |
-| `PDKExternalStandardViewResultProviding` | Supply a JSON-encoded shared result envelope from an external standard-view backend |
-| `PDKExternalRuleDeckResultProviding` | Supply a JSON-encoded shared result envelope from an external rule-deck backend |
-| `ExternalPDKStandardViewInspector` | Decode and fail closed on external standard-view envelope contract mismatches |
-| `ExternalPDKRuleDeckInspector` | Decode and fail closed on external rule-deck envelope, asset and PDK-digest mismatches |
+| `PDKExternalStandardViewResultProviding` | Supply a JSON-encoded typed result from an external standard-view backend |
+| `PDKExternalRuleDeckResultProviding` | Supply a JSON-encoded typed result from an external rule-deck backend |
+| `ExternalPDKStandardViewInspector` | Decode and fail closed on external standard-view result contract mismatches |
+| `ExternalPDKRuleDeckInspector` | Decode and fail closed on external rule-deck result, asset and PDK-digest mismatches |
 | `LocalPDKOracleComparator` | Compare manifest-bound canonical facts against digest-bound immutable expectations |
 | `PDKQualificationGate` | Require matching retained corpus and oracle evidence for `oracleCorrelated` |
-| `LocalPDKQualificationEvaluator` | Load immutable corpus/oracle payload artifacts and return a qualification envelope |
+| `LocalPDKQualificationEvaluator` | Load immutable corpus/oracle payload artifacts and return a qualification result |
 
 `PDKValidationPayload` exposes findings, resolved immutable references, a
 `standardViewResults` collection, a `PDKQualificationScope` and a
@@ -73,7 +72,7 @@ Each `PDKResolvedAsset` also exposes `foundationArtifactReference()`, the
 canonical immutable identity used by downstream boundary code.
 `PDKStandardViewIR.sourceArtifact`, `PDKRuleDeckInspectionPayload.sourceArtifact`
 and `PDKOracleComparisonPayload.oracleArtifact` retain the canonical
-CircuiteFoundation identity alongside the execution-envelope reference.
+CircuiteFoundation identity directly in the domain payload.
 `ruleDeckResults` retains rule-deck text integrity, mapped layer coverage,
 statement counts, per-layer token/statement evidence and typed findings. The
 same payload is returned by `inspect-rule-deck` and embedded in manifest
@@ -103,9 +102,9 @@ rule-deck asset. Its payload retains the immutable source reference, statement
 count, expected/observed layer IDs, per-layer evidence and explicit grammar
 limitations.
 
-External providers return JSON-encoded `XcircuiteEngineResultEnvelope` values
-with the request schema version and run ID. The external inspectors validate
-the envelope before returning it, then validate the payload asset identity,
+External providers return JSON-encoded typed domain results with the request
+schema version and run ID. The external inspectors validate the result before
+returning it, then validate the payload asset identity,
 standard-view format when present, completed-payload validity, digest-bearing
 standard-view source binding and rule-deck asset/PDK digest binding. Schema,
 run, asset, format, source-reference and digest mismatches are blocked;
@@ -115,30 +114,18 @@ as structured failures. The contract does not qualify the external process.
 
 ## Error contract
 
-- Throw only when execution cannot produce a valid result envelope.
+- Throw only when execution cannot produce a valid typed result.
 - Represent design findings and failed checks as typed diagnostics and a completed domain payload.
 - Represent missing prerequisites or insufficient semantics as `blocked`.
 - Preserve cancellation as `cancelled`.
 - Do not swallow parser, process or persistence failures.
 
-## Xcircuite adapter
+## Flow integration
 
-The adapter lives in the Xcircuite package and must:
-
-1. resolve project-relative references through XcircuitePackage;
-2. verify input digests;
-3. evaluate ToolQualification requirements;
-4. invoke the injected engine protocol;
-5. persist every returned artifact;
-6. map diagnostics and status to FlowStageResult;
-7. attach design, PDK and tool provenance;
-8. leave approval and resume handling to DesignFlowKernel.
-
-The implemented adapters are `PDKDiscoveryFlowStageExecutor`,
-`PDKValidationFlowStageExecutor`,
-`PDKStandardViewInspectionFlowStageExecutor`, `PDKOracleFlowStageExecutor` and
-`PDKQualificationFlowStageExecutor`. Each persists the complete result
-envelope under the run's stage `raw` directory and exposes the persisted
-reference as a flow artifact. Xcircuite owns the final package build and
-headless integration verification; PDKKit's own detailed standard-view suite
-is independently reproducible with the package Xcode test bundle.
+PDKKit engines conform directly to their domain protocols and to the shared
+Foundation artifact, diagnostic and provenance contracts. DesignFlowKernel
+injects those protocols, applies tool-qualification and flow policy, and
+persists typed results through its ledger protocol. Xcircuite supplies the
+concrete `.xcircuite` workspace and run-artifact stores. PDKKit does not define
+an adapter or compatibility facade, and its detailed standard-view suite
+remains independently reproducible from the package test bundle.

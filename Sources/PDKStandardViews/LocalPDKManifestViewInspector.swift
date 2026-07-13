@@ -1,7 +1,7 @@
 import Foundation
 import CircuiteFoundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
     private let clock: any PDKStandardViewExecutionClock
@@ -23,12 +23,12 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
 
     public func execute(
         _ request: PDKManifestViewInspectionRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKManifestViewInspectionPayload> {
+    ) async throws -> PDKManifestViewInspectionResult {
         let startedAt = clock.now()
         let manifestURL: URL
         do {
             manifestURL = try PDKArtifactURLResolver().resolve(
-                request.pdk.manifest,
+                request.pdk.manifest.locator,
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
@@ -186,7 +186,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
 
         let inspectionRequest = PDKStandardViewInspectionRequest(
             runID: request.runID,
-            inputs: [resolved.reference],
+                inputs: [resolved.reference.locator],
             format: request.format,
             assetID: request.assetID,
             requireNonEmpty: request.requireNonEmpty,
@@ -210,7 +210,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         }
 
         let bindingIsValid = binding?.isValid ?? false
-        let status: XcircuiteEngineExecutionStatus
+        let status: PDKExecutionStatus
         switch inspectionEnvelope.status {
         case .failed, .cancelled:
             status = inspectionEnvelope.status
@@ -233,19 +233,19 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
     private func makeEnvelope(
         request: PDKManifestViewInspectionRequest,
         startedAt: Date,
-        status: XcircuiteEngineExecutionStatus,
+        status: PDKExecutionStatus,
         findings: [PDKValidationFinding],
-        artifacts: [XcircuiteFileReference] = [],
+        artifacts: [ArtifactLocator] = [],
         inspection: PDKStandardViewInspectionPayload? = nil,
         binding: PDKStandardViewBindingReport? = nil
-    ) -> XcircuiteEngineResultEnvelope<PDKManifestViewInspectionPayload> {
-        XcircuiteEngineResultEnvelope(
+    ) -> PDKManifestViewInspectionResult {
+        PDKManifestViewInspectionResult(
             schemaVersion: PDKManifestViewInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: findings.map(PDKStandardViewDiagnosticMapper.map),
             artifacts: artifacts,
-            metadata: XcircuiteEngineExecutionMetadata(
+            metadata: PDKExecutionMetadata(
                 engineID: "PDKManifestViewInspection",
                 implementationID: "LocalPDKManifestViewInspector",
                 implementationVersion: "1",

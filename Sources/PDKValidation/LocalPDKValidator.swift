@@ -2,7 +2,7 @@ import Foundation
 import CircuiteFoundation
 import PDKCore
 import PDKStandardViews
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct LocalPDKValidator: PDKValidating {
     private let clock: any PDKValidationExecutionClock
@@ -30,12 +30,12 @@ public struct LocalPDKValidator: PDKValidating {
 
     public func execute(
         _ request: PDKValidationRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKValidationPayload> {
+    ) async throws -> PDKValidationExecutionResult {
         let startedAt = clock.now()
         var validationResult: ValidationResult
         do {
             let manifestURL = try PDKArtifactURLResolver().resolve(
-                request.pdk.manifest,
+                request.pdk.manifest.locator,
                 baseDirectoryPath: request.projectRootPath
             )
             validationResult = validate(request: request, manifestURL: manifestURL)
@@ -69,19 +69,19 @@ public struct LocalPDKValidator: PDKValidating {
             )
         }
         let completedAt = clock.now()
-        let metadata = XcircuiteEngineExecutionMetadata(
+        let metadata = PDKExecutionMetadata(
             engineID: "PDKValidation",
             implementationID: "LocalPDKValidator",
             implementationVersion: "1",
             startedAt: startedAt,
             completedAt: completedAt
         )
-        return XcircuiteEngineResultEnvelope(
+        return PDKValidationExecutionResult(
             schemaVersion: PDKValidationRequest.currentSchemaVersion,
             runID: request.runID,
             status: validationResult.status,
             diagnostics: validationResult.diagnostics,
-            artifacts: validationResult.resolvedAssets.map(\.reference),
+            artifacts: validationResult.resolvedAssets.map { $0.reference.locator },
             metadata: metadata,
             payload: PDKValidationPayload(
                 isValid: validationResult.status == .completed,
@@ -217,7 +217,7 @@ public struct LocalPDKValidator: PDKValidating {
 
         let hasBlocker = findings.contains { $0.severity == .blocker }
         let hasError = findings.contains { $0.severity == .error }
-        let status: XcircuiteEngineExecutionStatus = hasBlocker ? .blocked : hasError ? .failed : .completed
+        let status: PDKExecutionStatus = hasBlocker ? .blocked : hasError ? .failed : .completed
         var assetDigests: [String: String] = [:]
         for resolvedAsset in resolvedAssets {
             assetDigests[resolvedAsset.assetID] = resolvedAsset.computedSHA256
@@ -259,7 +259,7 @@ public struct LocalPDKValidator: PDKValidating {
             guard seen.insert(key).inserted else { continue }
             let inspectionRequest = PDKManifestViewInspectionRequest(
                 runID: request.runID + ":" + assetID + ":" + format.rawValue,
-                inputs: [request.pdk.manifest],
+                inputs: [request.pdk.manifest.locator],
                 pdk: request.pdk,
                 assetID: assetID,
                 format: format,
@@ -345,7 +345,7 @@ public struct LocalPDKValidator: PDKValidating {
         for asset in ruleDeckAssets {
             let inspectionRequest = PDKRuleDeckInspectionRequest(
                 runID: request.runID + ":" + asset.assetID + ":rule-deck",
-                inputs: [request.pdk.manifest],
+                inputs: [request.pdk.manifest.locator],
                 pdk: request.pdk,
                 assetID: asset.assetID,
                 projectRootPath: request.projectRootPath
@@ -357,7 +357,7 @@ public struct LocalPDKValidator: PDKValidating {
                     assetID: asset.assetID,
                     status: envelope.status,
                     isValid: payload.isValid,
-                    reference: payload.reference ?? resolvedAssets.first(where: { $0.assetID == asset.assetID })?.reference,
+                    reference: payload.reference ?? resolvedAssets.first(where: { $0.assetID == asset.assetID })?.reference.locator,
                     expectedLayerIDs: payload.expectedLayerIDs,
                     observedLayerIDs: payload.observedLayerIDs,
                     statementCount: payload.statementCount,
@@ -378,7 +378,7 @@ public struct LocalPDKValidator: PDKValidating {
                     assetID: asset.assetID,
                     status: .failed,
                     isValid: false,
-                    reference: resolvedAssets.first(where: { $0.assetID == asset.assetID })?.reference,
+                    reference: resolvedAssets.first(where: { $0.assetID == asset.assetID })?.reference.locator,
                     inspection: PDKRuleDeckInspectionPayload(
                         isValid: false,
                         assetID: asset.assetID,
@@ -402,8 +402,8 @@ public struct LocalPDKValidator: PDKValidating {
     }
 
     private func updateStatus(
-        _ current: inout XcircuiteEngineExecutionStatus,
-        with next: XcircuiteEngineExecutionStatus
+        _ current: inout PDKExecutionStatus,
+        with next: PDKExecutionStatus
     ) {
         switch next {
         case .failed:
@@ -518,7 +518,7 @@ public struct LocalPDKValidator: PDKValidating {
     }
 
     private func validateInputs(
-        _ inputs: [XcircuiteFileReference],
+        _ inputs: [ArtifactLocator],
         projectRootPath: String?,
         findings: inout [PDKValidationFinding]
     ) {
@@ -539,29 +539,6 @@ public struct LocalPDKValidator: PDKValidating {
                 ))
                 continue
             }
-            if input.sha256 == nil {
-                findings.append(PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.validation.input-digest-missing",
-                    message: "Immutable input artifacts must carry a SHA-256 digest.",
-                    entity: input.path,
-                    suggestedActions: ["attach_sha256_digest"]
-                ))
-            }
-            if input.byteCount == nil {
-                findings.append(PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.validation.input-byte-count-missing",
-                    message: "Immutable input artifacts must carry a byte count.",
-                    entity: input.path,
-                    suggestedActions: ["attach_byte_count"]
-                ))
-            }
-
-            guard input.sha256 != nil, input.byteCount != nil else {
-                continue
-            }
-
             do {
                 let foundationReference = try PDKFoundationArtifactBridge.artifactReference(
                     for: input,
@@ -660,7 +637,7 @@ public struct LocalPDKValidator: PDKValidating {
     }
 
     private func result(
-        status: XcircuiteEngineExecutionStatus,
+        status: PDKExecutionStatus,
         findings: [PDKValidationFinding],
         resolvedAssets: [PDKResolvedAsset] = [],
         request: PDKValidationRequest,
@@ -691,8 +668,8 @@ public struct LocalPDKValidator: PDKValidating {
 }
 
 private struct ValidationResult: Sendable {
-    var status: XcircuiteEngineExecutionStatus
-    var diagnostics: [XcircuiteEngineDiagnostic]
+    var status: PDKExecutionStatus
+    var diagnostics: [DesignDiagnostic]
     var findings: [PDKValidationFinding]
     var missingRequirements: [String]
     var resolvedAssets: [PDKResolvedAsset]

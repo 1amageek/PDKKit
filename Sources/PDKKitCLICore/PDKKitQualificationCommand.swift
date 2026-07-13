@@ -2,7 +2,7 @@ import Foundation
 import PDKCore
 import PDKValidation
 import PDKStandardViews
-import XcircuitePackage
+import CircuiteFoundation
 
 struct PDKKitQualificationCommand: Sendable {
     struct Options: Sendable, Equatable {
@@ -68,7 +68,7 @@ struct PDKKitQualificationCommand: Sendable {
             oracle: oracle.payload
         )
         let findings = assessment.findings.map(PDKValidationDiagnosticMapper.map)
-        let status: XcircuiteEngineExecutionStatus = assessment.isValid ? .completed : .blocked
+        let status: PDKExecutionStatus = assessment.isValid ? .completed : .blocked
         let output = PDKKitQualificationOutput(
             command: "qualify",
             manifestPath: manifestURL.path,

@@ -1,7 +1,7 @@
 import Foundation
 import CircuiteFoundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     private let clock: any PDKStandardViewExecutionClock
@@ -20,12 +20,12 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
 
     public func execute(
         _ request: PDKRuleDeckInspectionRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKRuleDeckInspectionPayload> {
+    ) async throws -> PDKRuleDeckInspectionResult {
         let startedAt = clock.now()
         let manifestURL: URL
         do {
             manifestURL = try PDKArtifactURLResolver().resolve(
-                request.pdk.manifest,
+                request.pdk.manifest.locator,
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
@@ -168,7 +168,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
-                reference: resolved.reference,
+                reference: resolved.reference.locator,
                 findings: [finding(
                     severity: .error,
                     code: "pdk.validation.rule-deck-integrity-failed",
@@ -187,7 +187,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
-                reference: resolved.reference,
+                reference: resolved.reference.locator,
                 sourceArtifact: sourceArtifact,
                 findings: [finding(
                     severity: .error,
@@ -203,7 +203,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
-                reference: resolved.reference,
+                reference: resolved.reference.locator,
                 sourceArtifact: sourceArtifact,
                 findings: [finding(
                     severity: .error,
@@ -290,12 +290,12 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
 
         let hasBlocker = findings.contains { $0.severity == .blocker }
         let hasError = findings.contains { $0.severity == .error }
-        let status: XcircuiteEngineExecutionStatus = hasBlocker ? .blocked : hasError ? .failed : .completed
+        let status: PDKExecutionStatus = hasBlocker ? .blocked : hasError ? .failed : .completed
         return makeEnvelope(
             request: request,
             startedAt: startedAt,
             status: status,
-            reference: resolved.reference,
+            reference: resolved.reference.locator,
             sourceArtifact: sourceArtifact,
             statementCount: statements.count,
             expectedLayerIDs: mapping.layerIDs.sorted(),
@@ -409,22 +409,22 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     private func makeEnvelope(
         request: PDKRuleDeckInspectionRequest,
         startedAt: Date,
-        status: XcircuiteEngineExecutionStatus,
-        reference: XcircuiteFileReference? = nil,
+        status: PDKExecutionStatus,
+        reference: ArtifactLocator? = nil,
         sourceArtifact: ArtifactReference? = nil,
         statementCount: Int = 0,
         expectedLayerIDs: [String] = [],
         observedLayerIDs: [String] = [],
         layerEvidence: [PDKRuleDeckLayerEvidence] = [],
         findings: [PDKValidationFinding]
-    ) -> XcircuiteEngineResultEnvelope<PDKRuleDeckInspectionPayload> {
-        XcircuiteEngineResultEnvelope(
+    ) -> PDKRuleDeckInspectionResult {
+        PDKRuleDeckInspectionResult(
             schemaVersion: PDKRuleDeckInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: findings.map(PDKStandardViewDiagnosticMapper.map),
             artifacts: reference.map { [$0] } ?? [],
-            metadata: XcircuiteEngineExecutionMetadata(
+            metadata: PDKExecutionMetadata(
                 engineID: "PDKRuleDeckInspection",
                 implementationID: "LocalPDKRuleDeckInspector",
                 implementationVersion: "1",

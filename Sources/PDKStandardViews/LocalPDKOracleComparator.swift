@@ -1,7 +1,7 @@
 import Foundation
 import CircuiteFoundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct LocalPDKOracleComparator: PDKOracleComparing {
     private let clock: any PDKStandardViewExecutionClock
@@ -17,12 +17,12 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
 
     public func execute(
         _ request: PDKOracleRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKOracleComparisonPayload> {
+    ) async throws -> PDKOracleComparisonResult {
         let startedAt = clock.now()
         let oracleURL: URL
         do {
             oracleURL = try PDKArtifactURLResolver().resolve(
-                request.oracle,
+                request.oracle.locator,
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
@@ -135,7 +135,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         for view in expectation.views {
             let inspectionRequest = PDKManifestViewInspectionRequest(
                 runID: request.runID + ":" + view.assetID + ":" + view.format.rawValue,
-                inputs: [request.pdk.manifest],
+                inputs: [request.pdk.manifest.locator],
                 pdk: request.pdk,
                 assetID: view.assetID,
                 format: view.format,
@@ -194,7 +194,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         }
 
         let hasMismatch = comparisons.contains { !$0.isMatch }
-        let status: XcircuiteEngineExecutionStatus
+        let status: PDKExecutionStatus
         if hasFailedView {
             status = .failed
         } else if hasBlockedView || hasMismatch {
@@ -358,19 +358,19 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
     private func makeEnvelope(
         request: PDKOracleRequest,
         startedAt: Date,
-        status: XcircuiteEngineExecutionStatus,
+        status: PDKExecutionStatus,
         oracleID: String,
         oracleArtifact: ArtifactReference? = nil,
         findings: [PDKValidationFinding],
         comparisons: [PDKOracleViewComparison] = []
-    ) -> XcircuiteEngineResultEnvelope<PDKOracleComparisonPayload> {
-        XcircuiteEngineResultEnvelope(
+    ) -> PDKOracleComparisonResult {
+        PDKOracleComparisonResult(
             schemaVersion: PDKOracleRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: findings.map(PDKStandardViewDiagnosticMapper.map),
-            artifacts: [request.pdk.manifest, request.oracle],
-            metadata: XcircuiteEngineExecutionMetadata(
+            artifacts: [request.pdk.manifest.locator, request.oracle.locator],
+            metadata: PDKExecutionMetadata(
                 engineID: "PDKOracleComparison",
                 implementationID: "LocalPDKOracleComparator",
                 implementationVersion: "1",

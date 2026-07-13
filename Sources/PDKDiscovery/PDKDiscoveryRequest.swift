@@ -1,13 +1,13 @@
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 import PDKCore
 
-public struct PDKDiscoveryRequest: XcircuiteEngineRequest {
+public struct PDKDiscoveryRequest: Sendable {
     public static let currentSchemaVersion = 1
 
     public var schemaVersion: Int
     public var runID: String
-    public var inputs: [XcircuiteFileReference]
+    public var inputs: [ArtifactLocator]
 
     public var searchRoots: [String]
     public var requiredProcessID: String?
@@ -15,7 +15,7 @@ public struct PDKDiscoveryRequest: XcircuiteEngineRequest {
 
     public init(
         runID: String,
-        inputs: [XcircuiteFileReference],
+        inputs: [ArtifactLocator],
         searchRoots: [String],
         requiredProcessID: String? = nil,
         manifestFileNames: [String] = [PDKManifest.fileName, "pdk-manifest.json", "manifest.json"]
@@ -32,7 +32,7 @@ public struct PDKDiscoveryRequest: XcircuiteEngineRequest {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? Self.currentSchemaVersion
         runID = try container.decode(String.self, forKey: .runID)
-        inputs = try container.decodeIfPresent([XcircuiteFileReference].self, forKey: .inputs) ?? []
+        inputs = try container.decodeIfPresent([ArtifactLocator].self, forKey: .inputs) ?? []
         searchRoots = try container.decodeIfPresent([String].self, forKey: .searchRoots) ?? []
         requiredProcessID = try container.decodeIfPresent(String.self, forKey: .requiredProcessID)
         manifestFileNames = try container.decodeIfPresent([String].self, forKey: .manifestFileNames)

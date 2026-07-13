@@ -1,14 +1,21 @@
 import CircuiteFoundation
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct PDKArtifactURLResolver: Sendable {
     public init() {}
 
     public func resolve(
-        _ reference: XcircuiteFileReference,
+        _ reference: ArtifactLocator,
         baseDirectoryPath: String? = nil
     ) throws -> URL {
+        if reference.location.storage == .absoluteFileURL {
+            do {
+                return try reference.location.resolvedFileURL()
+            } catch {
+                throw PDKArtifactPathError.pathEscapesBaseDirectory(reference.path)
+            }
+        }
         let path = reference.path.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !path.isEmpty else {
             throw PDKArtifactPathError.emptyPath

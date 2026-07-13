@@ -1,7 +1,7 @@
 import Foundation
 import PDKCore
 import PDKStandardViews
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct LocalPDKCorpusValidator: PDKCorpusValidating {
     private let clock: any PDKValidationExecutionClock
@@ -32,7 +32,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
 
     public func execute(
         _ request: PDKCorpusValidationRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKCorpusValidationPayload> {
+    ) async throws -> PDKCorpusValidationExecutionResult {
         let startedAt = clock.now()
         let suiteURL = URL(filePath: request.suitePath).standardizedFileURL
         let rootURL = URL(filePath: request.rootPath).standardizedFileURL
@@ -119,7 +119,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
             )
             caseResults.append(result)
             if !result.passed {
-                diagnostics.append(XcircuiteEngineDiagnostic(
+                diagnostics.append(DesignDiagnostic(
                     severity: .error,
                     code: "pdk.corpus.case-mismatch",
                     message: "Corpus case did not produce its expected outcome or findings.",
@@ -130,13 +130,13 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         }
 
         let isValid = caseResults.allSatisfy(\.passed)
-        let status: XcircuiteEngineExecutionStatus = isValid ? .completed : .failed
+        let status: PDKExecutionStatus = isValid ? .completed : .failed
         return makeEnvelope(
             request: request,
             startedAt: startedAt,
             status: status,
             diagnostics: diagnostics,
-            artifacts: caseResults.compactMap(\.manifestReference),
+            artifacts: caseResults.compactMap { $0.manifestReference?.locator },
             payload: PDKCorpusValidationPayload(
                 suiteID: suite.suiteID,
                 processID: suite.processID,
@@ -186,7 +186,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
 
         let validationRequest = PDKValidationRequest(
             runID: runID + ":" + corpusCase.caseID,
-            inputs: [reference.manifest],
+            inputs: [reference.manifest.locator],
             pdk: reference,
             requiredAssetRoles: corpusCase.requiredAssetRoles,
             validateCrossViews: corpusCase.validateCrossViews
@@ -194,9 +194,9 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         do {
             let envelope = try await validator.execute(validationRequest)
             let observedOutcome = outcome(for: envelope.status)
-            var observedFindingCodes = Set(
-                envelope.diagnostics.map(\.code) + envelope.payload.findings.map(\.code)
-            )
+            let envelopeDiagnosticCodes: [String] = envelope.diagnostics.map { $0.code.rawValue }
+            let envelopeFindingCodes: [String] = envelope.payload.findings.map { $0.code }
+            var observedFindingCodes: Set<String> = Set(envelopeDiagnosticCodes + envelopeFindingCodes)
             var standardViewResults: [PDKCorpusStandardViewResult] = []
             var ruleDeckResults: [PDKCorpusRuleDeckResult] = []
             if envelope.status == .completed {
@@ -214,16 +214,16 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                     }
                     let inspectionRequest = PDKManifestViewInspectionRequest(
                         runID: runID + ":" + corpusCase.caseID + ":" + check.assetID + ":" + check.format,
-                        inputs: [reference.manifest],
+                        inputs: [reference.manifest.locator],
                         pdk: reference,
                         assetID: check.assetID,
                         format: format
                     )
                     do {
                         let inspectionEnvelope = try await standardViewInspector.execute(inspectionRequest)
-                        let codes = Set(
-                            inspectionEnvelope.diagnostics.map(\.code) + inspectionEnvelope.payload.findings.map(\.code)
-                        )
+                        let diagnosticCodes: [String] = inspectionEnvelope.diagnostics.map { $0.code.rawValue }
+                        let findingCodes: [String] = inspectionEnvelope.payload.findings.map { $0.code }
+                        let codes: Set<String> = Set(diagnosticCodes + findingCodes)
                         standardResult = standardViewResult(
                             check,
                             observedOutcome: outcome(for: inspectionEnvelope.status),
@@ -244,15 +244,15 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                 let deckResult: PDKCorpusRuleDeckResult
                 let inspectionRequest = PDKRuleDeckInspectionRequest(
                     runID: runID + ":" + corpusCase.caseID + ":" + check.assetID + ":rule-deck",
-                    inputs: [reference.manifest],
+                    inputs: [reference.manifest.locator],
                     pdk: reference,
                     assetID: check.assetID
                 )
                 do {
                     let inspectionEnvelope = try await ruleDeckInspector.execute(inspectionRequest)
-                    let codes = Set(
-                        inspectionEnvelope.diagnostics.map(\.code) + inspectionEnvelope.payload.findings.map(\.code)
-                    )
+                    let diagnosticCodes: [String] = inspectionEnvelope.diagnostics.map { $0.code.rawValue }
+                    let findingCodes: [String] = inspectionEnvelope.payload.findings.map { $0.code }
+                    let codes: Set<String> = Set(diagnosticCodes + findingCodes)
                     deckResult = ruleDeckResult(
                         check,
                         observedOutcome: outcome(for: inspectionEnvelope.status),
@@ -292,7 +292,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         observedFindingCodes: [String],
         standardViewResults: [PDKCorpusStandardViewResult] = [],
         ruleDeckResults: [PDKCorpusRuleDeckResult] = [],
-        manifestReference: XcircuiteFileReference? = nil
+        manifestReference: ArtifactReference? = nil
     ) -> PDKCorpusCaseResult {
         let expectedCodes = Set(corpusCase.expectedFindingCodes)
         let observedCodes = Set(observedFindingCodes)
@@ -352,7 +352,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         )
     }
 
-    private func outcome(for status: XcircuiteEngineExecutionStatus) -> PDKCorpusExpectedOutcome {
+    private func outcome(for status: PDKExecutionStatus) -> PDKCorpusExpectedOutcome {
         switch status {
         case .completed: .valid
         case .blocked: .blocked
@@ -368,18 +368,18 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
     private func makeEnvelope(
         request: PDKCorpusValidationRequest,
         startedAt: Date,
-        status: XcircuiteEngineExecutionStatus,
-        diagnostics: [XcircuiteEngineDiagnostic],
-        artifacts: [XcircuiteFileReference] = [],
+        status: PDKExecutionStatus,
+        diagnostics: [DesignDiagnostic],
+        artifacts: [ArtifactLocator] = [],
         payload: PDKCorpusValidationPayload
-    ) -> XcircuiteEngineResultEnvelope<PDKCorpusValidationPayload> {
-        XcircuiteEngineResultEnvelope(
+    ) -> PDKCorpusValidationExecutionResult {
+        PDKCorpusValidationExecutionResult(
             schemaVersion: PDKCorpusValidationRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: diagnostics,
             artifacts: artifacts,
-            metadata: XcircuiteEngineExecutionMetadata(
+            metadata: PDKExecutionMetadata(
                 engineID: "PDKCorpusValidation",
                 implementationID: "LocalPDKCorpusValidator",
                 implementationVersion: "1",

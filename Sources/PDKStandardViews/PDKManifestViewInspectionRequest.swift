@@ -1,13 +1,13 @@
 import Foundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
-public struct PDKManifestViewInspectionRequest: XcircuiteEngineRequest {
+public struct PDKManifestViewInspectionRequest: Sendable {
     public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var runID: String
-    public var inputs: [XcircuiteFileReference]
+    public var inputs: [ArtifactLocator]
     public var pdk: PDKReference
     public var assetID: String
     public var format: PDKStandardViewFormat
@@ -16,7 +16,7 @@ public struct PDKManifestViewInspectionRequest: XcircuiteEngineRequest {
 
     public init(
         runID: String,
-        inputs: [XcircuiteFileReference],
+        inputs: [ArtifactLocator],
         pdk: PDKReference,
         assetID: String,
         format: PDKStandardViewFormat,

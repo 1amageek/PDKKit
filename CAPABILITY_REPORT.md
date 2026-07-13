@@ -16,20 +16,20 @@
 | Rule-deck semantic validation | `PDKRuleDeckInspecting`, `LocalPDKRuleDeckInspector`, `PDKRuleDeckInspectionPayload`, `ruleDeckResults` and `pdkkit inspect-rule-deck` | Available for declared text rule decks; grammar limitations and missing layer evidence block |
 | Retained corpus evaluation | `PDKCorpusSuite`, `LocalPDKCorpusValidator`, standard-view and rule-deck case results, valid/blocked/failed fixture cases | Available for declared local cases; schema v2 accepts legacy v1 suites |
 | Standard-view detailed inspection | `PDKStandardViews`, `swift-mask-data` readers, SPICE/Liberty text adapters, canonical IR and manifest binding | Available for supported mask structure, numeric SPICE model parameters, Liberty timing tables and units |
-| External backend envelope parity | `PDKExternalStandardViewResultProviding`, `PDKExternalRuleDeckResultProviding`, external inspectors and contract tests | Available for shared typed result envelopes, digest-bearing source-reference binding and canonical artifact identity binding; provider process execution is outside PDKKit |
+| External backend result parity | `PDKExternalStandardViewResultProviding`, `PDKExternalRuleDeckResultProviding`, external inspectors and contract tests | Available for typed domain results, digest-bearing source-reference binding and canonical artifact identity binding; provider process execution is outside PDKKit |
 | Immutable oracle comparison | `PDKOracleExpectation`, `LocalPDKOracleComparator`, mismatch payload | Available for declared canonical facts |
 | Local qualification gate | `PDKQualificationGate`, digest-bound corpus + oracle evidence | Available for `oracleCorrelated` handoff |
 | Qualification artifact evaluator | `PDKQualificationRequest`, `LocalPDKQualificationEvaluator` | Available for immutable payload/envelope artifacts |
 | Deterministic JSON API surface | `pdkkit inspect/discover/validate/corpus/inspect-view/inspect-rule-deck/oracle/qualify` | Available |
-| Xcircuite stage execution | six PDK adapters, immutable envelopes, agent-facing runtime specs and approval/resume flow | Available for the PDK integration slice; release adapter contract is available across the workspace |
+| Flow stage execution | Direct DesignFlowKernel protocol integration, immutable typed results, agent-facing runtime specs and approval/resume flow | Available for the PDK integration slice; concrete `.xcircuite` persistence is owned by Xcircuite |
 
 ## Explicit limitations
 
 - This package does not run DRC, LVS, PEX or simulation.
-- External backend adapters validate a shared result envelope but do not start
+- External backend inspectors validate a typed result contract but do not start
   external tools, discover binaries, persist process logs or establish
   process-scoped qualification. Those responsibilities remain with
-  Xcircuite/SignoffToolSupport and ToolQualification.
+  DesignFlowKernel/Xcircuite, SignoffToolSupport and ToolQualification.
 - This package does not replace format-specific LEF, GDSII/OASIS, SPICE or
   Liberty parsers. A raw file without a typed mapping is insufficient evidence
   and blocks validation.

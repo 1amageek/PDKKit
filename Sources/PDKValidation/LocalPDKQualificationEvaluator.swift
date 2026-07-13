@@ -2,7 +2,6 @@ import Foundation
 import CircuiteFoundation
 import PDKCore
 import PDKStandardViews
-import XcircuitePackage
 
 public struct LocalPDKQualificationEvaluator: PDKQualificationExecuting {
     private let clock: any PDKValidationExecutionClock
@@ -18,21 +17,19 @@ public struct LocalPDKQualificationEvaluator: PDKQualificationExecuting {
 
     public func execute(
         _ request: PDKQualificationRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKQualificationAssessment> {
+    ) async throws -> PDKQualificationExecutionResult {
         let startedAt = clock.now()
         do {
-            let corpus = try loadPayload(
-                PDKCorpusValidationPayload.self,
+            let corpus = try loadCorpusPayload(
                 from: request.corpusReport,
                 baseDirectoryPath: request.projectRootPath
             )
-            let oracle = try loadPayload(
-                PDKOracleComparisonPayload.self,
+            let oracle = try loadOraclePayload(
                 from: request.oracleReport,
                 baseDirectoryPath: request.projectRootPath
             )
             let assessment = gate.evaluate(pdk: request.pdk, corpus: corpus, oracle: oracle)
-            let status: XcircuiteEngineExecutionStatus = assessment.isValid ? .completed : .blocked
+            let status: PDKExecutionStatus = assessment.isValid ? .completed : .blocked
             return makeEnvelope(
                 request: request,
                 startedAt: startedAt,
@@ -67,15 +64,64 @@ public struct LocalPDKQualificationEvaluator: PDKQualificationExecuting {
         }
     }
 
-    private func loadPayload<Payload: Codable & Hashable & Sendable>(
-        _ type: Payload.Type,
-        from reference: XcircuiteFileReference,
+    private func loadCorpusPayload(
+        from reference: ArtifactReference,
         baseDirectoryPath: String?
-    ) throws -> Payload {
+    ) throws -> PDKCorpusValidationPayload {
+        let (data, url) = try loadArtifactData(
+            from: reference,
+            baseDirectoryPath: baseDirectoryPath
+        )
+        do {
+            return try JSONDecoder().decode(PDKCorpusValidationPayload.self, from: data)
+        } catch let payloadError {
+            do {
+                return try JSONDecoder().decode(
+                    PDKCorpusValidationExecutionResult.self,
+                    from: data
+                ).payload
+            } catch {
+                throw PDKQualificationArtifactError.decode(
+                    path: url.path,
+                    reason: "Payload decode failed: \(payloadError.localizedDescription); execution result decode failed: \(error.localizedDescription)"
+                )
+            }
+        }
+    }
+
+    private func loadOraclePayload(
+        from reference: ArtifactReference,
+        baseDirectoryPath: String?
+    ) throws -> PDKOracleComparisonPayload {
+        let (data, url) = try loadArtifactData(
+            from: reference,
+            baseDirectoryPath: baseDirectoryPath
+        )
+        do {
+            return try JSONDecoder().decode(PDKOracleComparisonPayload.self, from: data)
+        } catch let payloadError {
+            do {
+                return try JSONDecoder().decode(
+                    PDKOracleComparisonResult.self,
+                    from: data
+                ).payload
+            } catch {
+                throw PDKQualificationArtifactError.decode(
+                    path: url.path,
+                    reason: "Payload decode failed: \(payloadError.localizedDescription); execution result decode failed: \(error.localizedDescription)"
+                )
+            }
+        }
+    }
+
+    private func loadArtifactData(
+        from reference: ArtifactReference,
+        baseDirectoryPath: String?
+    ) throws -> (data: Data, url: URL) {
         let url: URL
         do {
             url = try PDKArtifactURLResolver().resolve(
-                reference,
+                reference.locator,
                 baseDirectoryPath: baseDirectoryPath
             )
         } catch {
@@ -124,37 +170,22 @@ public struct LocalPDKQualificationEvaluator: PDKQualificationExecuting {
                 reason: "byte count does not match the reference"
             )
         }
-        do {
-            return try JSONDecoder().decode(Payload.self, from: data)
-        } catch {
-            do {
-                let envelope = try JSONDecoder().decode(
-                    XcircuiteEngineResultEnvelope<Payload>.self,
-                    from: data
-                )
-                return envelope.payload
-            } catch {
-                throw PDKQualificationArtifactError.decode(
-                    path: url.path,
-                    reason: error.localizedDescription
-                )
-            }
-        }
+        return (data, url)
     }
 
     private func makeEnvelope(
         request: PDKQualificationRequest,
         startedAt: Date,
-        status: XcircuiteEngineExecutionStatus,
+        status: PDKExecutionStatus,
         assessment: PDKQualificationAssessment
-    ) -> XcircuiteEngineResultEnvelope<PDKQualificationAssessment> {
-        XcircuiteEngineResultEnvelope(
+    ) -> PDKQualificationExecutionResult {
+        PDKQualificationExecutionResult(
             schemaVersion: PDKQualificationRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: assessment.findings.map(PDKValidationDiagnosticMapper.map),
-            artifacts: [request.pdk.manifest, request.corpusReport, request.oracleReport],
-            metadata: XcircuiteEngineExecutionMetadata(
+            artifacts: [request.pdk.manifest, request.corpusReport, request.oracleReport].map(\.locator),
+            metadata: PDKExecutionMetadata(
                 engineID: "PDKQualification",
                 implementationID: "LocalPDKQualificationEvaluator",
                 implementationVersion: "1",

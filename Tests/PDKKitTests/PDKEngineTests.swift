@@ -1,7 +1,6 @@
 import Foundation
 import CircuiteFoundation
 import Testing
-import XcircuitePackage
 @testable import PDKCore
 @testable import PDKDiscovery
 @testable import PDKStandardViews
@@ -15,7 +14,7 @@ struct PDKEngineTests {
         let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKValidationRequest(
             runID: "validation-fixture",
-            inputs: [reference.manifest],
+            inputs: [reference.manifest.locator],
             pdk: reference,
             requiredAssetRoles: [.layerMap, .model, .cell, .ruleDeck]
         )
@@ -42,7 +41,7 @@ struct PDKEngineTests {
         let envelope = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-inspection",
-                inputs: [reference.manifest],
+                inputs: [reference.manifest.locator],
                 pdk: reference,
                 assetID: "rules"
             )
@@ -52,20 +51,20 @@ struct PDKEngineTests {
         #expect(envelope.payload.statementCount == 3)
         #expect(envelope.payload.observedLayerIDs == ["active", "metal1"])
         #expect(envelope.payload.layerEvidence.allSatisfy { !$0.matchedTokens.isEmpty })
-        #expect(envelope.artifacts.map(\.artifactID) == ["rules"])
+        #expect(envelope.artifacts.map(\.path).contains { $0.hasSuffix("/rules.deck") })
     }
 
     @Test("relative manifest and input references use the explicit project root")
     func validatesRelativeReferences() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let absoluteReference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
-        let relativeManifest = XcircuiteFileReference(
+        let relativeManifest = try makeArtifactReference(
             artifactID: absoluteReference.manifest.artifactID,
             path: "pdk.json",
             kind: absoluteReference.manifest.kind,
             format: absoluteReference.manifest.format,
             sha256: absoluteReference.manifest.sha256,
-            byteCount: absoluteReference.manifest.byteCount
+            byteCount: Int64(absoluteReference.manifest.byteCount)
         )
         let relativeReference = PDKReference(
             manifest: relativeManifest,
@@ -76,7 +75,7 @@ struct PDKEngineTests {
         let envelope = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-relative-references",
-                inputs: [relativeManifest],
+                inputs: [relativeManifest.locator],
                 pdk: relativeReference,
                 requiredAssetRoles: [.layerMap, .model],
                 projectRootPath: fixtureURL().path
@@ -86,29 +85,16 @@ struct PDKEngineTests {
         #expect(envelope.payload.isValid)
         #expect(envelope.payload.resolvedAssets.count == 7)
 
-        let traversalManifest = XcircuiteFileReference(
-            artifactID: relativeManifest.artifactID,
-            path: "../pdk.json",
-            kind: relativeManifest.kind,
-            format: relativeManifest.format,
-            sha256: relativeManifest.sha256,
-            byteCount: relativeManifest.byteCount
-        )
-        let blocked = try await LocalPDKValidator().execute(
-            PDKValidationRequest(
-                runID: "validation-relative-traversal",
-                inputs: [traversalManifest],
-                pdk: PDKReference(
-                    manifest: traversalManifest,
-                    processID: absoluteReference.processID,
-                    version: absoluteReference.version,
-                    digest: absoluteReference.digest
-                ),
-                projectRootPath: fixtureURL().path
+        #expect(throws: ArtifactLocationError.self) {
+            _ = try makeArtifactReference(
+                artifactID: relativeManifest.artifactID,
+                path: "../pdk.json",
+                kind: relativeManifest.kind,
+                format: relativeManifest.format,
+                sha256: relativeManifest.sha256,
+                byteCount: Int64(relativeManifest.byteCount)
             )
-        )
-        #expect(blocked.status == .blocked)
-        #expect(blocked.payload.findings.contains { $0.code == "pdk.validation.manifest-path-invalid" })
+        }
     }
 
     @Test("missing required assets block validation")
@@ -118,7 +104,7 @@ struct PDKEngineTests {
         let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKValidationRequest(
             runID: "validation-missing-asset",
-            inputs: [reference.manifest],
+            inputs: [reference.manifest.locator],
             pdk: reference
         )
         let missingURL = isolatedFixture.appending(path: "models.spice")
@@ -132,7 +118,7 @@ struct PDKEngineTests {
         }
         let envelope = try await LocalPDKValidator().execute(request)
         #expect(envelope.status == .blocked)
-        #expect(envelope.diagnostics.contains { $0.code == "pdk.validation.required-asset-unavailable" })
+        #expect(envelope.diagnostics.contains { $0.code.rawValue == "pdk.validation.required-asset-unavailable" })
         #expect(envelope.payload.standardViewResults.contains {
             $0.assetID == "spice-view" && $0.status == .blocked
         })
@@ -156,7 +142,7 @@ struct PDKEngineTests {
         let envelope = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-semantic-block",
-                inputs: [reference.manifest],
+                inputs: [reference.manifest.locator],
                 pdk: reference,
                 requiredAssetRoles: [.model]
             )
@@ -188,7 +174,7 @@ struct PDKEngineTests {
         let envelope = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-rule-deck-block",
-                inputs: [reference.manifest],
+                inputs: [reference.manifest.locator],
                 pdk: reference,
                 requiredAssetRoles: [.ruleDeck]
             )
@@ -220,7 +206,7 @@ struct PDKEngineTests {
         let envelope = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-comment-block",
-                inputs: [reference.manifest],
+                inputs: [reference.manifest.locator],
                 pdk: reference,
                 assetID: "rules"
             )
@@ -250,7 +236,7 @@ struct PDKEngineTests {
         let envelope = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-comment-failure",
-                inputs: [reference.manifest],
+                inputs: [reference.manifest.locator],
                 pdk: reference,
                 assetID: "rules"
             )
@@ -415,7 +401,7 @@ struct PDKEngineTests {
         let oracleURL = directory.appending(path: "oracle.json")
         try corpusData.write(to: corpusURL, options: [.atomic])
         try oracleData.write(to: oracleURL, options: [.atomic])
-        let corpusReference = XcircuiteFileReference(
+        let corpusReference = try makeArtifactReference(
             artifactID: "corpus",
             path: "corpus.json",
             kind: .report,
@@ -423,7 +409,7 @@ struct PDKEngineTests {
             sha256: try SHA256ContentDigester().digest(data: corpusData, using: .sha256).hexadecimalValue,
             byteCount: Int64(corpusData.count)
         )
-        let oracleReference = XcircuiteFileReference(
+        let oracleReference = try makeArtifactReference(
             artifactID: "oracle",
             path: "oracle.json",
             kind: .report,
@@ -452,7 +438,7 @@ struct PDKEngineTests {
         let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKValidationRequest(
             runID: "round-trip",
-            inputs: [reference.manifest],
+            inputs: [reference.manifest.locator],
             pdk: reference,
             requiredAssetRoles: [.model],
             validateCrossViews: false

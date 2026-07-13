@@ -1,13 +1,13 @@
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 import PDKCore
 
-public struct PDKValidationRequest: XcircuiteEngineRequest {
+public struct PDKValidationRequest: Sendable, Hashable, Codable {
     public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var runID: String
-    public var inputs: [XcircuiteFileReference]
+    public var inputs: [ArtifactLocator]
 
     public var pdk: PDKReference
     public var requiredAssetRoles: [PDKAssetRole]
@@ -18,7 +18,7 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
 
     public init(
         runID: String,
-        inputs: [XcircuiteFileReference],
+        inputs: [ArtifactLocator],
         pdk: PDKReference,
         requiredAssetRoles: [PDKAssetRole] = [],
         validateCrossViews: Bool = true,
@@ -41,7 +41,7 @@ public struct PDKValidationRequest: XcircuiteEngineRequest {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? Self.currentSchemaVersion
         runID = try container.decode(String.self, forKey: .runID)
-        inputs = try container.decodeIfPresent([XcircuiteFileReference].self, forKey: .inputs) ?? []
+        inputs = try container.decodeIfPresent([ArtifactLocator].self, forKey: .inputs) ?? []
         pdk = try container.decode(PDKReference.self, forKey: .pdk)
         requiredAssetRoles = try container.decodeIfPresent([PDKAssetRole].self, forKey: .requiredAssetRoles) ?? []
         validateCrossViews = try container.decodeIfPresent(Bool.self, forKey: .validateCrossViews) ?? true

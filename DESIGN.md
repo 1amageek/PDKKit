@@ -28,13 +28,13 @@ Swift/Foundation
        ↓
 CircuiteFoundation artifact intent, identity and integrity
        ↓
-PDKKit protocols and result schemas
+PDKKit protocols and typed result schemas
                  ↓
-PDKStandardViews parser-backed adapters
+PDKStandardViews parser-backed implementations
                  ↓
-Xcircuite stage adapters
+DesignFlowKernel stage execution (injected protocol)
                  ↓
-DesignFlowKernel and .xcircuite artifacts
+Xcircuite concrete .xcircuite persistence
 ```
 
 Backends may depend on lower-level data packages. This package must never import `Xcircuite` or `circuit-studio`.
@@ -59,9 +59,8 @@ treated as foundry qualification.
 `artifactLocator()` projection uses `CircuiteFoundation.ArtifactLocator`.
 `LocalPDKAssetResolver` materializes that intent through
 `LocalArtifactReferencer`, producing a streaming SHA-256 and an immutable
-`ArtifactReference` before it creates the Xcircuite execution-envelope
-reference required by `XcircuiteEngineRequest`; it is not the integrity
-authority.
+`ArtifactReference`. No compatibility envelope or adapter is created at this
+boundary; PDK requests and results use Foundation artifact types directly.
 
 The same boundary applies to standard-view, rule-deck, oracle and
 qualification artifact reads. Local inspectors verify declared artifacts

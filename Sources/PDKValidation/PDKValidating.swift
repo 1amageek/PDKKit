@@ -1,9 +1,9 @@
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 import PDKCore
 
 public protocol PDKValidating: Sendable {
     func execute(
         _ request: PDKValidationRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKValidationPayload>
+    ) async throws -> PDKValidationExecutionResult
 }

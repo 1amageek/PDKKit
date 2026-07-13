@@ -5,7 +5,7 @@ import LEF
 import LayoutIR
 import OASIS
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
     private let clock: any PDKStandardViewExecutionClock
@@ -30,7 +30,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
 
     public func execute(
         _ request: PDKStandardViewInspectionRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKStandardViewInspectionPayload> {
+    ) async throws -> PDKStandardViewInspectionResult {
         let startedAt = clock.now()
         guard request.inputs.count == 1, let input = request.inputs.first else {
             let finding = PDKValidationFinding(
@@ -107,7 +107,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             }
         } catch let error as PDKFoundationArtifactError {
             let finding: PDKValidationFinding
-            let status: XcircuiteEngineExecutionStatus
+            let status: PDKExecutionStatus
             switch error {
             case .missingDigest:
                 finding = PDKValidationFinding(
@@ -187,7 +187,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             inspection.sourceArtifact = sourceArtifact
             findings.append(contentsOf: semanticFindings(inspection: inspection, request: request))
             let hasBlocker = findings.contains { $0.severity == .blocker }
-            let status: XcircuiteEngineExecutionStatus = hasBlocker ? .blocked : .completed
+            let status: PDKExecutionStatus = hasBlocker ? .blocked : .completed
             return makeEnvelope(
                 request: request,
                 startedAt: startedAt,
@@ -259,7 +259,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
 
     private func parse(
         data: Data,
-        reference: XcircuiteFileReference,
+        reference: ArtifactLocator,
         format: PDKStandardViewFormat
     ) throws -> PDKStandardViewIR {
         switch format {
@@ -293,7 +293,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
 
     private func parseSPICE(
         data: Data,
-        reference: XcircuiteFileReference
+        reference: ArtifactLocator
     ) throws -> PDKStandardViewIR {
         guard let text = String(data: data, encoding: .utf8) else {
             throw PDKStandardViewTextParseError.invalidEncoding
@@ -464,7 +464,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
 
     private func parseLiberty(
         data: Data,
-        reference: XcircuiteFileReference
+        reference: ArtifactLocator
     ) throws -> PDKStandardViewIR {
         guard let text = String(data: data, encoding: .utf8) else {
             throw PDKStandardViewTextParseError.invalidEncoding
@@ -1071,7 +1071,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
 
     private func makeMaskIR(
         library: IRLibrary,
-        reference: XcircuiteFileReference,
+        reference: ArtifactLocator,
         format: PDKStandardViewFormat
     ) -> PDKStandardViewIR {
         let elements = library.cells.flatMap(\.elements)
@@ -1235,18 +1235,18 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
     private func makeEnvelope(
         request: PDKStandardViewInspectionRequest,
         startedAt: Date,
-        status: XcircuiteEngineExecutionStatus,
+        status: PDKExecutionStatus,
         findings: [PDKValidationFinding],
-        artifacts: [XcircuiteFileReference] = [],
+        artifacts: [ArtifactLocator] = [],
         inspection: PDKStandardViewIR? = nil
-    ) -> XcircuiteEngineResultEnvelope<PDKStandardViewInspectionPayload> {
-        XcircuiteEngineResultEnvelope(
+    ) -> PDKStandardViewInspectionResult {
+        PDKStandardViewInspectionResult(
             schemaVersion: PDKStandardViewInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: findings.map(PDKStandardViewDiagnosticMapper.map),
             artifacts: artifacts,
-            metadata: XcircuiteEngineExecutionMetadata(
+            metadata: PDKExecutionMetadata(
                 engineID: "PDKStandardViewInspection",
                 implementationID: "LocalPDKStandardViewInspector",
                 implementationVersion: "2",

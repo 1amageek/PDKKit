@@ -1,6 +1,7 @@
 import Foundation
+import PDKCore
 import PDKStandardViews
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct PDKKitStandardViewOutput: Sendable, Hashable, Codable {
     public var command: String
@@ -8,8 +9,8 @@ public struct PDKKitStandardViewOutput: Sendable, Hashable, Codable {
     public var assetID: String
     public var format: PDKStandardViewFormat
     public var runID: String
-    public var status: XcircuiteEngineExecutionStatus
-    public var diagnostics: [XcircuiteEngineDiagnostic]
+    public var status: PDKExecutionStatus
+    public var diagnostics: [DesignDiagnostic]
     public var payload: PDKManifestViewInspectionPayload
 
     public init(
@@ -18,8 +19,8 @@ public struct PDKKitStandardViewOutput: Sendable, Hashable, Codable {
         assetID: String,
         format: PDKStandardViewFormat,
         runID: String,
-        status: XcircuiteEngineExecutionStatus,
-        diagnostics: [XcircuiteEngineDiagnostic],
+        status: PDKExecutionStatus,
+        diagnostics: [DesignDiagnostic],
         payload: PDKManifestViewInspectionPayload
     ) {
         self.command = command

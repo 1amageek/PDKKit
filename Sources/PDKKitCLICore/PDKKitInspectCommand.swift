@@ -43,7 +43,7 @@ struct PDKKitInspectCommand: Sendable {
         do {
             let location = try ArtifactLocation(fileURL: URL(filePath: options.manifestPath).standardizedFileURL)
             let artifact = try LocalArtifactReferencer().reference(
-                ArtifactLocator(location: location, kind: .technology, format: .json)
+                ArtifactLocator(location: location, role: .input, kind: .technology, format: .json)
             )
             digest = artifact.digest.hexadecimalValue
         } catch {

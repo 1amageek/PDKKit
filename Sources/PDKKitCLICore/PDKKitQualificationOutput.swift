@@ -1,6 +1,7 @@
 import Foundation
+import PDKCore
 import PDKValidation
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct PDKKitQualificationOutput: Sendable, Hashable, Codable {
     public var command: String
@@ -8,8 +9,8 @@ public struct PDKKitQualificationOutput: Sendable, Hashable, Codable {
     public var corpusPath: String
     public var oraclePath: String
     public var runID: String
-    public var status: XcircuiteEngineExecutionStatus
-    public var diagnostics: [XcircuiteEngineDiagnostic]
+    public var status: PDKExecutionStatus
+    public var diagnostics: [DesignDiagnostic]
     public var assessment: PDKQualificationAssessment
 
     public init(
@@ -18,8 +19,8 @@ public struct PDKKitQualificationOutput: Sendable, Hashable, Codable {
         corpusPath: String,
         oraclePath: String,
         runID: String,
-        status: XcircuiteEngineExecutionStatus,
-        diagnostics: [XcircuiteEngineDiagnostic],
+        status: PDKExecutionStatus,
+        diagnostics: [DesignDiagnostic],
         assessment: PDKQualificationAssessment
     ) {
         self.command = command

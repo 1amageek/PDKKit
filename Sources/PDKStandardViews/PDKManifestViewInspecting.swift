@@ -1,8 +1,8 @@
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 
 public protocol PDKManifestViewInspecting: Sendable {
     func execute(
         _ request: PDKManifestViewInspectionRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKManifestViewInspectionPayload>
+    ) async throws -> PDKManifestViewInspectionResult
 }

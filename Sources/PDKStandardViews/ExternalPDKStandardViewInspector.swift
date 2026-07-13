@@ -1,7 +1,7 @@
 import Foundation
 import CircuiteFoundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
     private let provider: any PDKExternalStandardViewResultProviding
@@ -20,9 +20,9 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
 
     public func execute(
         _ request: PDKStandardViewInspectionRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKStandardViewInspectionPayload> {
+    ) async throws -> PDKStandardViewInspectionResult {
         let startedAt = clock.now()
-        var receivedArtifacts: [XcircuiteFileReference] = []
+        var receivedArtifacts: [ArtifactLocator] = []
         let data: Data
         do {
             data = try await provider.resultData(for: request)
@@ -41,9 +41,8 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         }
 
         do {
-            let envelope = try decoder.decode(
+            let envelope = try decoder.decodeStandardView(
                 data,
-                payload: PDKStandardViewInspectionPayload.self,
                 expectedSchemaVersion: PDKStandardViewInspectionRequest.currentSchemaVersion,
                 expectedRunID: request.runID
             )
@@ -54,7 +53,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
             if receivedArtifacts.isEmpty {
                 receivedArtifacts = artifacts(from: data)
             }
-            let status: XcircuiteEngineExecutionStatus = isTrustBoundaryError(error) ? .blocked : .failed
+            let status: PDKExecutionStatus = isTrustBoundaryError(error) ? .blocked : .failed
             return failureEnvelope(
                 request: request,
                 startedAt: startedAt,
@@ -88,7 +87,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
 
     private func validate(
         payload: PDKStandardViewInspectionPayload,
-        status: XcircuiteEngineExecutionStatus,
+        status: PDKExecutionStatus,
         request: PDKStandardViewInspectionRequest
     ) throws {
         guard payload.assetID == request.assetID else {
@@ -118,8 +117,13 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
             }
             let expectedArtifact: ArtifactReference
             do {
+                let sourceURL = try PDKArtifactURLResolver().resolve(
+                    inspection.source,
+                    baseDirectoryPath: request.projectRootPath
+                )
                 expectedArtifact = try PDKFoundationArtifactBridge.artifactReference(
-                    for: inspection.source
+                    for: inspection.source,
+                    resolvedURL: sourceURL
                 )
             } catch {
                 throw PDKExternalInspectionError.inputReferenceUnavailable(error.localizedDescription)
@@ -154,14 +158,11 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         }
     }
 
-    private static func referenceDescription(_ reference: XcircuiteFileReference) -> String {
+    private static func referenceDescription(_ reference: ArtifactLocator) -> String {
         [
-            reference.artifactID ?? "<anonymous>",
             reference.path,
             reference.kind.rawValue,
             reference.format.rawValue,
-            reference.sha256 ?? "<missing-sha256>",
-            reference.byteCount.map(String.init) ?? "<missing-byte-count>",
         ].joined(separator: "|")
     }
 
@@ -193,17 +194,17 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
     private func failureEnvelope(
         request: PDKStandardViewInspectionRequest,
         startedAt: Date,
-        status: XcircuiteEngineExecutionStatus,
-        artifacts: [XcircuiteFileReference] = [],
+        status: PDKExecutionStatus,
+        artifacts: [ArtifactLocator] = [],
         finding: PDKValidationFinding
-    ) -> XcircuiteEngineResultEnvelope<PDKStandardViewInspectionPayload> {
-        XcircuiteEngineResultEnvelope(
+    ) -> PDKStandardViewInspectionResult {
+        PDKStandardViewInspectionResult(
             schemaVersion: PDKStandardViewInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: [PDKStandardViewDiagnosticMapper.map(finding)],
             artifacts: artifacts,
-            metadata: XcircuiteEngineExecutionMetadata(
+            metadata: PDKExecutionMetadata(
                 engineID: "PDKStandardViewInspection",
                 implementationID: "ExternalPDKStandardViewInspector",
                 implementationVersion: "1",
@@ -217,14 +218,14 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                 parserID: "external",
                 parserVersion: "unknown",
                 limitations: [
-                    "The external backend result was rejected at the shared envelope boundary.",
+                    "The external backend result was rejected at the typed result boundary.",
                     "External tool qualification and process scope are evaluated outside this adapter."
                 ]
             )
         )
     }
 
-    private func artifacts(from data: Data) -> [XcircuiteFileReference] {
+    private func artifacts(from data: Data) -> [ArtifactLocator] {
         do {
             return try JSONDecoder().decode(ArtifactContainer.self, from: data).artifacts
         } catch {
@@ -233,6 +234,6 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
     }
 
     private struct ArtifactContainer: Decodable {
-        var artifacts: [XcircuiteFileReference] = []
+        var artifacts: [ArtifactLocator] = []
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 import PDKCore
 import PDKValidation
-import XcircuitePackage
+import CircuiteFoundation
 
 struct PDKKitValidateCommand: Sendable {
     struct Options: Sendable, Equatable {
@@ -62,7 +62,7 @@ struct PDKKitValidateCommand: Sendable {
         }
         let request = PDKValidationRequest(
             runID: options.runID,
-            inputs: [reference.manifest],
+            inputs: [reference.manifest.locator],
             pdk: reference,
             requiredAssetRoles: options.requiredAssetRoles,
             validateCrossViews: options.validateCrossViews,

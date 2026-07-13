@@ -1,10 +1,9 @@
 import Foundation
 import CircuiteFoundation
-import XcircuitePackage
 
 public struct PDKStandardViewIR: Sendable, Hashable, Codable {
     public var format: PDKStandardViewFormat
-    public var source: XcircuiteFileReference
+    public var source: ArtifactLocator
     public var sourceArtifact: ArtifactReference?
     public var libraryName: String
     public var layerNames: [String]
@@ -30,7 +29,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
 
     public init(
         format: PDKStandardViewFormat,
-        source: XcircuiteFileReference,
+        source: ArtifactLocator,
         sourceArtifact: ArtifactReference? = nil,
         libraryName: String,
         layerNames: [String] = [],
@@ -89,7 +88,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.init(
             format: try container.decode(PDKStandardViewFormat.self, forKey: .format),
-            source: try container.decode(XcircuiteFileReference.self, forKey: .source),
+            source: try container.decode(ArtifactLocator.self, forKey: .source),
             sourceArtifact: try container.decodeIfPresent(ArtifactReference.self, forKey: .sourceArtifact),
             libraryName: try container.decode(String.self, forKey: .libraryName),
             layerNames: try container.decodeIfPresent([String].self, forKey: .layerNames) ?? [],

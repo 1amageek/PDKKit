@@ -59,7 +59,7 @@ struct PDKKitInspectViewCommand: Sendable {
         }
         let request = PDKManifestViewInspectionRequest(
             runID: options.runID,
-            inputs: [pdk.manifest],
+            inputs: [pdk.manifest.locator],
             pdk: pdk,
             assetID: options.assetID,
             format: options.format

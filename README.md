@@ -7,12 +7,12 @@ Canonical process-design-kit discovery, identity, asset integrity and validation
 The PDKKit-owned contract layer is complete and executable for deterministic manifest-driven discovery,
 validation, retained corpus evaluation and parser-backed standard-view
 inspection, detailed numeric semantics, immutable Foundation-backed artifact provenance, oracle comparison and a local qualification gate. The
-PDK stage slice is also executable through Xcircuite with immutable artifacts,
+PDK stage slice is also executable by a flow host with immutable artifacts,
 scope-bound tool evidence, human approval and resume coverage. The larger
 platform goal requires separate provider evidence and foundry approval; PDKKit
 represents unsupported vendor-specific constructs as explicit blocked results.
 External standard-view and rule-deck backends can now return the same typed
-result envelopes as the local inspectors. The adapters fail closed on envelope
+domain results as the local inspectors. External providers fail closed on result
 schema, run, asset, format, source-reference and PDK-digest mismatches; they do not execute or
 qualify an external process by themselves.
 The workspace now provides typed
@@ -27,20 +27,17 @@ independent evidence required to pass those gates.
 | `PDKCore` | PDK identity and immutable manifest reference |
 | `PDKDiscovery` | Deterministic local PDK discovery without qualification claims |
 | `PDKValidation` | Manifest, input, asset, digest, parser-backed cross-view, retained corpus and local qualification gate |
-| `PDKStandardViews` | Canonical standard-view and rule-deck inspection, local/external envelope adapters, manifest binding and immutable oracle comparison |
+| `PDKStandardViews` | Canonical standard-view and rule-deck inspection, local/external result providers, manifest binding and immutable oracle comparison |
 | `PDKKit` | Umbrella API and public contract version (2) |
 | `PDKKitCLICore` / `pdkkit` | Deterministic JSON inspection, discovery, validation, corpus, standard-view, rule-deck, oracle and qualification CLI |
 
 ## Contract
 
-Every executing product uses:
-
-- a `Codable`, `Hashable`, `Sendable` request conforming to `XcircuiteEngineRequest`;
-- `XcircuiteEngineResultEnvelope<Payload>` for status, diagnostics, artifacts and execution metadata;
-- protocol-first dependency injection;
-- immutable artifact identities from CircuiteFoundation, projected to
-  `XcircuiteFileReference` only where required by the current execution envelope;
-- explicit blocked, failed and cancelled states.
+Every executing product uses protocol-first dependency injection, typed request
+records, immutable artifact identities from CircuiteFoundation, and explicit
+completed, blocked, failed and cancelled states. Each domain result carries its
+own payload, diagnostics, artifact locators and execution metadata; there is no
+generic result envelope.
 
 The artifact boundary has two representations with different authority:
 
@@ -49,21 +46,19 @@ flowchart LR
   Intent["PDKAssetReference\nartifact intent"] --> Locator["CircuiteFoundation\nArtifactLocator"]
   Locator --> Referencer["LocalArtifactReferencer\nstreaming SHA-256"]
   Referencer --> Identity["ArtifactReference\nimmutable verified identity"]
-  Identity --> Envelope["XcircuiteFileReference\nexecution envelope"]
+  Identity --> Result["PDK domain result\nwith provenance"]
 ```
 
-`ArtifactReference` is the integrity source of truth inside PDKCore. The
-Xcircuite projection is retained for the current request/result envelope and
-is validated from the Foundation identity; it does not replace the canonical
-artifact contract. Standard-view IR, rule-deck inspection payloads and oracle
-comparison payloads retain the same canonical identity, so every PDKKit-owned
-artifact consumer observes one integrity boundary.
+`ArtifactReference` is the integrity source of truth inside PDKCore. Requests
+carry locators while completed domain results retain the same canonical
+identity and provenance, so every PDKKit-owned artifact consumer observes one
+integrity boundary.
 
 External providers conform to `PDKExternalStandardViewResultProviding` or
-`PDKExternalRuleDeckResultProviding` and return JSON-encoded
-`XcircuiteEngineResultEnvelope` payloads. `ExternalPDKStandardViewInspector`
-and `ExternalPDKRuleDeckInspector` validate the shared envelope before the
-result is consumed by manifest binding or downstream evidence. Source
+`PDKExternalRuleDeckResultProviding` and return JSON-encoded domain results.
+`ExternalPDKStandardViewInspector` and `ExternalPDKRuleDeckInspector` validate
+the corresponding typed result before it is consumed by manifest binding or
+downstream evidence. Source
 references must match the requested digest-bearing input artifacts. Provider
 process execution, tool discovery and process-scoped qualification remain
 owned by Xcircuite/SignoffToolSupport and ToolQualification.
@@ -72,16 +67,15 @@ owned by Xcircuite/SignoffToolSupport and ToolQualification.
 
 Xcircuite resolves a PDKReference before constructing downstream stage requests. Every physical or electrical stage records the same PDK digest.
 
-The library does not depend on the Xcircuite runtime. Xcircuite owns the adapter to `DesignFlowKernel.FlowStageExecutor`, artifact persistence, qualification gates, repair loops and human approval.
+The library does not depend on a flow runtime. A flow host owns stage execution, artifact persistence, qualification gates, repair loops and human approval.
 
-The Xcircuite package provides discovery, validation, retained-corpus,
-standard-view, oracle and qualification `FlowStageExecutor` adapters. The
-agent-facing `XcircuiteFlowStageExecutorSpec` can encode and construct all six
-PDK stages. Each adapter persists the complete engine envelope as an immutable
-run artifact and maps completed, blocked, failed and cancelled states to flow
-gates. Qualification evidence is accepted only when the ToolQualification
-scope matches the requested implementation, binary, algorithm, process and
-deck; the integration test also covers human approval followed by resume.
+The flow host can expose discovery, validation, retained-corpus, standard-view,
+oracle and qualification stages through its own executor implementation. Each
+stage persists the complete domain result as an immutable run artifact and maps
+completed, blocked, failed and cancelled states to flow gates. Qualification
+evidence is accepted only when the ToolQualification scope matches the
+requested implementation, binary, algorithm, process and deck; integration
+tests also cover human approval followed by resume.
 
 Relative artifact references are resolved against an explicit project root and
 cannot escape it. Adapters pass the project root into PDKKit, so a persisted
@@ -124,7 +118,7 @@ needs to isolate a contract layer during diagnosis.
 standalone protocol-first form of that check. `LocalPDKRuleDeckInspector` and
 `pdkkit inspect-rule-deck` expose the same immutable reference, mapped-layer
 evidence and structured findings without requiring a full manifest validation
-run. The adapter intentionally reports grammar limitations instead of claiming
+run. The inspector intentionally reports grammar limitations instead of claiming
 complete vendor-specific DRC rule semantics.
 
 The public package and CLI contract version is 2. The rule-deck stage is

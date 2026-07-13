@@ -1,6 +1,6 @@
 import Foundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public enum PDKStandardViewFormat: String, Sendable, Hashable, Codable, CaseIterable {
     case lef
@@ -9,7 +9,7 @@ public enum PDKStandardViewFormat: String, Sendable, Hashable, Codable, CaseIter
     case spice
     case liberty
 
-    public var fileFormat: XcircuiteFileFormat {
+    public var fileFormat: ArtifactFormat {
         switch self {
         case .lef: .lef
         case .gdsii: .gdsii

@@ -1,9 +1,9 @@
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 import PDKCore
 
 public protocol PDKDiscovering: Sendable {
     func execute(
         _ request: PDKDiscoveryRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKDiscoveryPayload>
+    ) async throws -> PDKDiscoveryResult
 }

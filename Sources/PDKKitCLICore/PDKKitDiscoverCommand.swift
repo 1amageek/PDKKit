@@ -1,6 +1,6 @@
 import Foundation
 import PDKDiscovery
-import XcircuitePackage
+import CircuiteFoundation
 
 struct PDKKitDiscoverCommand: Sendable {
     struct Options: Sendable, Equatable {

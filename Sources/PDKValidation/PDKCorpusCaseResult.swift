@@ -1,6 +1,6 @@
 import Foundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
     public var caseID: String
@@ -13,7 +13,7 @@ public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
     public var missingExpectedFindingCodes: [String]
     public var standardViewResults: [PDKCorpusStandardViewResult]
     public var ruleDeckResults: [PDKCorpusRuleDeckResult]
-    public var manifestReference: XcircuiteFileReference?
+    public var manifestReference: ArtifactReference?
 
     public init(
         caseID: String,
@@ -26,7 +26,7 @@ public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
         missingExpectedFindingCodes: [String],
         standardViewResults: [PDKCorpusStandardViewResult] = [],
         ruleDeckResults: [PDKCorpusRuleDeckResult] = [],
-        manifestReference: XcircuiteFileReference? = nil
+        manifestReference: ArtifactReference? = nil
     ) {
         self.caseID = caseID
         self.manifestPath = manifestPath
@@ -53,7 +53,7 @@ public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
         missingExpectedFindingCodes = try container.decodeIfPresent([String].self, forKey: .missingExpectedFindingCodes) ?? []
         standardViewResults = try container.decodeIfPresent([PDKCorpusStandardViewResult].self, forKey: .standardViewResults) ?? []
         ruleDeckResults = try container.decodeIfPresent([PDKCorpusRuleDeckResult].self, forKey: .ruleDeckResults) ?? []
-        manifestReference = try container.decodeIfPresent(XcircuiteFileReference.self, forKey: .manifestReference)
+        manifestReference = try container.decodeIfPresent(ArtifactReference.self, forKey: .manifestReference)
     }
 
     private enum CodingKeys: String, CodingKey {

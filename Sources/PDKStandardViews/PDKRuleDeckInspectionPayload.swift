@@ -1,13 +1,13 @@
 import Foundation
 import CircuiteFoundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct PDKRuleDeckInspectionPayload: Sendable, Hashable, Codable {
     public var isValid: Bool
     public var assetID: String
     public var pdkDigest: String
-    public var reference: XcircuiteFileReference?
+    public var reference: ArtifactLocator?
     public var sourceArtifact: ArtifactReference?
     public var statementCount: Int
     public var expectedLayerIDs: [String]
@@ -20,7 +20,7 @@ public struct PDKRuleDeckInspectionPayload: Sendable, Hashable, Codable {
         isValid: Bool,
         assetID: String,
         pdkDigest: String,
-        reference: XcircuiteFileReference? = nil,
+        reference: ArtifactLocator? = nil,
         sourceArtifact: ArtifactReference? = nil,
         statementCount: Int = 0,
         expectedLayerIDs: [String] = [],

@@ -10,11 +10,11 @@ passing manifest test is not physical design qualification.
 flowchart LR
   M0[Baseline and contracts] --> M1[Manifest and immutable references]
   M1 --> M2[Semantic coverage validation]
-  M2 --> M2b[Rule-deck adapter and schema evolution]
+  M2 --> M2b[Rule-deck protocol and schema evolution]
   M2b --> M3[Retained PDK corpus]
   M3 --> M4a[M4a LEF/GDSII/OASIS]
   M4a --> M4b[M4b SPICE/Liberty]
-  M4b --> M4c[M4c external envelope parity]
+  M4b --> M4c[M4c external typed-result parity]
   M4c --> M5[Immutable oracle correlation]
   M5 --> M6[Local qualification gate]
   M6 --> M6b[Process-scoped qualification]
@@ -34,11 +34,11 @@ flowchart LR
 | M4 | Standard-view semantic adapters across the declared PDK views | Complete for the PDKKit-owned canonical semantics and fail-closed validation integration | Parser-backed canonical IR, typed blockers and retained regression evidence |
 | M4a | Parser-backed LEF, GDSII and OASIS canonical inspection plus manifest binding | Complete for the PDKKit-owned canonical mask contract | parser tests, malformed-input findings, manifest binding and CLI evidence |
 | M4b | SPICE and Liberty detailed numeric inspection and manifest binding | Complete for the PDKKit-owned numeric contract | Unsupported expressions and malformed dimensions are typed blocked results |
-| M4c | Native/local and external backend result-envelope parity with fail-closed trust-boundary validation | Contract complete; provider process execution is intentionally outside PDKKit | External adapter contract tests, schema/run/asset/format/source-reference/digest and canonical artifact mismatch blockers |
+| M4c | Native/local and external backend typed-result parity with fail-closed trust-boundary validation | Contract complete; provider process execution is intentionally outside PDKKit | External result contract tests, schema/run/asset/format/source-reference/digest and canonical artifact mismatch blockers |
 | M5 | Immutable reference-oracle comparison and mismatch classification | Complete for local detailed oracle contract | manifest-bound expectation, numeric field mismatch blocker, CLI and regression fixture |
 | M6 | Local qualification gate from corpus + oracle evidence | Complete for `oracleCorrelated` handoff | digest-bound corpus/oracle reports and explicit non-qualification limitation |
 | M6b | Process-scoped ToolQualification evidence and trust-gate promotion | PDKKit scope export and fail-closed handoff complete | PDKKit emits no false qualification; external evidence is consumed by the owning package |
-| M7 | Xcircuite runtime execution, immutable stage artifacts, human review and resume | PDK adapter/runtime slice complete | clean headless PDK integration build, scope mismatch block and resume test |
+| M7 | DesignFlowKernel runtime execution, immutable stage artifacts, human review and resume | Direct protocol integration complete; persistence owned by Xcircuite | clean headless PDK integration build, scope mismatch block and resume test |
 | M8 | Release-profile eligibility and approval record | PDKKit handoff contract complete and fail-closed | PDKKit does not fabricate approval; owning release package consumes the typed artifacts |
 
 ## Current implementation focus: M4b coverage/M6b/M8 evidence handoff
@@ -75,12 +75,12 @@ units. This closes the supported numeric subset; it does not imply complete
 coverage of all vendor extensions.
 
 M4c adds `ExternalPDKStandardViewInspector` and
-`ExternalPDKRuleDeckInspector`. Both consume the same typed
-`XcircuiteEngineResultEnvelope` used by local implementations and reject
+`ExternalPDKRuleDeckInspector`. Both consume the same typed domain result
+schema used by local implementations and reject
 schema, run, asset, format, source-reference or PDK-digest mismatches as
 structured blockers.
 Malformed JSON, provider failures and invalid completed payloads remain
-structured failures. These adapters define the integration boundary only;
+structured failures. These inspectors define the integration boundary only;
 they do not claim that an external process has been discovered, executed,
 qualified or approved.
 
@@ -90,11 +90,11 @@ declared LEF, GDSII/OASIS, SPICE and Liberty mapping. The resulting
 validation pass cannot silently omit a mapped parser failure or semantic
 blocker.
 
-Rule-deck assets are handled as a separate text-semantic adapter. A mapped deck
+Rule-deck assets are handled as a separate text-semantic implementation. A mapped deck
 must be readable UTF-8 text with at least one statement and evidence for every
 mapped manufacturing layer; otherwise `ruleDeckResults` reports a typed blocker.
 
-M2b now exposes that adapter independently as `PDKRuleDeckInspecting`. The
+M2b now exposes that implementation independently as `PDKRuleDeckInspecting`. The
 result retains the immutable source reference, statement count and per-layer
 matched-token/statement-index evidence. `pdkkit inspect-rule-deck` and
 manifest validation consume the same implementation. Validation request schema
@@ -114,8 +114,8 @@ version 1 suites, which decode with no rule-deck checks.
 
 | Gate | Owner | Required artifact |
 |---|---|---|
-| Manifest/asset integrity | PDKKit | immutable references and validation envelope |
-| Format semantics | PDKKit adapter or approved external tool | canonical view report |
+| Manifest/asset integrity | PDKKit | immutable references and validation result |
+| Format semantics | PDKKit implementation or approved external tool | canonical view report |
 | Oracle correlation | PDKKit, then ToolQualification/Xcircuite | immutable comparison result and mismatch evidence |
 | Process qualification | ToolQualification | independent process-scoped qualification record and evidence lineage |
 | Release eligibility | ReleaseEngine/Xcircuite | retained release result, approval record and reproducible run |

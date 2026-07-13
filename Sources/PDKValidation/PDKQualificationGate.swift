@@ -11,9 +11,9 @@ public struct PDKQualificationGate: PDKQualificationGating {
         oracle: PDKOracleComparisonPayload
     ) -> PDKQualificationAssessment {
         var findings: [PDKValidationFinding] = []
-        let matchingManifestEvidence = corpus.caseResults.contains { result in
-            result.manifestReference?.sha256?.caseInsensitiveCompare(pdk.digest) == .orderedSame
-        }
+        let matchingManifestEvidence = corpus.caseResults.contains(where: { result in
+            result.manifestReference?.sha256.caseInsensitiveCompare(pdk.digest) == .orderedSame
+        })
         if !corpus.isValid {
             findings.append(PDKValidationFinding(
                 severity: .blocker,

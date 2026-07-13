@@ -1,18 +1,17 @@
 import Foundation
 import CircuiteFoundation
-import XcircuitePackage
 
 public struct PDKResolvedAsset: Sendable, Hashable, Codable {
     public var assetID: String
     public var path: String
-    public var reference: XcircuiteFileReference
+    public var reference: ArtifactReference
     public var computedSHA256: String
     public var computedByteCount: Int64
 
     public init(
         assetID: String,
         path: String,
-        reference: XcircuiteFileReference,
+        reference: ArtifactReference,
         computedSHA256: String,
         computedByteCount: Int64
     ) {

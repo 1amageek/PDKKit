@@ -1,5 +1,5 @@
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 import PDKCore
 
 public struct PDKValidationPayload: Sendable, Hashable, Codable {

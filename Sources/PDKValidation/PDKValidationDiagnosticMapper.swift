@@ -1,10 +1,10 @@
 import Foundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public enum PDKValidationDiagnosticMapper {
-    public static func map(_ finding: PDKValidationFinding) -> XcircuiteEngineDiagnostic {
-        XcircuiteEngineDiagnostic(
+    public static func map(_ finding: PDKValidationFinding) -> DesignDiagnostic {
+        DesignDiagnostic(
             severity: finding.severity == .info || finding.severity == .warning ? finding.severity.engineSeverity : .error,
             code: finding.code,
             message: finding.message,
@@ -15,9 +15,9 @@ public enum PDKValidationDiagnosticMapper {
 }
 
 private extension PDKFindingSeverity {
-    var engineSeverity: XcircuiteEngineDiagnosticSeverity {
+    var engineSeverity: DiagnosticSeverity {
         switch self {
-        case .info: .info
+        case .info: .information
         case .warning: .warning
         case .error, .blocker: .error
         }

@@ -3,7 +3,7 @@
 ## Status
 
 The implementation order below is complete for every PDKKit-owned contract:
-standard-view semantics, external envelope parity, canonical artifact
+standard-view semantics, external typed-result parity, canonical artifact
 provenance, local oracle, qualification-scope handoff and PDK-specific runtime
 integration. Unsupported input is represented as a typed blocked result;
 provider process execution and independent evidence are runtime inputs owned by
@@ -14,15 +14,15 @@ the corresponding platform packages.
 1. Manifest schema and digest validation
 2. Discovery providers
 3. Cross-view consistency validation
-4. Rule-deck adapter contract and validation request schema evolution
+4. Rule-deck protocol and validation request schema evolution
 5. Retained PDK corpus contract and deterministic evaluator
 6. M4a parser-backed LEF/GDSII/OASIS inspection and manifest binding
 7. M4b SPICE/Liberty detailed numeric inspection and manifest binding
-8. M4c native/local and external result-envelope parity
+8. M4c native/local and external typed-result parity
 9. Immutable reference-oracle correlation
 10. Local qualification gate and evidence handoff
 11. Process-scoped ToolQualification integration
-12. Xcircuite runtime, review and resume evidence
+12. DesignFlowKernel runtime integration and Xcircuite review/resume evidence
 
 ## Implemented slices
 
@@ -30,8 +30,8 @@ the corresponding platform packages.
 - Deterministic local discovery and reference digest construction through the
   CircuiteFoundation artifact boundary.
 - Root-bounded, symlink-safe asset resolution with streaming SHA-256 and
-  byte-count verification. Xcircuite file references are used only at the
-  execution-envelope boundary required by `XcircuiteEngineRequest`.
+  byte-count verification. Foundation `ArtifactLocator` and
+  `ArtifactReference` are used directly throughout the public boundary.
 - Standard-view, rule-deck, oracle and qualification artifact reads use the
   same Foundation verifier and retain canonical `ArtifactReference`
   provenance.
@@ -49,7 +49,7 @@ the corresponding platform packages.
   standard-view mapping.
 - Rule-deck assets now use a typed text-semantic result that verifies UTF-8,
   non-empty statements and mapped manufacturing-layer evidence.
-- Rule-deck inspection is now an independent `PDKRuleDeckInspecting` adapter
+- Rule-deck inspection is now an independent `PDKRuleDeckInspecting` implementation
   with immutable source references, per-layer evidence and
   `pdkkit inspect-rule-deck`; `LocalPDKValidator` injects the same protocol.
 - Validation request schema version 2 explicitly carries the standard-view and
@@ -58,28 +58,26 @@ the corresponding platform packages.
   `ruleDeckResults`; version 1 suites remain readable with an empty collection.
 - M5 immutable manifest-digest-bound oracle expectations, canonical field comparison, structured mismatch blockers and `pdkkit oracle`.
 - M6 `PDKQualificationGate` and `pdkkit qualify`, which require matching retained corpus and oracle evidence and stop at `oracleCorrelated`.
-- M7 six PDK FlowStageExecutor adapters with immutable stage-envelope
-  persistence, agent-facing Codable runtime specs, project-root-bounded artifact
-  references, ToolQualification scope enforcement, human approval and resume
-  regression coverage.
-- Xcircuite discovery/validation/corpus/standard-view/oracle/qualification
-  adapters and persistence tests.
-- M4c external standard-view and rule-deck providers with shared JSON envelope
+- M7 direct DesignFlowKernel protocol integration with project-root-bounded
+  artifact references, ToolQualification scope enforcement, human approval and
+  resume regression coverage; concrete `.xcircuite` persistence remains owned
+  by Xcircuite.
+- M4c external standard-view and rule-deck providers with typed JSON result
   decoding, schema/run/asset/format/digest boundary validation and structured
-  contract regression tests. The adapters intentionally leave external
-  process execution and qualification to Xcircuite/SignoffToolSupport and
-  ToolQualification.
+  contract regression tests. External process execution and qualification are
+  owned by DesignFlowKernel/Xcircuite, SignoffToolSupport and ToolQualification.
 
 ## Completion gates
 
 - Public APIs remain protocol-first and Sendable.
 - Every unsupported semantic produces a structured blocked result.
 - Native and external backends produce the same result schema.
-- External result adapters reject trust-boundary mismatches before evidence is
+- External result inspectors reject trust-boundary mismatches before evidence is
   consumed by manifest binding or downstream stages.
 - No UI type enters a public contract.
 - No result claims foundry qualification without process-scoped oracle evidence.
-- Xcircuite can execute, persist, review and resume the PDK stage without
+- DesignFlowKernel can execute and review the PDK stage through direct typed
+  protocols; Xcircuite can persist and resume the stage without
   circuit-studio.
 
 ## M3 evidence gate
@@ -109,14 +107,14 @@ structured blockers.
 
 ## M4c evidence gate
 
-An external backend result is accepted only when its JSON envelope decodes with
+An external backend result is accepted only when its typed JSON result decodes with
 the request schema version and run ID, its payload identifies the requested
 asset, and its completed payload is valid. Standard-view payloads must preserve
 the requested format and exact digest-bearing source reference. Rule-deck
 payloads must preserve the requested PDK digest and resolved asset reference.
 Schema, run, asset, format, source-reference and digest
 mismatches are blocked. Provider failures, malformed JSON and invalid completed
-payloads are failed with typed findings. This is envelope and semantic
+payloads are failed with typed findings. This is result and semantic
 integration evidence, not external-tool execution or process qualification.
 
 ## M5/M6 evidence gate
@@ -134,8 +132,8 @@ matches the requested implementation ID, binary digest, algorithm version,
 process profile ID and deck digest. Xcircuite applies this requirement before
 running the PDK qualification stage. A mismatched scope is blocked, while a
 matching scope still requires human approval before a resumed run may continue.
-The PDK-specific xcodebuild regression covers all six adapters and persists
-the resulting envelopes; the fixture is contract evidence, not foundry
+The PDK-specific regression covers direct protocol execution and persists
+typed stage results; the fixture is contract evidence, not foundry
 qualification.
 
 ## Evidence gate

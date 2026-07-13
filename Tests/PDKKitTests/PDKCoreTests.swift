@@ -1,7 +1,6 @@
 import Foundation
 import Testing
 import CircuiteFoundation
-import XcircuitePackage
 @testable import PDKCore
 
 @Suite("PDKCore implementation")
@@ -104,7 +103,7 @@ struct PDKCoreTests {
     func pdkReferenceValidatesManifestIdentity() throws {
         let manifestDigest = String(repeating: "a", count: 64)
         let pdkDigest = String(repeating: "b", count: 64)
-        let manifest = XcircuiteFileReference(
+        let manifest = try makeArtifactReference(
             artifactID: "pdk-manifest",
             path: "/tmp/pdk.json",
             kind: .technology,
@@ -167,24 +166,24 @@ struct PDKCoreTests {
             }
         }
 
-        let reference = XcircuiteFileReference(
+        let reference = try makeArtifactReference(
             artifactID: "report",
             path: "reports/result.json",
             kind: .report,
             format: .json
         )
         let resolved = try PDKArtifactURLResolver().resolve(
-            reference,
+            reference.locator,
             baseDirectoryPath: root.path
         )
         #expect(resolved.path == root.appending(path: "reports/result.json").path)
-        #expect(throws: PDKArtifactPathError.self) {
+        #expect(throws: ArtifactLocationError.self) {
             try PDKArtifactURLResolver().resolve(
-                XcircuiteFileReference(
+                try makeArtifactReference(
                     path: "../outside.json",
                     kind: .report,
                     format: .json
-                ),
+                ).locator,
                 baseDirectoryPath: root.path
             )
         }

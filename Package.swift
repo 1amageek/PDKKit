@@ -9,12 +9,6 @@ let isFullLSIWorkspace = FileManager.default.fileExists(
     atPath: workspaceRoot.appendingPathComponent("Xcircuite/Package.swift").path
 )
 
-let xcircuitePackageDependency: Package.Dependency = isFullLSIWorkspace && FileManager.default.fileExists(
-    atPath: workspaceRoot.appendingPathComponent("XcircuitePackage/Package.swift").path
-)
-    ? .package(path: "../XcircuitePackage")
-    : .package(url: "https://github.com/1amageek/XcircuitePackage.git", revision: "55b757efa6c906c30e829c2ca5b67566856dec6b")
-
 let swiftMaskDataDependency: Package.Dependency = isFullLSIWorkspace && FileManager.default.fileExists(
     atPath: workspaceRoot.appendingPathComponent("swift-mask-data/Package.swift").path
 )
@@ -41,7 +35,6 @@ let package = Package(
     ],
     dependencies: [
         circuiteFoundationDependency,
-        xcircuitePackageDependency,
         swiftMaskDataDependency,
     ],
     targets: [
@@ -49,18 +42,16 @@ let package = Package(
             name: "PDKCore",
             dependencies: [
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
-                .product(name: "XcircuitePackage", package: "XcircuitePackage"),
             ]
         ),
         .target(
             name: "PDKDiscovery",
-            dependencies: [.product(name: "XcircuitePackage", package: "XcircuitePackage"), "PDKCore"]
+            dependencies: ["PDKCore"]
         ),
         .target(
             name: "PDKValidation",
             dependencies: [
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
-                .product(name: "XcircuitePackage", package: "XcircuitePackage"),
                 "PDKCore",
                 "PDKStandardViews",
             ]

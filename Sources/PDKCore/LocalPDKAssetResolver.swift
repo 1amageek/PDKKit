@@ -1,6 +1,6 @@
 import CircuiteFoundation
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct LocalPDKAssetResolver: PDKAssetResolving {
     private let referencer: LocalArtifactReferencer
@@ -83,13 +83,16 @@ public struct LocalPDKAssetResolver: PDKAssetResolving {
             )
         }
         let assetURL = try foundationReference.locator.location.resolvedFileURL(relativeTo: rootURL)
-        let reference = XcircuiteFileReference(
-            artifactID: asset.assetID,
-            path: assetURL.path,
-            kind: asset.kind,
-            format: asset.format,
-            sha256: foundationReference.digest.hexadecimalValue,
-            byteCount: Int64(foundationReference.byteCount)
+        let reference = try ArtifactReference(
+            id: ArtifactID(rawValue: asset.assetID),
+            locator: ArtifactLocator(
+                location: ArtifactLocation(fileURL: assetURL),
+                role: foundationReference.locator.role,
+                kind: foundationReference.locator.kind,
+                format: foundationReference.locator.format
+            ),
+            digest: foundationReference.digest,
+            byteCount: foundationReference.byteCount
         )
         return PDKResolvedAsset(
             assetID: asset.assetID,

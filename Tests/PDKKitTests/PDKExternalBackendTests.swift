@@ -1,7 +1,6 @@
 import Foundation
 import CircuiteFoundation
 import Testing
-import XcircuitePackage
 @testable import PDKCore
 @testable import PDKStandardViews
 
@@ -17,10 +16,11 @@ struct PDKExternalBackendTests {
         let resolved = try LocalPDKAssetResolver().resolve(asset, relativeTo: manifestURL)
         let rawRequest = PDKStandardViewInspectionRequest(
             runID: "external-standard-view",
-            inputs: [resolved.reference],
+            inputs: [resolved.reference.locator],
             format: .lef,
             assetID: "cells",
-            expectedCellNames: ["nmos"]
+            expectedCellNames: ["nmos"],
+            projectRootPath: fixture.path
         )
         let localEnvelope = try await LocalPDKStandardViewInspector().execute(rawRequest)
         let resultData = try JSONEncoder().encode(localEnvelope)
@@ -33,7 +33,7 @@ struct PDKExternalBackendTests {
         ).execute(
             PDKManifestViewInspectionRequest(
                 runID: rawRequest.runID,
-                inputs: [pdk.manifest],
+                inputs: [pdk.manifest.locator],
                 pdk: pdk,
                 assetID: "cells",
                 format: .lef,
@@ -66,14 +66,14 @@ struct PDKExternalBackendTests {
         var wrongRun = localEnvelope
         wrongRun.runID = "unexpected-run"
         wrongRun.artifacts = [
-            XcircuiteFileReference(
+            try makeArtifactReference(
                 artifactID: "external-log",
                 path: "external.log",
                 kind: .report,
                 format: .text,
-                sha256: "abc",
+                sha256: String(repeating: "a", count: 64),
                 byteCount: 3
-            ),
+            ).locator,
         ]
         let runResult = try await ExternalPDKStandardViewInspector(
             provider: StaticStandardViewResultProvider(data: try JSONEncoder().encode(wrongRun))
@@ -82,7 +82,7 @@ struct PDKExternalBackendTests {
         #expect(runResult.payload.findings.contains {
             $0.code == "pdk.external.standard-view-contract-mismatch"
         })
-        #expect(runResult.artifacts.compactMap(\.artifactID) == ["external-log"])
+        #expect(runResult.artifacts.map(\.path) == ["external.log"])
     }
 
     @Test("external standard-view malformed data remains structured")
@@ -98,7 +98,7 @@ struct PDKExternalBackendTests {
             $0.code == "pdk.external.standard-view-contract-mismatch"
         })
         #expect(envelope.payload.limitations.contains {
-            $0.contains("shared envelope boundary")
+            $0.contains("typed result boundary")
         })
     }
 
@@ -107,7 +107,12 @@ struct PDKExternalBackendTests {
         let request = try standardViewRequest()
         var tampered = try await LocalPDKStandardViewInspector().execute(request)
         var inspection = try #require(tampered.payload.inspection)
-        inspection.source.path = "tampered.lef"
+        inspection.source = try makeArtifactLocator(
+            path: "tampered.lef",
+            kind: inspection.source.kind,
+            format: inspection.source.format,
+            role: inspection.source.role
+        )
         tampered.payload.inspection = inspection
 
         let envelope = try await ExternalPDKStandardViewInspector(
@@ -127,7 +132,7 @@ struct PDKExternalBackendTests {
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKRuleDeckInspectionRequest(
             runID: "external-rule-deck",
-            inputs: [pdk.manifest],
+            inputs: [pdk.manifest.locator],
             pdk: pdk,
             assetID: "rules",
             projectRootPath: fixture.path
@@ -155,7 +160,14 @@ struct PDKExternalBackendTests {
 
         var wrongReference = localEnvelope
         var wrongPayload = wrongReference.payload
-        wrongPayload.reference?.path = "tampered.deck"
+        if let reference = wrongPayload.reference {
+            wrongPayload.reference = try makeArtifactLocator(
+                path: "tampered.deck",
+                kind: reference.kind,
+                format: reference.format,
+                role: reference.role
+            )
+        }
         wrongReference.payload = wrongPayload
         let referenceBlocked = try await ExternalPDKRuleDeckInspector(
             provider: StaticRuleDeckResultProvider(data: try JSONEncoder().encode(wrongReference))
@@ -173,7 +185,7 @@ struct PDKExternalBackendTests {
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKRuleDeckInspectionRequest(
             runID: "external-rule-deck-artifact",
-            inputs: [pdk.manifest],
+            inputs: [pdk.manifest.locator],
             pdk: pdk,
             assetID: "rules",
             projectRootPath: fixture.path
@@ -213,7 +225,7 @@ struct PDKExternalBackendTests {
         let fixture = fixtureURL()
         let fileURL = fixture.appending(path: "cells.lef")
         let data = try Data(contentsOf: fileURL)
-        let reference = XcircuiteFileReference(
+        let reference = try makeArtifactReference(
             artifactID: "cells",
             path: fileURL.path,
             kind: .technology,
@@ -223,7 +235,7 @@ struct PDKExternalBackendTests {
         )
         return PDKStandardViewInspectionRequest(
             runID: "external-standard-view-contract",
-            inputs: [reference],
+            inputs: [reference.locator],
             format: .lef,
             assetID: "cells"
         )

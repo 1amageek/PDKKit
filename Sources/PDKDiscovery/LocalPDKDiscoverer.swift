@@ -1,6 +1,6 @@
 import Foundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct LocalPDKDiscoverer: PDKDiscovering {
     private let clock: any PDKDiscoveryExecutionClock
@@ -16,9 +16,9 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
 
     public func execute(
         _ request: PDKDiscoveryRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKDiscoveryPayload> {
+    ) async throws -> PDKDiscoveryResult {
         let startedAt = clock.now()
-        var diagnostics: [XcircuiteEngineDiagnostic] = []
+        var diagnostics: [DesignDiagnostic] = []
         var candidates: [PDKReference] = []
         var inspectedPaths: [String] = []
         let paths = discoverManifestPaths(request: request, diagnostics: &diagnostics)
@@ -33,7 +33,7 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
                 }
                 candidates.append(reference)
             } catch {
-                diagnostics.append(XcircuiteEngineDiagnostic(
+                diagnostics.append(DesignDiagnostic(
                     severity: .warning,
                     code: "pdk.discovery.invalid-manifest",
                     message: "Candidate manifest could not be decoded: \(error)",
@@ -49,9 +49,9 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
             return $0.manifest.path < $1.manifest.path
         }
 
-        let status: XcircuiteEngineExecutionStatus
+        let status: PDKExecutionStatus
         if request.searchRoots.isEmpty {
-            diagnostics.append(XcircuiteEngineDiagnostic(
+            diagnostics.append(DesignDiagnostic(
                 severity: .error,
                 code: "pdk.discovery.search-roots-missing",
                 message: "At least one local PDK search root is required.",
@@ -60,7 +60,7 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
             ))
             status = .blocked
         } else if candidates.isEmpty {
-            diagnostics.append(XcircuiteEngineDiagnostic(
+            diagnostics.append(DesignDiagnostic(
                 severity: .error,
                 code: request.requiredProcessID == nil
                     ? "pdk.discovery.no-candidates"
@@ -77,19 +77,19 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
         }
 
         let completedAt = clock.now()
-        let metadata = XcircuiteEngineExecutionMetadata(
+        let metadata = PDKExecutionMetadata(
             engineID: "PDKDiscovery",
             implementationID: "LocalPDKDiscoverer",
             implementationVersion: "1",
             startedAt: startedAt,
             completedAt: completedAt
         )
-        return XcircuiteEngineResultEnvelope(
+        return PDKDiscoveryResult(
             schemaVersion: PDKDiscoveryRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: diagnostics,
-            artifacts: candidates.map(\.manifest),
+            artifacts: candidates.map { $0.manifest.locator },
             metadata: metadata,
             payload: PDKDiscoveryPayload(
                 candidates: candidates,
@@ -100,7 +100,7 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
 
     private func discoverManifestPaths(
         request: PDKDiscoveryRequest,
-        diagnostics: inout [XcircuiteEngineDiagnostic]
+        diagnostics: inout [DesignDiagnostic]
     ) -> [URL] {
         var urls: [URL] = []
         let fileManager = FileManager.default
@@ -108,7 +108,7 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
             let rootURL = URL(filePath: rootPath).standardizedFileURL
             var isDirectory: ObjCBool = false
             guard fileManager.fileExists(atPath: rootURL.path, isDirectory: &isDirectory) else {
-                diagnostics.append(XcircuiteEngineDiagnostic(
+                diagnostics.append(DesignDiagnostic(
                     severity: .warning,
                     code: "pdk.discovery.search-root-missing",
                     message: "Search root does not exist.",
@@ -128,7 +128,7 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
                 includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey],
                 options: [.skipsHiddenFiles, .skipsPackageDescendants]
             ) else {
-                diagnostics.append(XcircuiteEngineDiagnostic(
+                diagnostics.append(DesignDiagnostic(
                     severity: .warning,
                     code: "pdk.discovery.search-root-unreadable",
                     message: "Search root could not be enumerated.",
@@ -143,7 +143,7 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
                     let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                     guard values.isRegularFile == true, values.isSymbolicLink != true else { continue }
                 } catch {
-                    diagnostics.append(XcircuiteEngineDiagnostic(
+                    diagnostics.append(DesignDiagnostic(
                         severity: .warning,
                         code: "pdk.discovery.entry-unreadable",
                         message: "Manifest candidate metadata could not be read: \(error.localizedDescription)",

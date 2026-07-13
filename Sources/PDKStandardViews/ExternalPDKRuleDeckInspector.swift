@@ -1,7 +1,7 @@
 import Foundation
 import CircuiteFoundation
 import PDKCore
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     private let provider: any PDKExternalRuleDeckResultProviding
@@ -23,9 +23,9 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
 
     public func execute(
         _ request: PDKRuleDeckInspectionRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKRuleDeckInspectionPayload> {
+    ) async throws -> PDKRuleDeckInspectionResult {
         let startedAt = clock.now()
-        var receivedArtifacts: [XcircuiteFileReference] = []
+        var receivedArtifacts: [ArtifactLocator] = []
         let data: Data
         do {
             data = try await provider.resultData(for: request)
@@ -44,9 +44,8 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         }
 
         do {
-            let envelope = try decoder.decode(
+            let envelope = try decoder.decodeRuleDeck(
                 data,
-                payload: PDKRuleDeckInspectionPayload.self,
                 expectedSchemaVersion: PDKRuleDeckInspectionRequest.currentSchemaVersion,
                 expectedRunID: request.runID
             )
@@ -57,7 +56,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             if receivedArtifacts.isEmpty {
                 receivedArtifacts = artifacts(from: data)
             }
-            let status: XcircuiteEngineExecutionStatus = isTrustBoundaryError(error) ? .blocked : .failed
+            let status: PDKExecutionStatus = isTrustBoundaryError(error) ? .blocked : .failed
             return failureEnvelope(
                 request: request,
                 startedAt: startedAt,
@@ -91,7 +90,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
 
     private func validate(
         payload: PDKRuleDeckInspectionPayload,
-        status: XcircuiteEngineExecutionStatus,
+        status: PDKExecutionStatus,
         request: PDKRuleDeckInspectionRequest
     ) throws {
         guard payload.assetID == request.assetID else {
@@ -112,7 +111,9 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             )
         }
         if status == .completed {
-            let expectedReference = try expectedRuleDeckReference(for: request)
+            let expectedIdentity = try expectedRuleDeckIdentity(for: request)
+            let expectedArtifact = expectedIdentity.artifact
+            let expectedReference = expectedIdentity.reference
             guard let actualReference = payload.reference else {
                 throw PDKExternalInspectionError.inputReferenceMismatch(
                     expected: Self.referenceDescription(expectedReference),
@@ -131,14 +132,6 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                     actual: "<missing>"
                 )
             }
-            let expectedArtifact: ArtifactReference
-            do {
-                expectedArtifact = try PDKFoundationArtifactBridge.artifactReference(
-                    for: expectedReference
-                )
-            } catch {
-                throw PDKExternalInspectionError.inputReferenceUnavailable(error.localizedDescription)
-            }
             guard sourceArtifact.id == expectedArtifact.id,
                   sourceArtifact.digest == expectedArtifact.digest,
                   sourceArtifact.byteCount == expectedArtifact.byteCount,
@@ -152,13 +145,13 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         }
     }
 
-    private func expectedRuleDeckReference(
+    private func expectedRuleDeckIdentity(
         for request: PDKRuleDeckInspectionRequest
-    ) throws -> XcircuiteFileReference {
+    ) throws -> (reference: ArtifactLocator, artifact: ArtifactReference) {
         let manifestURL: URL
         do {
             manifestURL = try PDKArtifactURLResolver().resolve(
-                request.pdk.manifest,
+                request.pdk.manifest.locator,
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
@@ -189,7 +182,11 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                     "PDK manifest does not declare asset \(request.assetID)"
                 )
             }
-            return try assetResolver.resolve(asset, relativeTo: manifestURL).reference
+            let resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
+            return (
+                reference: resolved.reference.locator,
+                artifact: try resolved.foundationArtifactReference()
+            )
         } catch let error as PDKExternalInspectionError {
             throw error
         } catch {
@@ -207,14 +204,11 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         }
     }
 
-    private static func referenceDescription(_ reference: XcircuiteFileReference) -> String {
+    private static func referenceDescription(_ reference: ArtifactLocator) -> String {
         [
-            reference.artifactID ?? "<anonymous>",
             reference.path,
             reference.kind.rawValue,
             reference.format.rawValue,
-            reference.sha256 ?? "<missing-sha256>",
-            reference.byteCount.map(String.init) ?? "<missing-byte-count>",
         ].joined(separator: "|")
     }
 
@@ -246,17 +240,17 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     private func failureEnvelope(
         request: PDKRuleDeckInspectionRequest,
         startedAt: Date,
-        status: XcircuiteEngineExecutionStatus,
-        artifacts: [XcircuiteFileReference] = [],
+        status: PDKExecutionStatus,
+        artifacts: [ArtifactLocator] = [],
         finding: PDKValidationFinding
-    ) -> XcircuiteEngineResultEnvelope<PDKRuleDeckInspectionPayload> {
-        XcircuiteEngineResultEnvelope(
+    ) -> PDKRuleDeckInspectionResult {
+        PDKRuleDeckInspectionResult(
             schemaVersion: PDKRuleDeckInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: [PDKStandardViewDiagnosticMapper.map(finding)],
             artifacts: artifacts,
-            metadata: XcircuiteEngineExecutionMetadata(
+            metadata: PDKExecutionMetadata(
                 engineID: "PDKRuleDeckInspection",
                 implementationID: "ExternalPDKRuleDeckInspector",
                 implementationVersion: "1",
@@ -269,14 +263,14 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 pdkDigest: request.pdk.digest,
                 findings: [finding],
                 limitations: [
-                    "The external backend result was rejected at the shared envelope boundary.",
+                    "The external backend result was rejected at the typed result boundary.",
                     "External tool qualification and process scope are evaluated outside this adapter."
                 ]
             )
         )
     }
 
-    private func artifacts(from data: Data) -> [XcircuiteFileReference] {
+    private func artifacts(from data: Data) -> [ArtifactLocator] {
         do {
             return try JSONDecoder().decode(ArtifactContainer.self, from: data).artifacts
         } catch {
@@ -285,6 +279,6 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     }
 
     private struct ArtifactContainer: Decodable {
-        var artifacts: [XcircuiteFileReference] = []
+        var artifacts: [ArtifactLocator] = []
     }
 }

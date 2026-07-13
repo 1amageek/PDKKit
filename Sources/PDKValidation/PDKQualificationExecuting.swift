@@ -1,8 +1,8 @@
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 
 public protocol PDKQualificationExecuting: Sendable {
     func execute(
         _ request: PDKQualificationRequest
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKQualificationAssessment>
+    ) async throws -> PDKQualificationExecutionResult
 }

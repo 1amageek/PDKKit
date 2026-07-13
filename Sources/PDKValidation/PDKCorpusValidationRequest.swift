@@ -1,12 +1,12 @@
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 
-public struct PDKCorpusValidationRequest: XcircuiteEngineRequest {
+public struct PDKCorpusValidationRequest: Sendable {
     public static let currentSchemaVersion = 1
 
     public var schemaVersion: Int
     public var runID: String
-    public var inputs: [XcircuiteFileReference]
+    public var inputs: [ArtifactLocator]
     public var suitePath: String
     public var rootPath: String
 
@@ -14,7 +14,7 @@ public struct PDKCorpusValidationRequest: XcircuiteEngineRequest {
         runID: String,
         suitePath: String,
         rootPath: String,
-        inputs: [XcircuiteFileReference] = []
+        inputs: [ArtifactLocator] = []
     ) {
         self.schemaVersion = Self.currentSchemaVersion
         self.runID = runID

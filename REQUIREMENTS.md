@@ -27,13 +27,15 @@ Provide one immutable, process-scoped source of truth for every design and signo
 - Public execution surfaces are protocol-first, Sendable and dependency-injected.
 - Requests and payloads are Codable, Hashable and schema-versioned.
 - PDKCore uses CircuiteFoundation `ArtifactLocator` and `ArtifactReference` for
-  artifact intent and verified identity. The existing XcircuiteFileReference
-  shape remains only as a compatibility envelope projection.
+  artifact intent and verified identity. No legacy or compatibility envelope
+  is part of the public contract.
 - Diagnostics contain a stable code, severity, affected entity and suggested actions.
 - Unsupported semantics and missing prerequisites produce blocked results.
 - Native and external-tool backends conform to identical request and payload schemas.
 - Execution capability, corpus validation, oracle correlation, process qualification and release approval remain distinct.
-- Xcircuite owns flow construction, artifact persistence, qualification gates, repair loops, approval and resume.
+- DesignFlowKernel owns flow construction, qualification gates, repair loops,
+  approval and resume; Xcircuite owns concrete `.xcircuite` artifact
+  persistence.
 - The package never imports Xcircuite or circuit-studio.
 
 ## Required developer surfaces
@@ -44,4 +46,4 @@ Provide one immutable, process-scoped source of truth for every design and signo
 - Contract and parser round-trip tests
 - Reference corpus
 - Capability and limitation report
-- Xcircuite stage adapter tests
+- Direct Foundation protocol conformance and DesignFlowKernel integration tests

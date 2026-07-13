@@ -4,7 +4,6 @@ import GDSII
 import LayoutIR
 import OASIS
 import Testing
-import XcircuitePackage
 @testable import PDKCore
 @testable import PDKStandardViews
 
@@ -27,7 +26,7 @@ struct PDKStandardViewTests {
                 Issue.record("Failed to remove relative oracle fixture: \(error)")
             }
         }
-        let oracle = XcircuiteFileReference(
+        let oracle = try makeArtifactReference(
             artifactID: "fixture-standard-view-oracle",
             path: "oracle.json",
             kind: .technology,
@@ -74,7 +73,7 @@ struct PDKStandardViewTests {
         }
         let mismatchURL = directory.appending(path: "oracle.json")
         try data.write(to: mismatchURL, options: [.atomic])
-        let oracle = XcircuiteFileReference(
+        let oracle = try makeArtifactReference(
             artifactID: "mismatch-oracle",
             path: mismatchURL.path,
             kind: .technology,
@@ -96,13 +95,13 @@ struct PDKStandardViewTests {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let relativePdk = PDKReference(
-            manifest: XcircuiteFileReference(
+            manifest: try makeArtifactReference(
                 artifactID: pdk.manifest.artifactID,
                 path: "pdk.json",
                 kind: pdk.manifest.kind,
                 format: pdk.manifest.format,
                 sha256: pdk.manifest.sha256,
-                byteCount: pdk.manifest.byteCount
+                byteCount: Int64(pdk.manifest.byteCount)
             ),
             processID: pdk.processID,
             version: pdk.version,
@@ -110,7 +109,7 @@ struct PDKStandardViewTests {
         )
         let request = PDKManifestViewInspectionRequest(
             runID: "lef-inspection",
-            inputs: [relativePdk.manifest],
+            inputs: [relativePdk.manifest.locator],
             pdk: relativePdk,
             assetID: "cells",
             format: .lef,
@@ -141,7 +140,7 @@ struct PDKStandardViewTests {
         for (assetID, format) in cases {
             let request = PDKManifestViewInspectionRequest(
                 runID: "\(format.rawValue)-inspection",
-                inputs: [pdk.manifest],
+                inputs: [pdk.manifest.locator],
                 pdk: pdk,
                 assetID: assetID,
                 format: format
@@ -266,7 +265,7 @@ struct PDKStandardViewTests {
                 ))]
             )]
         )
-        let cases: [(PDKStandardViewFormat, Data, XcircuiteFileFormat)] = [
+        let cases: [(PDKStandardViewFormat, Data, ArtifactFormat)] = [
             (.gdsii, try GDSLibraryWriter.write(library), .gdsii),
             (.oasis, try OASISLibraryWriter.write(library), .oasis),
         ]
@@ -285,7 +284,7 @@ struct PDKStandardViewTests {
                 }
             }
 
-            let reference = XcircuiteFileReference(
+            let reference = try makeArtifactReference(
                 artifactID: format.rawValue,
                 path: fileURL.path,
                 kind: .layout,
@@ -295,7 +294,7 @@ struct PDKStandardViewTests {
             )
             let request = PDKStandardViewInspectionRequest(
                 runID: "mask-\(format.rawValue)-inspection",
-                inputs: [reference],
+                inputs: [reference.locator],
                 format: format,
                 assetID: format.rawValue,
                 expectedPhysicalLayerNumbers: [10],
@@ -324,7 +323,7 @@ struct PDKStandardViewTests {
         let data = Data("not-gdsii".utf8)
         let fileURL = directory.appending(path: "broken.gdsii")
         try data.write(to: fileURL, options: [.atomic])
-        let reference = XcircuiteFileReference(
+        let reference = try makeArtifactReference(
             artifactID: "broken",
             path: fileURL.path,
             kind: .layout,
@@ -334,7 +333,7 @@ struct PDKStandardViewTests {
         )
         let request = PDKStandardViewInspectionRequest(
             runID: "malformed-mask",
-            inputs: [reference],
+            inputs: [reference.locator],
             format: .gdsii,
             assetID: "broken"
         )
@@ -348,17 +347,17 @@ struct PDKStandardViewTests {
     func missingCornerBindingBlocks() throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let manifest = try PDKManifestCodec.decode(contentsOf: manifestURL).manifest
-        let source = XcircuiteFileReference(
+        let source = try makeArtifactReference(
             artifactID: "spice-view",
             path: fixtureURL().appending(path: "models.spice").path,
             kind: .model,
             format: .spice,
-            sha256: "fixture",
+            sha256: String(repeating: "0", count: 64),
             byteCount: 1
         )
         let inspection = PDKStandardViewIR(
             format: .spice,
-            source: source,
+            source: source.locator,
             libraryName: "SPICE",
             modelNames: ["nmos_180n"],
             cornerNames: []
@@ -377,7 +376,7 @@ struct PDKStandardViewTests {
 
     @Test("malformed SPICE and Liberty produce typed parser failures")
     func malformedTextViewsFailStructurally() async throws {
-        let cases: [(PDKStandardViewFormat, String, XcircuiteFileFormat)] = [
+        let cases: [(PDKStandardViewFormat, String, ArtifactFormat)] = [
             (.spice, ".subckt nmos D G\n", .spice),
             (.liberty, "library (broken) {\n  cell (nmos) {\n", .liberty),
         ]
@@ -395,7 +394,7 @@ struct PDKStandardViewTests {
             let data = Data(text.utf8)
             let fileURL = directory.appending(path: "broken.\(format.rawValue)")
             try data.write(to: fileURL, options: [.atomic])
-            let reference = XcircuiteFileReference(
+            let reference = try makeArtifactReference(
                 artifactID: "broken-\(format.rawValue)",
                 path: fileURL.path,
                 kind: .model,
@@ -405,7 +404,7 @@ struct PDKStandardViewTests {
             )
             let request = PDKStandardViewInspectionRequest(
                 runID: "malformed-\(format.rawValue)",
-                inputs: [reference],
+                inputs: [reference.locator],
                 format: format,
                 assetID: format.rawValue
             )
@@ -431,7 +430,7 @@ struct PDKStandardViewTests {
         data: Data,
         format: PDKStandardViewFormat,
         fileExtension: String
-    ) async throws -> XcircuiteEngineResultEnvelope<PDKStandardViewInspectionPayload> {
+    ) async throws -> PDKStandardViewInspectionResult {
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "pdkkit-detailed-semantic-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -444,7 +443,7 @@ struct PDKStandardViewTests {
                 Issue.record("Failed to remove temporary detailed semantic fixture: \(error)")
             }
         }
-        let reference = XcircuiteFileReference(
+        let reference = try makeArtifactReference(
             artifactID: "detailed-\(format.rawValue)",
             path: fileURL.path,
             kind: .model,
@@ -455,7 +454,7 @@ struct PDKStandardViewTests {
         return try await LocalPDKStandardViewInspector().execute(
             PDKStandardViewInspectionRequest(
                 runID: "detailed-\(format.rawValue)",
-                inputs: [reference],
+                inputs: [reference.locator],
                 format: format
             )
         )

@@ -1,13 +1,13 @@
 import CircuiteFoundation
 import Foundation
-import XcircuitePackage
+import CircuiteFoundation
 
 public struct PDKAssetReference: Sendable, Hashable, Codable {
     public var assetID: String
     public var role: PDKAssetRole
     public var path: String
-    public var kind: XcircuiteFileKind
-    public var format: XcircuiteFileFormat
+    public var kind: ArtifactKind
+    public var format: ArtifactFormat
     public var required: Bool
     public var sha256: String?
     public var byteCount: Int64?
@@ -18,8 +18,8 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
         assetID: String,
         role: PDKAssetRole,
         path: String,
-        kind: XcircuiteFileKind,
-        format: XcircuiteFileFormat,
+        kind: ArtifactKind,
+        format: ArtifactFormat,
         required: Bool = true,
         sha256: String? = nil,
         byteCount: Int64? = nil,
@@ -42,6 +42,7 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
     public func artifactLocator() throws -> ArtifactLocator {
         ArtifactLocator(
             location: try ArtifactLocation(workspaceRelativePath: path),
+            role: .input,
             kind: try ArtifactKind(rawValue: "pdk.\(kind.rawValue.lowercased())"),
             format: try PDKFoundationArtifactBridge.artifactFormat(for: format)
         )
@@ -65,8 +66,16 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
         assetID = try container.decodeIfPresent(String.self, forKey: .assetID) ?? ""
         role = try container.decodeIfPresent(PDKAssetRole.self, forKey: .role) ?? .other
         path = try container.decodeIfPresent(String.self, forKey: .path) ?? ""
-        kind = try container.decodeIfPresent(XcircuiteFileKind.self, forKey: .kind) ?? .other
-        format = try container.decodeIfPresent(XcircuiteFileFormat.self, forKey: .format) ?? .unknown
+        kind = try container.decodeIfPresent(ArtifactKind.self, forKey: .kind) ?? .other
+        if let rawFormat = try container.decodeIfPresent(String.self, forKey: .format) {
+            do {
+                format = try ArtifactFormat(rawValue: rawFormat.lowercased())
+            } catch {
+                format = .unknown
+            }
+        } else {
+            format = .unknown
+        }
         required = try container.decodeIfPresent(Bool.self, forKey: .required) ?? true
         sha256 = try container.decodeIfPresent(String.self, forKey: .sha256)
         byteCount = try container.decodeIfPresent(Int64.self, forKey: .byteCount)
