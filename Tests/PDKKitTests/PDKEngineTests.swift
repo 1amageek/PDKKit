@@ -417,9 +417,7 @@ struct PDKEngineTests {
     }
 
     private func fixtureRootURL() -> URL {
-        URL(filePath: #filePath)
-            .deletingLastPathComponent()
-            .appending(path: "Fixtures")
+        PDKTestFixtures.rootURL
     }
 
     private func makeIsolatedFixture() throws -> URL {

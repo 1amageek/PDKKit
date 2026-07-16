@@ -465,15 +465,11 @@ struct PDKStandardViewTests {
     }
 
     private func fixtureURL() -> URL {
-        URL(filePath: #filePath)
-            .deletingLastPathComponent()
-            .appending(path: "Fixtures/valid-pdk")
+        PDKTestFixtures.validPDKURL
     }
 
     private func fixtureRootURL() -> URL {
-        URL(filePath: #filePath)
-            .deletingLastPathComponent()
-            .appending(path: "Fixtures")
+        PDKTestFixtures.rootURL
     }
 
     private func inspectTemporaryText(

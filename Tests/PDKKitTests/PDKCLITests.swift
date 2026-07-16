@@ -124,12 +124,10 @@ struct PDKCLITests {
     }
 
     private func fixtureURL() -> URL {
-        fixtureRootURL().appending(path: "valid-pdk")
+        PDKTestFixtures.validPDKURL
     }
 
     private func fixtureRootURL() -> URL {
-        URL(filePath: #filePath)
-            .deletingLastPathComponent()
-            .appending(path: "Fixtures")
+        PDKTestFixtures.rootURL
     }
 }
