@@ -3,7 +3,7 @@
   "oracleID": "fixture-standard-view-oracle",
   "processID": "fixture-180nm",
   "version": "2026.1",
-  "pdkDigest": "769b205c45ee145c9a1ff4cff437ce4ec99cd91e664399eb0c1db6dd56acf489",
+  "pdkDigest": "87db1866aa73ed22c4dc89d69e5bce1a4841c252c59d9fe8a9e86e79cf7543e4",
   "views": [
     {
       "assetID": "cells",

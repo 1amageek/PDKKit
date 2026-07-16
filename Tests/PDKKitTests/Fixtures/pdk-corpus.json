@@ -4,27 +4,40 @@
       "caseID": "invalid-manifest-is-failed",
       "expectedFindingCodes": ["pdk.corpus.reference-build-failed"],
       "expectedOutcome": "failed",
-      "manifestPath": "invalid-pdk/pdk.json"
+      "manifestPath": "invalid-pdk/pdk.json",
+      "requiredAssetRoles": [],
+      "validateCrossViews": true,
+      "standardViewChecks": [],
+      "ruleDeckChecks": [],
+      "metadata": {}
     },
     {
       "caseID": "missing-manifest-is-blocked",
       "expectedFindingCodes": ["pdk.corpus.manifest-missing"],
       "expectedOutcome": "blocked",
-      "manifestPath": "missing-pdk/pdk.json"
+      "manifestPath": "missing-pdk/pdk.json",
+      "requiredAssetRoles": [],
+      "validateCrossViews": true,
+      "standardViewChecks": [],
+      "ruleDeckChecks": [],
+      "metadata": {}
     },
     {
       "caseID": "retained-fixture-is-valid",
+      "expectedFindingCodes": [],
       "expectedOutcome": "valid",
       "manifestPath": "valid-pdk/pdk.json",
       "requiredAssetRoles": ["cell", "layerMap", "model", "ruleDeck"],
+      "validateCrossViews": true,
       "standardViewChecks": [
-        { "assetID": "cells", "format": "lef" },
-        { "assetID": "liberty-view", "format": "liberty" },
-        { "assetID": "spice-view", "format": "spice" }
+        { "assetID": "cells", "format": "lef", "expectedOutcome": "valid", "expectedFindingCodes": [] },
+        { "assetID": "liberty-view", "format": "liberty", "expectedOutcome": "valid", "expectedFindingCodes": [] },
+        { "assetID": "spice-view", "format": "spice", "expectedOutcome": "valid", "expectedFindingCodes": [] }
       ],
       "ruleDeckChecks": [
-        { "assetID": "rules", "expectedOutcome": "valid" }
-      ]
+        { "assetID": "rules", "expectedOutcome": "valid", "expectedFindingCodes": [] }
+      ],
+      "metadata": {}
     }
   ],
   "metadata": {
