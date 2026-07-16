@@ -150,7 +150,7 @@ struct PDKStandardViewTests {
                 path: "pdk.json",
                 kind: pdk.manifest.kind,
                 format: pdk.manifest.format,
-                sha256: pdk.manifest.sha256,
+                sha256: pdk.manifest.digest.hexadecimalValue,
                 byteCount: Int64(pdk.manifest.byteCount)
             ),
             processID: pdk.processID,
