@@ -36,8 +36,7 @@ independent evidence required to pass those gates.
 Every executing product uses protocol-first dependency injection, typed request
 records, immutable artifact identities from CircuiteFoundation, and explicit
 completed, blocked, failed and cancelled states. Each domain result carries its
-own payload, diagnostics, artifact locators and execution metadata; there is no
-generic result envelope.
+own payload, diagnostics, artifact locators and execution metadata.
 
 The artifact boundary has two representations with different authority:
 
@@ -78,7 +77,7 @@ requested implementation, binary, algorithm, process and deck; integration
 tests also cover human approval followed by resume.
 
 Relative artifact references are resolved against an explicit project root and
-cannot escape it. Adapters pass the project root into PDKKit, so a persisted
+cannot escape it. Callers pass the project root into PDKKit, so a persisted
 run remains reproducible even when its inputs are stored as project-relative
 references.
 
@@ -93,9 +92,8 @@ references.
 - PVT, RC, electromigration and reliability corner mappings;
 - cross-view mappings for layer map, LEF/GDSII/OASIS, SPICE and Liberty views.
 
-Schema version zero is migrated to the current schema, including legacy
-`process`, `pdkVersion` and file-path fields. Unsupported or malformed schemas
-produce typed errors.
+The current manifest schema and canonical field names are required.
+Unsupported, incomplete, or malformed schemas produce typed errors.
 
 Raw asset presence is not treated as semantic proof. Missing mappings, missing
 assets, digest mismatches and unavailable semantics produce structured blocked
@@ -172,7 +170,7 @@ The repository's current verification result is 52 tests in 6 Swift Testing
 suites. The detailed standard-view suite passes 12 tests with
 `xcodebuild test-without-building` after an Xcode `build-for-testing` build.
 The Xcircuite PDK integration slice passes 6 tests in 1 suite with `xcodebuild`;
-the release-stage adapter slice passes 5 tests in 1 suite. The Xcode command
+the release-stage composition slice passes 5 tests in 1 suite. The Xcode command
 may print environment-specific IDE warnings while still returning success.
 
 ## Evidence boundary
@@ -200,11 +198,9 @@ timing tables without a declared `time_unit` are blocked. This is a supported
 numeric-semantic subset, not a claim of complete vendor-specific language
 coverage.
 
-Validation request schema changes are explicit: the cross-view controls are
-carried by schema version 2, while legacy version 1 requests decode with the
-safe default of validating standard views and rule decks. The manifest-bound
-standard-view requests also advance when project-root resolution is part of
-their reproducibility contract.
+Validation requests use schema version 2 and require explicit cross-view
+controls. Manifest-bound standard-view requests include project-root
+resolution whenever it is part of their reproducibility contract.
 
 See `MILESTONES.md`, `CAPABILITY_REPORT.md`, `DESIGN.md`, `INTERFACES.md` and
 `IMPLEMENTATION_PLAN.md` for the implementation boundary and qualification

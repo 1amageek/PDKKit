@@ -13,7 +13,7 @@ public protocol DomainExecuting: Sendable {
 Requests carry a schema version, run ID and Foundation artifact locators.
 PDKCore resolves those inputs to immutable `ArtifactReference` values before
 consuming bytes. Domain result types carry their own diagnostics, artifacts
-and execution provenance; no generic result envelope is required.
+and execution provenance.
 
 ## Products
 
@@ -126,6 +126,6 @@ PDKKit engines conform directly to their domain protocols and to the shared
 Foundation artifact, diagnostic and provenance contracts. DesignFlowKernel
 injects those protocols, applies tool-qualification and flow policy, and
 persists typed results through its ledger protocol. Xcircuite supplies the
-concrete `.xcircuite` workspace and run-artifact stores. PDKKit does not define
-an adapter or compatibility facade, and its detailed standard-view suite
-remains independently reproducible from the package test bundle.
+concrete `.xcircuite` workspace and run-artifact stores. The detailed
+standard-view suite remains independently reproducible from the package test
+bundle.
