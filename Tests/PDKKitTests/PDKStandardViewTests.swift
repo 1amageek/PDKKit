@@ -249,7 +249,7 @@ struct PDKStandardViewTests {
     func maskViewInspectionIsCanonical() async throws {
         let library = IRLibrary(
             name: "fixture-mask",
-            units: IRUnits(dbuPerMicron: 1000),
+            databaseUnitScale: try DatabaseUnitScale(databaseUnitsPerMicrometer: 1_000),
             cells: [IRCell(
                 name: "TOP",
                 elements: [.boundary(IRBoundary(

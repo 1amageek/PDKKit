@@ -5,7 +5,6 @@ import LEF
 import LayoutIR
 import OASIS
 import PDKCore
-import CircuiteFoundation
 
 public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
     private let clock: any PDKStandardViewExecutionClock
@@ -1083,7 +1082,9 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             physicalLayerNumbers: layerNumbers,
             cellNames: library.cells.map(\.name),
             elementCount: elements.count,
-            metadata: ["dbuPerMicron": String(library.units.dbuPerMicron)]
+            metadata: [
+                "dbuPerMicron": String(library.databaseUnitScale.databaseUnitsPerMicrometer)
+            ]
         )
     }
 
