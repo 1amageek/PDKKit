@@ -1,6 +1,6 @@
 import Foundation
 
-public struct PDKKitCLIDiagnosticEnvelope: Sendable, Equatable, Codable {
+public struct PDKKitCLIDiagnosticOutput: Sendable, Equatable, Codable {
     public var code: String
     public var message: String
 

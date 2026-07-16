@@ -38,7 +38,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: request.pdk.manifest.path,
                 suggestedActions: ["provide_project_root", "repair_manifest_reference"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -47,7 +47,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         }
         let manifest: PDKManifest
         do {
-            let manifestArtifact = try PDKFoundationArtifactBridge.artifactReference(
+            let manifestArtifact = try PDKArtifactReferenceBuilder.artifactReference(
                 for: request.pdk.manifest,
                 resolvedURL: manifestURL
             )
@@ -64,7 +64,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                     entity: manifestURL.path,
                     suggestedActions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
                 )
-                return try makeEnvelope(
+                return try makeResult(
                     request: request,
                     startedAt: startedAt,
                     status: .blocked,
@@ -81,7 +81,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: manifestURL.path,
                 suggestedActions: ["repair_pdk_manifest", "run_pdkkit_inspect"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -95,7 +95,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: manifestURL.path,
                 suggestedActions: ["restore_pdk_manifest", "check_file_permissions"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -111,7 +111,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["add_pdk_asset", "repair_pdk_manifest"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -126,7 +126,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["repair_pdk_manifest", "select_matching_view_parser"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -145,7 +145,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["restore_pdk_asset", "check_manifest_relative_path"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: asset.required ? .blocked : .failed,
@@ -194,10 +194,10 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
             expectedCellNames: expectedCellNames,
             projectRootPath: request.projectRootPath
         )
-        let inspectionEnvelope = try await standardInspector.execute(inspectionRequest)
-        var findings = inspectionEnvelope.payload.findings
+        let inspectionResult = try await standardInspector.execute(inspectionRequest)
+        var findings = inspectionResult.payload.findings
         var binding: PDKStandardViewBindingReport?
-        if let inspection = inspectionEnvelope.payload.inspection {
+        if let inspection = inspectionResult.payload.inspection {
             let report = bindingValidator.validate(
                 manifest: manifest,
                 assetID: request.assetID,
@@ -210,26 +210,26 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
 
         let bindingIsValid = binding?.isValid ?? false
         let status: PDKExecutionStatus
-        switch inspectionEnvelope.status {
+        switch inspectionResult.status {
         case .failed, .cancelled:
-            status = inspectionEnvelope.status
+            status = inspectionResult.status
         case .blocked:
             status = .blocked
         case .completed:
             status = bindingIsValid ? .completed : .blocked
         }
-        return try makeEnvelope(
+        return try makeResult(
             request: request,
             startedAt: startedAt,
             status: status,
             findings: findings,
-            artifacts: inspectionEnvelope.artifacts,
-            inspection: inspectionEnvelope.payload,
+            artifacts: inspectionResult.artifacts,
+            inspection: inspectionResult.payload,
             binding: binding
         )
     }
 
-    private func makeEnvelope(
+    private func makeResult(
         request: PDKManifestViewInspectionRequest,
         startedAt: Date,
         status: PDKExecutionStatus,

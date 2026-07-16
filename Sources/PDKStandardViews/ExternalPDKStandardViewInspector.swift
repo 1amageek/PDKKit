@@ -5,12 +5,12 @@ import CircuiteFoundation
 
 public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
     private let provider: any PDKExternalStandardViewResultProviding
-    private let decoder: PDKExternalInspectionEnvelopeDecoder
+    private let decoder: PDKExternalInspectionResultDecoder
     private let clock: any PDKStandardViewExecutionClock
 
     public init(
         provider: any PDKExternalStandardViewResultProviding,
-        decoder: PDKExternalInspectionEnvelopeDecoder = PDKExternalInspectionEnvelopeDecoder(),
+        decoder: PDKExternalInspectionResultDecoder = PDKExternalInspectionResultDecoder(),
         clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock()
     ) {
         self.provider = provider
@@ -27,7 +27,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         do {
             data = try await provider.resultData(for: request)
         } catch {
-            return try failureEnvelope(
+            return try failureResult(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -41,20 +41,20 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         }
 
         do {
-            let envelope = try decoder.decodeStandardView(
+            let result = try decoder.decodeStandardView(
                 data,
                 expectedSchemaVersion: PDKStandardViewInspectionRequest.currentSchemaVersion,
                 expectedRunID: request.runID
             )
-            receivedArtifacts = envelope.artifacts
-            try validate(payload: envelope.payload, status: envelope.status, request: request)
-            return envelope
+            receivedArtifacts = result.artifacts
+            try validate(payload: result.payload, status: result.status, request: request)
+            return result
         } catch let error as PDKExternalInspectionError {
             if receivedArtifacts.isEmpty {
                 receivedArtifacts = artifacts(from: data)
             }
             let status: PDKExecutionStatus = isTrustBoundaryError(error) ? .blocked : .failed
-            return try failureEnvelope(
+            return try failureResult(
                 request: request,
                 startedAt: startedAt,
                 status: status,
@@ -63,14 +63,14 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                     code: "pdk.external.standard-view-contract-mismatch",
                     message: error.localizedDescription,
                     severity: status == .blocked ? .blocker : .error,
-                    actions: ["repair_external_result_envelope", "rerun_external_standard_view"]
+                    actions: ["repair_external_result", "rerun_external_standard_view"]
                 )
             )
         } catch {
             if receivedArtifacts.isEmpty {
                 receivedArtifacts = artifacts(from: data)
             }
-            return try failureEnvelope(
+            return try failureResult(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -79,7 +79,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                     code: "pdk.external.standard-view-result-invalid",
                     message: "External standard-view result could not be validated: " + error.localizedDescription,
                     severity: .error,
-                    actions: ["repair_external_result_envelope", "rerun_external_standard_view"]
+                    actions: ["repair_external_result", "rerun_external_standard_view"]
                 )
             )
         }
@@ -121,7 +121,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                     inspection.source,
                     baseDirectoryPath: request.projectRootPath
                 )
-                expectedArtifact = try PDKFoundationArtifactBridge.artifactReference(
+                expectedArtifact = try PDKArtifactReferenceBuilder.artifactReference(
                     for: inspection.source,
                     resolvedURL: sourceURL
                 )
@@ -191,7 +191,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         )
     }
 
-    private func failureEnvelope(
+    private func failureResult(
         request: PDKStandardViewInspectionRequest,
         startedAt: Date,
         status: PDKExecutionStatus,

@@ -27,8 +27,9 @@ Provide one immutable, process-scoped source of truth for every design and signo
 - Public execution surfaces are protocol-first, Sendable and dependency-injected.
 - Requests and payloads are Codable, Hashable and schema-versioned.
 - PDKCore uses CircuiteFoundation `ArtifactLocator` and `ArtifactReference` for
-  artifact intent and verified identity. No legacy or compatibility envelope
-  is part of the public contract.
+  artifact intent and verified identity.
+- Domain execution protocols refine `CircuiteFoundation.Engine` directly, and
+  results expose artifact, diagnostic and evidence capabilities directly.
 - Diagnostics contain a stable code, severity, affected entity and suggested actions.
 - Unsupported semantics and missing prerequisites produce blocked results.
 - Native and external-tool backends conform to identical request and payload schemas.
@@ -46,4 +47,4 @@ Provide one immutable, process-scoped source of truth for every design and signo
 - Contract and parser round-trip tests
 - Reference corpus
 - Capability and limitation report
-- Direct Foundation protocol conformance and DesignFlowKernel integration tests
+- Direct CircuiteFoundation protocol conformance and DesignFlowKernel integration tests

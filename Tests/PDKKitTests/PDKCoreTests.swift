@@ -56,7 +56,7 @@ struct PDKCoreTests {
         let asset = try #require(manifest.assets.first(where: { $0.assetID == "models" }))
 
         let resolved = try LocalPDKAssetResolver().resolve(asset, relativeTo: manifestURL)
-        let foundationReference = try resolved.foundationArtifactReference()
+        let foundationReference = try resolved.artifactReference()
 
         #expect(foundationReference.id.rawValue == "models")
         #expect(foundationReference.digest.algorithm == .sha256)
@@ -133,7 +133,7 @@ struct PDKCoreTests {
         let reference = try PDKManifestReferenceBuilder().makeReference(
             for: fixtureURL().appending(path: "pdk.json")
         )
-        let foundationReference = try reference.foundationManifestReference()
+        let foundationReference = try reference.validatedManifest()
 
         #expect(foundationReference.id.rawValue == "pdk-manifest")
         #expect(foundationReference.locator.kind.rawValue == "pdk.technology")

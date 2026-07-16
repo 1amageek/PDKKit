@@ -85,7 +85,7 @@ struct PDKStandardViewTests {
             byteCount: Int64(oracleData.count)
         )
 
-        let envelope = try await LocalPDKOracleComparator().execute(
+        let result = try await LocalPDKOracleComparator().execute(
             PDKOracleRequest(
                 runID: "oracle-correlation",
                 pdk: pdk,
@@ -93,11 +93,11 @@ struct PDKStandardViewTests {
                 projectRootPath: directory.path
             )
         )
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.isValid)
-        #expect(envelope.payload.comparisons.count == 3)
-        #expect(envelope.payload.comparisons.allSatisfy { $0.isMatch })
-        #expect(envelope.payload.findings.isEmpty)
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.isValid)
+        #expect(result.payload.comparisons.count == 3)
+        #expect(result.payload.comparisons.allSatisfy { $0.isMatch })
+        #expect(result.payload.findings.isEmpty)
     }
 
     @Test("oracle mismatch returns a structured blocker")
@@ -132,12 +132,12 @@ struct PDKStandardViewTests {
             byteCount: Int64(data.count)
         )
 
-        let envelope = try await LocalPDKOracleComparator().execute(
+        let result = try await LocalPDKOracleComparator().execute(
             PDKOracleRequest(runID: "oracle-mismatch", pdk: pdk, oracle: oracle)
         )
-        #expect(envelope.status == .blocked)
-        #expect(envelope.payload.findings.contains { $0.code == "pdk.oracle.value-mismatch" })
-        #expect(envelope.payload.comparisons.contains { !$0.isMatch })
+        #expect(result.status == .blocked)
+        #expect(result.payload.findings.contains { $0.code == "pdk.oracle.value-mismatch" })
+        #expect(result.payload.comparisons.contains { !$0.isMatch })
     }
 
     @Test("manifest-bound LEF inspection returns canonical semantics")
@@ -166,16 +166,16 @@ struct PDKStandardViewTests {
             projectRootPath: fixtureURL().path
         )
 
-        let envelope = try await LocalPDKManifestViewInspector().execute(request)
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.isValid)
-        #expect(envelope.payload.inspection?.inspection?.layerNames.contains("M1") == true)
-        #expect(envelope.payload.inspection?.inspection?.cellNames.contains("nmos") == true)
-        #expect(envelope.payload.inspection?.inspection?.sourceArtifact?.digest.algorithm == .sha256)
-        #expect(envelope.payload.inspection?.inspection?.sourceArtifact?.byteCount ?? 0 > 0)
-        #expect(envelope.payload.binding?.mappingID == "lef-cell-view")
-        #expect(envelope.payload.binding?.isValid == true)
-        #expect(envelope.payload.binding?.missingCellNames.isEmpty == true)
+        let result = try await LocalPDKManifestViewInspector().execute(request)
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.isValid)
+        #expect(result.payload.inspection?.inspection?.layerNames.contains("M1") == true)
+        #expect(result.payload.inspection?.inspection?.cellNames.contains("nmos") == true)
+        #expect(result.payload.inspection?.inspection?.sourceArtifact?.digest.algorithm == .sha256)
+        #expect(result.payload.inspection?.inspection?.sourceArtifact?.byteCount ?? 0 > 0)
+        #expect(result.payload.binding?.mappingID == "lef-cell-view")
+        #expect(result.payload.binding?.isValid == true)
+        #expect(result.payload.binding?.missingCellNames.isEmpty == true)
     }
 
     @Test("manifest-bound SPICE and Liberty inspection expose device and timing facts")
@@ -195,29 +195,29 @@ struct PDKStandardViewTests {
                 assetID: assetID,
                 format: format
             )
-            let envelope = try await LocalPDKManifestViewInspector().execute(request)
-            #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-            #expect(envelope.payload.inspection?.inspection?.sourceArtifact != nil)
-            #expect(envelope.payload.binding?.isValid == true)
-            #expect(envelope.payload.binding?.missingCellNames.isEmpty == true)
-            #expect(envelope.payload.binding?.missingCornerNames.isEmpty == true)
+            let result = try await LocalPDKManifestViewInspector().execute(request)
+            #expect(result.status == .completed, "\(result.diagnostics)")
+            #expect(result.payload.inspection?.inspection?.sourceArtifact != nil)
+            #expect(result.payload.binding?.isValid == true)
+            #expect(result.payload.binding?.missingCellNames.isEmpty == true)
+            #expect(result.payload.binding?.missingCornerNames.isEmpty == true)
             if format == .spice {
-                #expect(envelope.payload.inspection?.inspection?.modelNames == ["nmos_180n"])
-                #expect(envelope.payload.inspection?.inspection?.modelTypes == ["nmos"])
-                #expect(envelope.payload.inspection?.inspection?.modelParameterNames == ["level"])
-                #expect(envelope.payload.inspection?.inspection?.cornerNames == ["tt"])
-                #expect(envelope.payload.inspection?.inspection?.spiceModels.first?.parameters.first?.numericValue == 1.0)
-                #expect(envelope.payload.inspection?.inspection?.spiceModels.first?.parameters.first?.isExpression == false)
+                #expect(result.payload.inspection?.inspection?.modelNames == ["nmos_180n"])
+                #expect(result.payload.inspection?.inspection?.modelTypes == ["nmos"])
+                #expect(result.payload.inspection?.inspection?.modelParameterNames == ["level"])
+                #expect(result.payload.inspection?.inspection?.cornerNames == ["tt"])
+                #expect(result.payload.inspection?.inspection?.spiceModels.first?.parameters.first?.numericValue == 1.0)
+                #expect(result.payload.inspection?.inspection?.spiceModels.first?.parameters.first?.isExpression == false)
             } else {
-                #expect(envelope.payload.inspection?.inspection?.cellNames == ["nmos"])
-                #expect(envelope.payload.inspection?.inspection?.timingArcCount == 1)
-                #expect(envelope.payload.inspection?.inspection?.timingRelatedPinNames == ["G"])
-                #expect(envelope.payload.inspection?.inspection?.timingTableValueCount == 1)
-                #expect(envelope.payload.inspection?.inspection?.cornerNames == ["tt"])
-                #expect(envelope.payload.inspection?.inspection?.unitDeclarations == ["time_unit": "1ns", "voltage_unit": "1V"])
-                #expect(envelope.payload.inspection?.inspection?.libertyCells.first?.area == 1.0)
-                #expect(envelope.payload.inspection?.inspection?.libertyTimingTables.first?.values == [0.1])
-                #expect(envelope.payload.inspection?.inspection?.libertyTimingTables.first?.hasCompleteNumericSemantics == true)
+                #expect(result.payload.inspection?.inspection?.cellNames == ["nmos"])
+                #expect(result.payload.inspection?.inspection?.timingArcCount == 1)
+                #expect(result.payload.inspection?.inspection?.timingRelatedPinNames == ["G"])
+                #expect(result.payload.inspection?.inspection?.timingTableValueCount == 1)
+                #expect(result.payload.inspection?.inspection?.cornerNames == ["tt"])
+                #expect(result.payload.inspection?.inspection?.unitDeclarations == ["time_unit": "1ns", "voltage_unit": "1V"])
+                #expect(result.payload.inspection?.inspection?.libertyCells.first?.area == 1.0)
+                #expect(result.payload.inspection?.inspection?.libertyTimingTables.first?.values == [0.1])
+                #expect(result.payload.inspection?.inspection?.libertyTimingTables.first?.hasCompleteNumericSemantics == true)
             }
         }
     }
@@ -350,11 +350,11 @@ struct PDKStandardViewTests {
                 expectedPhysicalLayerNumbers: [10],
                 expectedCellNames: ["TOP"]
             )
-            let envelope = try await LocalPDKStandardViewInspector().execute(request)
-            #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-            #expect(envelope.payload.inspection?.physicalLayerNumbers == [10])
-            #expect(envelope.payload.inspection?.cellNames == ["TOP"])
-            #expect(envelope.payload.inspection?.elementCount == 1)
+            let result = try await LocalPDKStandardViewInspector().execute(request)
+            #expect(result.status == .completed, "\(result.diagnostics)")
+            #expect(result.payload.inspection?.physicalLayerNumbers == [10])
+            #expect(result.payload.inspection?.cellNames == ["TOP"])
+            #expect(result.payload.inspection?.elementCount == 1)
         }
     }
 
@@ -388,9 +388,9 @@ struct PDKStandardViewTests {
             assetID: "broken"
         )
 
-        let envelope = try await LocalPDKStandardViewInspector().execute(request)
-        #expect(envelope.status == .failed)
-        #expect(envelope.payload.findings.contains { $0.code == "pdk.standard-view.parse-failed" })
+        let result = try await LocalPDKStandardViewInspector().execute(request)
+        #expect(result.status == .failed)
+        #expect(result.payload.findings.contains { $0.code == "pdk.standard-view.parse-failed" })
     }
 
     @Test("manifest corner binding blocks an unqualified standard view")
@@ -458,9 +458,9 @@ struct PDKStandardViewTests {
                 format: format,
                 assetID: format.rawValue
             )
-            let envelope = try await LocalPDKStandardViewInspector().execute(request)
-            #expect(envelope.status == .failed)
-            #expect(envelope.payload.findings.contains { $0.code == "pdk.standard-view.parse-failed" })
+            let result = try await LocalPDKStandardViewInspector().execute(request)
+            #expect(result.status == .failed)
+            #expect(result.payload.findings.contains { $0.code == "pdk.standard-view.parse-failed" })
         }
     }
 

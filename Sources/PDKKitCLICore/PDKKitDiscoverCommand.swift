@@ -37,16 +37,16 @@ struct PDKKitDiscoverCommand: Sendable {
             searchRoots: options.searchRoots,
             requiredProcessID: options.requiredProcessID
         )
-        let envelope = try await LocalPDKDiscoverer().execute(request)
+        let result = try await LocalPDKDiscoverer().execute(request)
         let output = PDKKitDiscoveryOutput(
             command: "discover",
             searchRoots: options.searchRoots,
             requiredProcessID: options.requiredProcessID,
-            status: envelope.status,
-            diagnostics: envelope.diagnostics,
-            payload: envelope.payload
+            status: result.status,
+            diagnostics: result.diagnostics,
+            payload: result.payload
         )
-        let exitCode: Int32 = envelope.status == .completed ? 0 : 2
+        let exitCode: Int32 = result.status == .completed ? 0 : 2
         return PDKKitCLIInvocationResult(
             exitCode: exitCode,
             standardOutput: try PDKKitCLIJSONCoding.encode(output, pretty: options.pretty) + "\n",

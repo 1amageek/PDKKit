@@ -22,7 +22,7 @@ public struct PDKManifestReferenceBuilder: Sendable {
         let materializedReference = try LocalArtifactReferencer(digester: digester).reference(
             artifactLocator
         )
-        let foundationReference = try PDKFoundationArtifactBridge.artifactReference(
+        let foundationReference = try PDKArtifactReferenceBuilder.artifactReference(
             assetID: "pdk-manifest",
             path: url,
             kind: artifactLocator.kind,

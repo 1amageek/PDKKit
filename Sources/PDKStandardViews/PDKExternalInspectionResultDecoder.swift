@@ -1,7 +1,7 @@
 import Foundation
 import CircuiteFoundation
 
-public struct PDKExternalInspectionEnvelopeDecoder: Sendable {
+public struct PDKExternalInspectionResultDecoder: Sendable {
     public init() {}
 
     public func decodeStandardView(
@@ -9,28 +9,28 @@ public struct PDKExternalInspectionEnvelopeDecoder: Sendable {
         expectedSchemaVersion: Int,
         expectedRunID: String
     ) throws -> PDKStandardViewInspectionResult {
-        let envelope: PDKStandardViewInspectionResult
+        let result: PDKStandardViewInspectionResult
         do {
-            envelope = try JSONDecoder().decode(
+            result = try JSONDecoder().decode(
                 PDKStandardViewInspectionResult.self,
                 from: data
             )
         } catch {
             throw PDKExternalInspectionError.invalidJSON(error.localizedDescription)
         }
-        guard envelope.schemaVersion == expectedSchemaVersion else {
+        guard result.schemaVersion == expectedSchemaVersion else {
             throw PDKExternalInspectionError.schemaVersionMismatch(
                 expected: expectedSchemaVersion,
-                actual: envelope.schemaVersion
+                actual: result.schemaVersion
             )
         }
-        guard envelope.runID == expectedRunID else {
+        guard result.runID == expectedRunID else {
             throw PDKExternalInspectionError.runIDMismatch(
                 expected: expectedRunID,
-                actual: envelope.runID
+                actual: result.runID
             )
         }
-        return envelope
+        return result
     }
 
     public func decodeRuleDeck(
@@ -38,18 +38,18 @@ public struct PDKExternalInspectionEnvelopeDecoder: Sendable {
         expectedSchemaVersion: Int,
         expectedRunID: String
     ) throws -> PDKRuleDeckInspectionResult {
-        let envelope: PDKRuleDeckInspectionResult
+        let result: PDKRuleDeckInspectionResult
         do {
-            envelope = try JSONDecoder().decode(PDKRuleDeckInspectionResult.self, from: data)
+            result = try JSONDecoder().decode(PDKRuleDeckInspectionResult.self, from: data)
         } catch {
             throw PDKExternalInspectionError.invalidJSON(error.localizedDescription)
         }
-        guard envelope.schemaVersion == expectedSchemaVersion else {
-            throw PDKExternalInspectionError.schemaVersionMismatch(expected: expectedSchemaVersion, actual: envelope.schemaVersion)
+        guard result.schemaVersion == expectedSchemaVersion else {
+            throw PDKExternalInspectionError.schemaVersionMismatch(expected: expectedSchemaVersion, actual: result.schemaVersion)
         }
-        guard envelope.runID == expectedRunID else {
-            throw PDKExternalInspectionError.runIDMismatch(expected: expectedRunID, actual: envelope.runID)
+        guard result.runID == expectedRunID else {
+            throw PDKExternalInspectionError.runIDMismatch(expected: expectedRunID, actual: result.runID)
         }
-        return envelope
+        return result
     }
 }

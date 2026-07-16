@@ -64,18 +64,18 @@ struct PDKKitInspectViewCommand: Sendable {
             assetID: options.assetID,
             format: options.format
         )
-        let envelope = try await LocalPDKManifestViewInspector().execute(request)
+        let result = try await LocalPDKManifestViewInspector().execute(request)
         let output = PDKKitStandardViewOutput(
             command: "inspect-view",
             manifestPath: manifestURL.path,
             assetID: options.assetID,
             format: options.format,
             runID: options.runID,
-            status: envelope.status,
-            diagnostics: envelope.diagnostics,
-            payload: envelope.payload
+            status: result.status,
+            diagnostics: result.diagnostics,
+            payload: result.payload
         )
-        let exitCode: Int32 = envelope.status == .completed ? 0 : 2
+        let exitCode: Int32 = result.status == .completed ? 0 : 2
         return PDKKitCLIInvocationResult(
             exitCode: exitCode,
             standardOutput: try PDKKitCLIJSONCoding.encode(output, pretty: options.pretty) + "\n",

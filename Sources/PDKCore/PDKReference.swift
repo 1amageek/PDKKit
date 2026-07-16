@@ -1,6 +1,5 @@
 import CircuiteFoundation
 import Foundation
-import CircuiteFoundation
 
 public struct PDKReference: Sendable, Hashable, Codable {
     public var manifest: ArtifactReference
@@ -57,8 +56,8 @@ public struct PDKReference: Sendable, Hashable, Codable {
         }
     }
 
-    /// Projects the manifest identity into the canonical Foundation artifact model.
-    public func foundationManifestReference() throws -> ArtifactReference {
+    /// Returns the manifest after validating its identity against the PDK digest.
+    public func validatedManifest() throws -> ArtifactReference {
         try validate()
         return manifest
     }

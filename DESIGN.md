@@ -58,8 +58,9 @@ qualification; ToolQualification consumes the evidence and owns trust state.
 `artifactLocator()` projection uses `CircuiteFoundation.ArtifactLocator`.
 `LocalPDKAssetResolver` materializes that intent through
 `LocalArtifactReferencer`, producing a streaming SHA-256 and an immutable
-`ArtifactReference`. No compatibility envelope or adapter is created at this
-boundary; PDK requests and results use Foundation artifact types directly.
+`ArtifactReference`. PDK requests and results use CircuiteFoundation artifact
+types directly, and each execution protocol refines `Engine` with its domain
+request and result types.
 
 The same boundary applies to standard-view, rule-deck and oracle artifact
 reads. Local inspectors verify declared artifacts

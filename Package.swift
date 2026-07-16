@@ -88,6 +88,7 @@ let package = Package(
                 "PDKStandardViews",
                 "PDKKit",
                 "PDKKitCLICore",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
                 .product(name: "LayoutIR", package: "swift-mask-data"),
                 .product(name: "GDSII", package: "swift-mask-data"),
                 .product(name: "OASIS", package: "swift-mask-data"),

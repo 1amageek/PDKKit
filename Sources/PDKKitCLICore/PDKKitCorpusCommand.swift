@@ -44,17 +44,17 @@ struct PDKKitCorpusCommand: Sendable {
             suitePath: suiteURL.path,
             rootPath: rootURL.path
         )
-        let envelope = try await LocalPDKCorpusValidator().execute(request)
+        let result = try await LocalPDKCorpusValidator().execute(request)
         let output = PDKKitCorpusOutput(
             command: "corpus",
             suitePath: suiteURL.path,
             rootPath: rootURL.path,
             runID: options.runID,
-            status: envelope.status,
-            diagnostics: envelope.diagnostics,
-            payload: envelope.payload
+            status: result.status,
+            diagnostics: result.diagnostics,
+            payload: result.payload
         )
-        let exitCode: Int32 = envelope.status == .completed ? 0 : 2
+        let exitCode: Int32 = result.status == .completed ? 0 : 2
         return PDKKitCLIInvocationResult(
             exitCode: exitCode,
             standardOutput: try PDKKitCLIJSONCoding.encode(output, pretty: options.pretty) + "\n",

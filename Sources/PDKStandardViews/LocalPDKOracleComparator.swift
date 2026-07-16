@@ -25,7 +25,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -41,14 +41,14 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         }
         let oracleArtifact: ArtifactReference
         do {
-            oracleArtifact = try PDKFoundationArtifactBridge.artifactReference(
+            oracleArtifact = try PDKArtifactReferenceBuilder.artifactReference(
                 for: request.oracle,
                 resolvedURL: oracleURL
             )
             let integrity = LocalArtifactVerifier().verify(oracleArtifact)
             let integrityFindings = findings(for: integrity, entity: request.oracle.path)
             guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
-                return try makeEnvelope(
+                return try makeResult(
                     request: request,
                     startedAt: startedAt,
                     status: .blocked,
@@ -58,7 +58,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 )
             }
         } catch {
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -77,7 +77,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         do {
             data = try Data(contentsOf: oracleURL)
         } catch {
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -106,7 +106,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 entity: oracleURL.path,
                 suggestedActions: ["repair_oracle_expectation", "run_pdkkit_oracle_help"]
             ))
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -118,7 +118,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
 
         var findings = validateExpectation(expectation: expectation, request: request)
         guard !findings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -141,10 +141,10 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 projectRootPath: request.projectRootPath
             )
             do {
-                let envelope = try await manifestInspector.execute(inspectionRequest)
-                let inspectionFindings = envelope.payload.findings
+                let result = try await manifestInspector.execute(inspectionRequest)
+                let inspectionFindings = result.payload.findings
                 findings.append(contentsOf: inspectionFindings)
-                switch envelope.status {
+                switch result.status {
                 case .failed, .cancelled:
                     hasFailedView = true
                 case .blocked:
@@ -152,7 +152,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 case .completed:
                     break
                 }
-                guard let inspection = envelope.payload.inspection?.inspection else {
+                guard let inspection = result.payload.inspection?.inspection else {
                     let missingInspection = PDKValidationFinding(
                         severity: .error,
                         code: "pdk.oracle.inspection-missing",
@@ -201,7 +201,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         } else {
             status = .completed
         }
-        return try makeEnvelope(
+        return try makeResult(
             request: request,
             startedAt: startedAt,
             status: status,
@@ -354,7 +354,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         ))
     }
 
-    private func makeEnvelope(
+    private func makeResult(
         request: PDKOracleRequest,
         startedAt: Date,
         status: PDKExecutionStatus,

@@ -69,16 +69,16 @@ struct PDKKitValidateCommand: Sendable {
             validateStandardViews: options.validateStandardViews,
             validateRuleDecks: options.validateRuleDecks
         )
-        let envelope = try await LocalPDKValidator().execute(request)
+        let result = try await LocalPDKValidator().execute(request)
         let output = PDKKitValidationOutput(
             command: "validate",
             manifestPath: url.path,
             runID: options.runID,
-            status: envelope.status,
-            diagnostics: envelope.diagnostics,
-            payload: envelope.payload
+            status: result.status,
+            diagnostics: result.diagnostics,
+            payload: result.payload
         )
-        let exitCode: Int32 = envelope.status == .completed ? 0 : 2
+        let exitCode: Int32 = result.status == .completed ? 0 : 2
         return PDKKitCLIInvocationResult(
             exitCode: exitCode,
             standardOutput: try PDKKitCLIJSONCoding.encode(output, pretty: options.pretty) + "\n",

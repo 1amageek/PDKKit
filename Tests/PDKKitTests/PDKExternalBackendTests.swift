@@ -4,7 +4,7 @@ import Testing
 @testable import PDKCore
 @testable import PDKStandardViews
 
-@Suite("PDK external backend envelope parity")
+@Suite("PDK external backend result parity")
 struct PDKExternalBackendTests {
     @Test("external standard-view results bind through the manifest contract")
     func externalStandardViewResultsBindThroughManifest() async throws {
@@ -22,13 +22,13 @@ struct PDKExternalBackendTests {
             expectedCellNames: ["nmos"],
             projectRootPath: fixture.path
         )
-        let localEnvelope = try await LocalPDKStandardViewInspector().execute(rawRequest)
-        let resultData = try JSONEncoder().encode(localEnvelope)
+        let localResult = try await LocalPDKStandardViewInspector().execute(rawRequest)
+        let resultData = try JSONEncoder().encode(localResult)
         let externalInspector = ExternalPDKStandardViewInspector(
             provider: StaticStandardViewResultProvider(data: resultData)
         )
 
-        let envelope = try await LocalPDKManifestViewInspector(
+        let result = try await LocalPDKManifestViewInspector(
             standardInspector: externalInspector
         ).execute(
             PDKManifestViewInspectionRequest(
@@ -41,19 +41,19 @@ struct PDKExternalBackendTests {
             )
         )
 
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.isValid)
-        #expect(envelope.payload.inspection?.parserID == localEnvelope.payload.parserID)
-        #expect(envelope.payload.binding?.mappingID == "lef-cell-view")
-        #expect(envelope.payload.binding?.isValid == true)
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.isValid)
+        #expect(result.payload.inspection?.parserID == localResult.payload.parserID)
+        #expect(result.payload.binding?.mappingID == "lef-cell-view")
+        #expect(result.payload.binding?.isValid == true)
     }
 
     @Test("external standard-view schema and run mismatches are blocked")
     func externalStandardViewContractMismatchesAreBlocked() async throws {
         let request = try standardViewRequest()
-        let localEnvelope = try await LocalPDKStandardViewInspector().execute(request)
+        let localResult = try await LocalPDKStandardViewInspector().execute(request)
 
-        var wrongSchema = localEnvelope
+        var wrongSchema = localResult
         wrongSchema.schemaVersion = 999
         let schemaResult = try await ExternalPDKStandardViewInspector(
             provider: StaticStandardViewResultProvider(data: try JSONEncoder().encode(wrongSchema))
@@ -63,7 +63,7 @@ struct PDKExternalBackendTests {
             $0.code == "pdk.external.standard-view-contract-mismatch"
         })
 
-        var wrongRun = localEnvelope
+        var wrongRun = localResult
         wrongRun.runID = "unexpected-run"
         wrongRun.artifacts = [
             try makeArtifactReference(
@@ -88,16 +88,16 @@ struct PDKExternalBackendTests {
     @Test("external standard-view malformed data remains structured")
     func externalStandardViewMalformedDataIsStructured() async throws {
         let request = try standardViewRequest()
-        let envelope = try await ExternalPDKStandardViewInspector(
+        let result = try await ExternalPDKStandardViewInspector(
             provider: StaticStandardViewResultProvider(data: Data("not-json".utf8))
         ).execute(request)
 
-        #expect(envelope.status == .failed)
-        #expect(envelope.payload.isValid == false)
-        #expect(envelope.payload.findings.contains {
+        #expect(result.status == .failed)
+        #expect(result.payload.isValid == false)
+        #expect(result.payload.findings.contains {
             $0.code == "pdk.external.standard-view-contract-mismatch"
         })
-        #expect(envelope.payload.limitations.contains {
+        #expect(result.payload.limitations.contains {
             $0.contains("typed result boundary")
         })
     }
@@ -115,12 +115,12 @@ struct PDKExternalBackendTests {
         )
         tampered.payload.inspection = inspection
 
-        let envelope = try await ExternalPDKStandardViewInspector(
+        let result = try await ExternalPDKStandardViewInspector(
             provider: StaticStandardViewResultProvider(data: try JSONEncoder().encode(tampered))
         ).execute(request)
 
-        #expect(envelope.status == .blocked)
-        #expect(envelope.payload.findings.contains {
+        #expect(result.status == .blocked)
+        #expect(result.payload.findings.contains {
             $0.code == "pdk.external.standard-view-contract-mismatch"
         })
     }
@@ -137,8 +137,8 @@ struct PDKExternalBackendTests {
             assetID: "rules",
             projectRootPath: fixture.path
         )
-        let localEnvelope = try await LocalPDKRuleDeckInspector().execute(request)
-        let resultData = try JSONEncoder().encode(localEnvelope)
+        let localResult = try await LocalPDKRuleDeckInspector().execute(request)
+        let resultData = try JSONEncoder().encode(localResult)
         let valid = try await ExternalPDKRuleDeckInspector(
             provider: StaticRuleDeckResultProvider(data: resultData)
         ).execute(request)
@@ -148,7 +148,7 @@ struct PDKExternalBackendTests {
         #expect(valid.payload.observedLayerIDs == ["active", "metal1"])
         #expect(valid.payload.sourceArtifact?.digest.algorithm == .sha256)
 
-        var wrongDigest = localEnvelope
+        var wrongDigest = localResult
         wrongDigest.payload.pdkDigest = "wrong-pdk-digest"
         let blocked = try await ExternalPDKRuleDeckInspector(
             provider: StaticRuleDeckResultProvider(data: try JSONEncoder().encode(wrongDigest))
@@ -158,7 +158,7 @@ struct PDKExternalBackendTests {
             $0.code == "pdk.external.rule-deck-contract-mismatch"
         })
 
-        var wrongReference = localEnvelope
+        var wrongReference = localResult
         var wrongPayload = wrongReference.payload
         if let reference = wrongPayload.reference {
             wrongPayload.reference = try makeArtifactLocator(
@@ -193,12 +193,12 @@ struct PDKExternalBackendTests {
         var tampered = try await LocalPDKRuleDeckInspector().execute(request)
         tampered.payload.sourceArtifact = nil
 
-        let envelope = try await ExternalPDKRuleDeckInspector(
+        let result = try await ExternalPDKRuleDeckInspector(
             provider: StaticRuleDeckResultProvider(data: try JSONEncoder().encode(tampered))
         ).execute(request)
 
-        #expect(envelope.status == .blocked)
-        #expect(envelope.payload.findings.contains {
+        #expect(result.status == .blocked)
+        #expect(result.payload.findings.contains {
             $0.code == "pdk.external.rule-deck-contract-mismatch"
         })
     }
@@ -211,12 +211,12 @@ struct PDKExternalBackendTests {
         inspection.sourceArtifact = nil
         tampered.payload.inspection = inspection
 
-        let envelope = try await ExternalPDKStandardViewInspector(
+        let result = try await ExternalPDKStandardViewInspector(
             provider: StaticStandardViewResultProvider(data: try JSONEncoder().encode(tampered))
         ).execute(request)
 
-        #expect(envelope.status == .blocked)
-        #expect(envelope.payload.findings.contains {
+        #expect(result.status == .blocked)
+        #expect(result.payload.findings.contains {
             $0.code == "pdk.external.standard-view-contract-mismatch"
         })
     }

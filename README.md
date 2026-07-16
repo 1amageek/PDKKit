@@ -6,7 +6,7 @@ Canonical process-design-kit discovery, identity, asset integrity and validation
 
 The PDKKit-owned contract layer is complete and executable for deterministic manifest-driven discovery,
 validation, retained corpus evaluation and parser-backed standard-view
-inspection, detailed numeric semantics, immutable Foundation-backed artifact provenance and oracle comparison. The
+inspection, detailed numeric semantics, immutable CircuiteFoundation artifact provenance and oracle comparison. The
 PDK stage slice is also executable by a flow host with immutable artifacts,
 scope-bound tool evidence, human approval and resume coverage. The larger
 platform goal requires separate provider evidence and foundry approval; PDKKit
@@ -37,6 +37,9 @@ Every executing product uses protocol-first dependency injection, typed request
 records, immutable artifact identities from CircuiteFoundation, and explicit
 completed, blocked, failed and cancelled states. Each domain result carries its
 own payload, diagnostics, immutable artifact references and `ExecutionProvenance`.
+The domain protocols refine `CircuiteFoundation.Engine` directly, and their
+result types conform to `ArtifactProducing`, `DiagnosticReporting` and
+`EvidenceProviding` without a facade or parallel execution contract.
 
 The artifact boundary has two representations with different authority:
 

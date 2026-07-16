@@ -5,13 +5,13 @@ import CircuiteFoundation
 
 public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     private let provider: any PDKExternalRuleDeckResultProviding
-    private let decoder: PDKExternalInspectionEnvelopeDecoder
+    private let decoder: PDKExternalInspectionResultDecoder
     private let clock: any PDKStandardViewExecutionClock
     private let assetResolver: any PDKAssetResolving
 
     public init(
         provider: any PDKExternalRuleDeckResultProviding,
-        decoder: PDKExternalInspectionEnvelopeDecoder = PDKExternalInspectionEnvelopeDecoder(),
+        decoder: PDKExternalInspectionResultDecoder = PDKExternalInspectionResultDecoder(),
         clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock(),
         assetResolver: any PDKAssetResolving = LocalPDKAssetResolver()
     ) {
@@ -30,7 +30,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         do {
             data = try await provider.resultData(for: request)
         } catch {
-            return try failureEnvelope(
+            return try failureResult(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -44,20 +44,20 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         }
 
         do {
-            let envelope = try decoder.decodeRuleDeck(
+            let result = try decoder.decodeRuleDeck(
                 data,
                 expectedSchemaVersion: PDKRuleDeckInspectionRequest.currentSchemaVersion,
                 expectedRunID: request.runID
             )
-            receivedArtifacts = envelope.artifacts
-            try validate(payload: envelope.payload, status: envelope.status, request: request)
-            return envelope
+            receivedArtifacts = result.artifacts
+            try validate(payload: result.payload, status: result.status, request: request)
+            return result
         } catch let error as PDKExternalInspectionError {
             if receivedArtifacts.isEmpty {
                 receivedArtifacts = artifacts(from: data)
             }
             let status: PDKExecutionStatus = isTrustBoundaryError(error) ? .blocked : .failed
-            return try failureEnvelope(
+            return try failureResult(
                 request: request,
                 startedAt: startedAt,
                 status: status,
@@ -66,14 +66,14 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                     code: "pdk.external.rule-deck-contract-mismatch",
                     message: error.localizedDescription,
                     severity: status == .blocked ? .blocker : .error,
-                    actions: ["repair_external_result_envelope", "rerun_external_rule_deck"]
+                    actions: ["repair_external_result", "rerun_external_rule_deck"]
                 )
             )
         } catch {
             if receivedArtifacts.isEmpty {
                 receivedArtifacts = artifacts(from: data)
             }
-            return try failureEnvelope(
+            return try failureResult(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -82,7 +82,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                     code: "pdk.external.rule-deck-result-invalid",
                     message: "External rule-deck result could not be validated: " + error.localizedDescription,
                     severity: .error,
-                    actions: ["repair_external_result_envelope", "rerun_external_rule_deck"]
+                    actions: ["repair_external_result", "rerun_external_rule_deck"]
                 )
             )
         }
@@ -159,7 +159,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         }
         let manifestData: Data
         do {
-            let manifestArtifact = try PDKFoundationArtifactBridge.artifactReference(
+            let manifestArtifact = try PDKArtifactReferenceBuilder.artifactReference(
                 for: request.pdk.manifest,
                 resolvedURL: manifestURL
             )
@@ -185,7 +185,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             let resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
             return (
                 reference: resolved.reference.locator,
-                artifact: try resolved.foundationArtifactReference()
+                artifact: try resolved.artifactReference()
             )
         } catch let error as PDKExternalInspectionError {
             throw error
@@ -237,7 +237,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         )
     }
 
-    private func failureEnvelope(
+    private func failureResult(
         request: PDKRuleDeckInspectionRequest,
         startedAt: Date,
         status: PDKExecutionStatus,

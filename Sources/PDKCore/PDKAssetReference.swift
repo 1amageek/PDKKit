@@ -1,6 +1,5 @@
 import CircuiteFoundation
 import Foundation
-import CircuiteFoundation
 
 public struct PDKAssetReference: Sendable, Hashable, Codable {
     public var assetID: String
@@ -44,7 +43,7 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
             location: try ArtifactLocation(workspaceRelativePath: path),
             role: .input,
             kind: try ArtifactKind(rawValue: "pdk.\(kind.rawValue.lowercased())"),
-            format: try PDKFoundationArtifactBridge.artifactFormat(for: format)
+            format: try PDKArtifactReferenceBuilder.artifactFormat(for: format)
         )
     }
 

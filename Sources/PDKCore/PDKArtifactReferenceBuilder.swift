@@ -1,15 +1,14 @@
 import CircuiteFoundation
 import Foundation
-import CircuiteFoundation
 
-/// Converts PDK artifact locators into canonical Foundation artifact identities.
-public enum PDKFoundationArtifactBridge {
+/// Builds immutable artifact references for PDK resources.
+public enum PDKArtifactReferenceBuilder {
     public static func artifactReference(
         for locator: ArtifactLocator,
         resolvedURL: URL? = nil
     ) throws -> ArtifactReference {
         guard let resolvedURL else {
-            throw PDKFoundationArtifactError.invalidLocation(
+            throw PDKArtifactReferenceError.invalidLocation(
                 path: locator.path,
                 reason: "A resolved URL is required to materialize an artifact locator."
             )
@@ -57,7 +56,7 @@ public enum PDKFoundationArtifactBridge {
         do {
             location = try ArtifactLocation(fileURL: path)
         } catch {
-            throw PDKFoundationArtifactError.invalidLocation(
+            throw PDKArtifactReferenceError.invalidLocation(
                 path: path.path,
                 reason: error.localizedDescription
             )

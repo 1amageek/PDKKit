@@ -30,7 +30,7 @@ public struct LocalPDKValidator: PDKValidating {
 
     public func execute(
         _ request: PDKValidationRequest
-    ) async throws -> PDKValidationExecutionResult {
+    ) async throws -> PDKValidationResult {
         let startedAt = clock.now()
         var validationResult: ValidationResult
         do {
@@ -77,7 +77,7 @@ public struct LocalPDKValidator: PDKValidating {
             startedAt: startedAt,
             completedAt: completedAt
         )
-        return PDKValidationExecutionResult(
+        return PDKValidationResult(
             schemaVersion: PDKValidationRequest.currentSchemaVersion,
             runID: request.runID,
             status: validationResult.status,
@@ -248,15 +248,15 @@ public struct LocalPDKValidator: PDKValidating {
                 projectRootPath: request.projectRootPath
             )
             do {
-                let envelope = try await standardViewInspector.execute(inspectionRequest)
+                let inspectionResult = try await standardViewInspector.execute(inspectionRequest)
                 result.standardViewResults.append(PDKStandardViewValidationResult(
                     assetID: assetID,
                     format: format,
-                    status: envelope.status,
-                    payload: envelope.payload
+                    status: inspectionResult.status,
+                    payload: inspectionResult.payload
                 ))
-                result.findings.append(contentsOf: envelope.payload.findings)
-                switch envelope.status {
+                result.findings.append(contentsOf: inspectionResult.payload.findings)
+                switch inspectionResult.status {
                 case .failed:
                     result.status = .failed
                 case .cancelled:
@@ -264,7 +264,7 @@ public struct LocalPDKValidator: PDKValidating {
                 case .blocked:
                     if result.status == .completed { result.status = .blocked }
                 case .completed:
-                    if !envelope.payload.isValid, result.status == .completed {
+                    if !inspectionResult.payload.isValid, result.status == .completed {
                         result.status = .blocked
                     }
                 }
@@ -333,11 +333,11 @@ public struct LocalPDKValidator: PDKValidating {
                 projectRootPath: request.projectRootPath
             )
             do {
-                let envelope = try await ruleDeckInspector.execute(inspectionRequest)
-                let payload = envelope.payload
+                let inspectionResult = try await ruleDeckInspector.execute(inspectionRequest)
+                let payload = inspectionResult.payload
                 result.ruleDeckResults.append(PDKRuleDeckValidationResult(
                     assetID: asset.assetID,
-                    status: envelope.status,
+                    status: inspectionResult.status,
                     isValid: payload.isValid,
                     reference: payload.reference ?? resolvedAssets.first(where: { $0.assetID == asset.assetID })?.reference.locator,
                     expectedLayerIDs: payload.expectedLayerIDs,
@@ -347,7 +347,7 @@ public struct LocalPDKValidator: PDKValidating {
                     findings: payload.findings
                 ))
                 result.findings.append(contentsOf: payload.findings)
-                updateStatus(&result.status, with: envelope.status)
+                updateStatus(&result.status, with: inspectionResult.status)
             } catch {
                 let finding = PDKValidationFinding(
                     severity: .error,
@@ -522,7 +522,7 @@ public struct LocalPDKValidator: PDKValidating {
                 continue
             }
             do {
-                let foundationReference = try PDKFoundationArtifactBridge.artifactReference(
+                let foundationReference = try PDKArtifactReferenceBuilder.artifactReference(
                     for: input,
                     resolvedURL: url
                 )
@@ -584,7 +584,7 @@ public struct LocalPDKValidator: PDKValidating {
         findings: inout [PDKValidationFinding]
     ) {
         do {
-            let artifact = try PDKFoundationArtifactBridge.artifactReference(
+            let artifact = try PDKArtifactReferenceBuilder.artifactReference(
                 for: request.pdk.manifest,
                 resolvedURL: manifestURL
             )

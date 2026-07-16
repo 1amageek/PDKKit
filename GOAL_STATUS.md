@@ -8,7 +8,7 @@
 |---|---|---|
 | Responsibility boundary | Complete | README.md and DESIGN.md |
 | Public package products | Complete | Package.swift, PDKCore/Discovery/Validation/Kit/CLI products; contract version 2 |
-| Shared Foundation request/result contract | Complete | Codable, Hashable, Sendable requests and typed result payloads |
+| Shared engine and evidence contract | Complete | Domain protocols refine `CircuiteFoundation.Engine`; results directly expose artifact, diagnostic and evidence capabilities |
 | Contract build | Passed | `swift build` |
 | Contract test | Passed | 52 PDKKit Swift Testing cases across 6 suites; Foundation artifact projection, symlink containment, digest binding, external typed-result parity, source-reference binding, corpus retention, schema decoding and CLI evidence included |
 | Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, parser-backed cross-view semantic validation, standard-view IR and oracle comparison |
@@ -30,7 +30,7 @@
 |---|---|---|---|---|
 | Manifest schema and migration | Implemented | Current schema plus legacy key/path migration | Retained fixture | Not qualified |
 | Local discovery | Implemented | Deterministic recursive local discovery | Retained fixture | Not qualified |
-| Asset resolution and hashing | Implemented | CircuiteFoundation locator/reference/verifier boundary, root-bounded symlink-safe resolution, streaming SHA-256 and byte-count checks; no legacy execution-envelope projection | Positive/negative tests | Not qualified |
+| Asset resolution and hashing | Implemented | CircuiteFoundation locator/reference/verifier boundary, root-bounded symlink-safe resolution, streaming SHA-256 and byte-count checks | Positive/negative tests | Not qualified |
 | Layer and device semantics | Implemented | Typed layers, purposes, terminals and extraction recognition | Retained fixture | Not qualified |
 | Corner model | Implemented | PVT plus RC/EM/reliability references and view mappings | Retained fixture | Not qualified |
 | Cross-view validation | Implemented | Manifest mapping coverage plus parser-backed LEF/GDSII/OASIS/SPICE/Liberty `standardViewResults` and protocol-first rule-deck inspection in `ruleDeckResults` | Valid, comment-filtered and semantic-blocked fixtures | Not qualified |

@@ -18,24 +18,24 @@ struct PDKEngineTests {
             pdk: reference,
             requiredAssetRoles: [.layerMap, .model, .cell, .ruleDeck]
         )
-        let envelope = try await LocalPDKValidator().execute(request)
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.isValid)
-        #expect(envelope.payload.resolvedAssets.count == 7)
-        #expect(envelope.payload.capabilityReport?.capabilities.contains { $0.capabilityID == "cross-view.mapping" } == true)
-        #expect(envelope.payload.standardViewResults.map(\.assetID) == ["cells", "layout", "liberty-view", "spice-view"])
-        #expect(envelope.payload.standardViewResults.allSatisfy { $0.status == .completed && $0.payload.isValid })
-        #expect(envelope.payload.ruleDeckResults.map(\.assetID) == ["rules"])
-        #expect(envelope.payload.ruleDeckResults.first?.observedLayerIDs == ["active", "metal1"])
-        #expect(envelope.payload.ruleDeckResults.first?.statementCount == 3)
-        #expect(envelope.payload.ruleDeckResults.first?.inspection?.layerEvidence.count == 2)
+        let result = try await LocalPDKValidator().execute(request)
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.isValid)
+        #expect(result.payload.resolvedAssets.count == 7)
+        #expect(result.payload.capabilityReport?.capabilities.contains { $0.capabilityID == "cross-view.mapping" } == true)
+        #expect(result.payload.standardViewResults.map(\.assetID) == ["cells", "layout", "liberty-view", "spice-view"])
+        #expect(result.payload.standardViewResults.allSatisfy { $0.status == .completed && $0.payload.isValid })
+        #expect(result.payload.ruleDeckResults.map(\.assetID) == ["rules"])
+        #expect(result.payload.ruleDeckResults.first?.observedLayerIDs == ["active", "metal1"])
+        #expect(result.payload.ruleDeckResults.first?.statementCount == 3)
+        #expect(result.payload.ruleDeckResults.first?.inspection?.layerEvidence.count == 2)
     }
 
     @Test("rule-deck inspection exposes manifest-bound layer evidence")
     func ruleDeckInspectorExposesLayerEvidence() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
-        let envelope = try await LocalPDKRuleDeckInspector().execute(
+        let result = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-inspection",
                 inputs: [reference.manifest.locator],
@@ -43,12 +43,12 @@ struct PDKEngineTests {
                 assetID: "rules"
             )
         )
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.isValid)
-        #expect(envelope.payload.statementCount == 3)
-        #expect(envelope.payload.observedLayerIDs == ["active", "metal1"])
-        #expect(envelope.payload.layerEvidence.allSatisfy { !$0.matchedTokens.isEmpty })
-        #expect(envelope.artifacts.map(\.path).contains { $0.hasSuffix("/rules.deck") })
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.isValid)
+        #expect(result.payload.statementCount == 3)
+        #expect(result.payload.observedLayerIDs == ["active", "metal1"])
+        #expect(result.payload.layerEvidence.allSatisfy { !$0.matchedTokens.isEmpty })
+        #expect(result.artifacts.map(\.path).contains { $0.hasSuffix("/rules.deck") })
     }
 
     @Test("relative manifest and input references use the explicit project root")
@@ -69,7 +69,7 @@ struct PDKEngineTests {
             version: absoluteReference.version,
             digest: absoluteReference.digest
         )
-        let envelope = try await LocalPDKValidator().execute(
+        let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-relative-references",
                 inputs: [relativeManifest.locator],
@@ -78,9 +78,9 @@ struct PDKEngineTests {
                 projectRootPath: fixtureURL().path
             )
         )
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.isValid)
-        #expect(envelope.payload.resolvedAssets.count == 7)
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.isValid)
+        #expect(result.payload.resolvedAssets.count == 7)
 
         #expect(throws: ArtifactLocationError.self) {
             _ = try makeArtifactReference(
@@ -113,10 +113,10 @@ struct PDKEngineTests {
                 Issue.record("Failed to restore fixture asset: \(error)")
             }
         }
-        let envelope = try await LocalPDKValidator().execute(request)
-        #expect(envelope.status == .blocked)
-        #expect(envelope.diagnostics.contains { $0.code.rawValue == "pdk.validation.required-asset-unavailable" })
-        #expect(envelope.payload.standardViewResults.contains {
+        let result = try await LocalPDKValidator().execute(request)
+        #expect(result.status == .blocked)
+        #expect(result.diagnostics.contains { $0.code.rawValue == "pdk.validation.required-asset-unavailable" })
+        #expect(result.payload.standardViewResults.contains {
             $0.assetID == "spice-view" && $0.status == .blocked
         })
     }
@@ -136,7 +136,7 @@ struct PDKEngineTests {
         try Data(".lib tt\n.model nmos_180n nmos level={vto + delta}\n.endl tt\n.end\n".utf8)
             .write(to: isolatedFixture.appending(path: "models.spice"), options: [.atomic])
 
-        let envelope = try await LocalPDKValidator().execute(
+        let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-semantic-block",
                 inputs: [reference.manifest.locator],
@@ -144,11 +144,11 @@ struct PDKEngineTests {
                 requiredAssetRoles: [.model]
             )
         )
-        #expect(envelope.status == .blocked, "\(envelope.diagnostics)")
-        #expect(envelope.payload.standardViewResults.contains {
+        #expect(result.status == .blocked, "\(result.diagnostics)")
+        #expect(result.payload.standardViewResults.contains {
             $0.assetID == "spice-view" && $0.status == .blocked
         })
-        #expect(envelope.payload.findings.contains {
+        #expect(result.payload.findings.contains {
             $0.code == "pdk.standard-view.spice-parameter-unsupported"
         })
     }
@@ -168,7 +168,7 @@ struct PDKEngineTests {
         try Data("RULESET fixture-180nm\n".utf8)
             .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
 
-        let envelope = try await LocalPDKValidator().execute(
+        let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-rule-deck-block",
                 inputs: [reference.manifest.locator],
@@ -176,11 +176,11 @@ struct PDKEngineTests {
                 requiredAssetRoles: [.ruleDeck]
             )
         )
-        #expect(envelope.status == .blocked, "\(envelope.diagnostics)")
-        #expect(envelope.payload.ruleDeckResults.contains {
+        #expect(result.status == .blocked, "\(result.diagnostics)")
+        #expect(result.payload.ruleDeckResults.contains {
             $0.assetID == "rules" && $0.status == .blocked
         })
-        #expect(envelope.payload.findings.contains {
+        #expect(result.payload.findings.contains {
             $0.code == "pdk.validation.rule-deck-layer-missing"
         })
     }
@@ -200,7 +200,7 @@ struct PDKEngineTests {
         try Data("/* ACTIVE M1 */\nRULESET fixture-180nm\n".utf8)
             .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
 
-        let envelope = try await LocalPDKRuleDeckInspector().execute(
+        let result = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-comment-block",
                 inputs: [reference.manifest.locator],
@@ -208,9 +208,9 @@ struct PDKEngineTests {
                 assetID: "rules"
             )
         )
-        #expect(envelope.status == .blocked)
-        #expect(envelope.payload.observedLayerIDs.isEmpty)
-        #expect(envelope.payload.findings.contains {
+        #expect(result.status == .blocked)
+        #expect(result.payload.observedLayerIDs.isEmpty)
+        #expect(result.payload.findings.contains {
             $0.code == "pdk.validation.rule-deck-layer-missing"
         })
     }
@@ -230,7 +230,7 @@ struct PDKEngineTests {
         try Data("RULESET fixture-180nm\nLAYER ACTIVE 1\nLAYER M1 10\n/* unterminated\n".utf8)
             .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
 
-        let envelope = try await LocalPDKRuleDeckInspector().execute(
+        let result = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-comment-failure",
                 inputs: [reference.manifest.locator],
@@ -238,8 +238,8 @@ struct PDKEngineTests {
                 assetID: "rules"
             )
         )
-        #expect(envelope.status == .failed)
-        #expect(envelope.payload.findings.contains {
+        #expect(result.status == .failed)
+        #expect(result.payload.findings.contains {
             $0.code == "pdk.validation.rule-deck-comment-unclosed"
         })
     }
@@ -252,10 +252,10 @@ struct PDKEngineTests {
             searchRoots: [fixtureURL().path],
             requiredProcessID: "fixture-180nm"
         )
-        let envelope = try await LocalPDKDiscoverer().execute(request)
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.candidates.count == 1)
-        #expect(envelope.payload.candidates[0].processID == "fixture-180nm")
+        let result = try await LocalPDKDiscoverer().execute(request)
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.candidates.count == 1)
+        #expect(result.payload.candidates[0].processID == "fixture-180nm")
     }
 
     @Test("discovery requests require the current complete schema")
@@ -292,21 +292,21 @@ struct PDKEngineTests {
             suitePath: suiteURL.path,
             rootPath: rootURL.path
         )
-        let envelope = try await LocalPDKCorpusValidator().execute(request)
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.isValid)
-        #expect(envelope.payload.caseCount == 3)
-        #expect(envelope.payload.passedCaseCount == 3)
-        #expect(envelope.payload.caseResults.map(\.caseID) == [
+        let result = try await LocalPDKCorpusValidator().execute(request)
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.isValid)
+        #expect(result.payload.caseCount == 3)
+        #expect(result.payload.passedCaseCount == 3)
+        #expect(result.payload.caseResults.map(\.caseID) == [
             "invalid-manifest-is-failed",
             "missing-manifest-is-blocked",
             "retained-fixture-is-valid"
         ])
-        #expect(envelope.payload.caseResults[0].observedOutcome == .failed)
-        #expect(envelope.payload.caseResults[0].observedFindingCodes.contains("pdk.corpus.reference-build-failed"))
-        #expect(envelope.payload.caseResults[1].observedOutcome == .blocked)
-        #expect(envelope.payload.caseResults[1].observedFindingCodes.contains("pdk.corpus.manifest-missing"))
-        let validCase = envelope.payload.caseResults[2]
+        #expect(result.payload.caseResults[0].observedOutcome == .failed)
+        #expect(result.payload.caseResults[0].observedFindingCodes.contains("pdk.corpus.reference-build-failed"))
+        #expect(result.payload.caseResults[1].observedOutcome == .blocked)
+        #expect(result.payload.caseResults[1].observedFindingCodes.contains("pdk.corpus.manifest-missing"))
+        let validCase = result.payload.caseResults[2]
         #expect(validCase.standardViewResults.count == 3)
         #expect(validCase.standardViewResults.allSatisfy { $0.passed })
         #expect(validCase.standardViewResults.map(\.format) == ["lef", "liberty", "spice"])
@@ -360,17 +360,17 @@ struct PDKEngineTests {
         )
         let suiteURL = isolatedFixture.appending(path: "suite.json")
         try PDKCorpusSuiteCodec().encode(suite).write(to: suiteURL, options: [.atomic])
-        let envelope = try await LocalPDKCorpusValidator().execute(
+        let result = try await LocalPDKCorpusValidator().execute(
             PDKCorpusValidationRequest(
                 runID: "blocked-rule-deck-corpus",
                 suitePath: suiteURL.path,
                 rootPath: isolatedFixture.path
             )
         )
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.isValid)
-        #expect(envelope.payload.caseResults.first?.ruleDeckResults.first?.passed == true)
-        #expect(envelope.payload.caseResults.first?.ruleDeckResults.first?.observedOutcome == .blocked)
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.isValid)
+        #expect(result.payload.caseResults.first?.ruleDeckResults.first?.passed == true)
+        #expect(result.payload.caseResults.first?.ruleDeckResults.first?.observedOutcome == .blocked)
     }
 
     @Test("requests and payloads round-trip with the shared JSON contract")

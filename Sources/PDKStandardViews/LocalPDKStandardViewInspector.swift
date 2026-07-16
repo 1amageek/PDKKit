@@ -39,7 +39,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["provide_one_standard_view_artifact"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -55,7 +55,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["correct_standard_view_format", "rebuild_input_reference"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -77,7 +77,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: input.path,
                 suggestedActions: ["provide_project_root", "repair_standard_view_reference"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -87,14 +87,14 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
 
         let sourceArtifact: ArtifactReference
         do {
-            sourceArtifact = try PDKFoundationArtifactBridge.artifactReference(
+            sourceArtifact = try PDKArtifactReferenceBuilder.artifactReference(
                 for: input,
                 resolvedURL: inputURL
             )
             let integrity = LocalArtifactVerifier().verify(sourceArtifact)
             let integrityFindings = findings(for: integrity, entity: input.path)
             guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
-                return try makeEnvelope(
+                return try makeResult(
                     request: request,
                     startedAt: startedAt,
                     status: .blocked,
@@ -102,42 +102,18 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                     artifacts: [sourceArtifact]
                 )
             }
-        } catch let error as PDKFoundationArtifactError {
-            let finding: PDKValidationFinding
-            let status: PDKExecutionStatus
-            switch error {
-            case .missingDigest:
-                finding = PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.standard-view.digest-missing",
-                    message: error.localizedDescription,
-                    entity: input.path,
-                    suggestedActions: ["rebuild_input_reference"]
-                )
-                status = .blocked
-            case .missingByteCount:
-                finding = PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.standard-view.byte-count-missing",
-                    message: error.localizedDescription,
-                    entity: input.path,
-                    suggestedActions: ["rebuild_input_reference"]
-                )
-                status = .blocked
-            default:
-                finding = PDKValidationFinding(
-                    severity: .error,
-                    code: "pdk.standard-view.integrity-failed",
-                    message: error.localizedDescription,
-                    entity: input.path,
-                    suggestedActions: ["rebuild_input_reference", "check_file_permissions"]
-                )
-                status = .failed
-            }
-            return try makeEnvelope(
+        } catch let error as PDKArtifactReferenceError {
+            let finding = PDKValidationFinding(
+                severity: .error,
+                code: "pdk.standard-view.integrity-failed",
+                message: error.localizedDescription,
+                entity: input.path,
+                suggestedActions: ["rebuild_input_reference", "check_file_permissions"]
+            )
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
-                status: status,
+                status: .failed,
                 findings: [finding]
             )
         } catch {
@@ -148,7 +124,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: input.path,
                 suggestedActions: ["rebuild_input_reference", "check_file_permissions"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -167,7 +143,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: inputURL.path,
                 suggestedActions: ["restore_standard_view_artifact", "check_file_permissions"]
             )
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -183,7 +159,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             findings.append(contentsOf: semanticFindings(inspection: inspection, request: request))
             let hasBlocker = findings.contains { $0.severity == .blocker }
             let status: PDKExecutionStatus = hasBlocker ? .blocked : .completed
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: status,
@@ -200,7 +176,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 suggestedActions: ["repair_standard_view_artifact", "run_format_specific_parser"]
             )
             findings.append(finding)
-            return try makeEnvelope(
+            return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -1229,7 +1205,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         }
     }
 
-    private func makeEnvelope(
+    private func makeResult(
         request: PDKStandardViewInspectionRequest,
         startedAt: Date,
         status: PDKExecutionStatus,

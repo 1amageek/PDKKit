@@ -53,17 +53,17 @@ struct PDKKitOracleCommand: Sendable {
             pdk: pdk,
             oracle: oracleReference
         )
-        let envelope = try await LocalPDKOracleComparator().execute(request)
+        let result = try await LocalPDKOracleComparator().execute(request)
         let output = PDKKitOracleOutput(
             command: "oracle",
             manifestPath: manifestURL.path,
             oraclePath: oracleURL.path,
             runID: options.runID,
-            status: envelope.status,
-            diagnostics: envelope.diagnostics,
-            payload: envelope.payload
+            status: result.status,
+            diagnostics: result.diagnostics,
+            payload: result.payload
         )
-        let exitCode: Int32 = envelope.status == .completed ? 0 : 2
+        let exitCode: Int32 = result.status == .completed ? 0 : 2
         return PDKKitCLIInvocationResult(
             exitCode: exitCode,
             standardOutput: try PDKKitCLIJSONCoding.encode(output, pretty: options.pretty) + "\n",

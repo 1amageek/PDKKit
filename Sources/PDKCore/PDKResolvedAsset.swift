@@ -22,16 +22,16 @@ public struct PDKResolvedAsset: Sendable, Hashable, Codable {
         self.computedByteCount = computedByteCount
     }
 
-    /// Returns the immutable Foundation identity for a resolved asset.
-    public func foundationArtifactReference() throws -> ArtifactReference {
+    /// Builds the immutable artifact identity for this resolved asset.
+    public func artifactReference() throws -> ArtifactReference {
         guard computedByteCount >= 0 else {
-            throw PDKFoundationArtifactError.invalidByteCount(path: path)
+            throw PDKArtifactReferenceError.invalidByteCount(path: path)
         }
         let digest = try ContentDigest(
             algorithm: .sha256,
             hexadecimalValue: computedSHA256
         )
-        return try PDKFoundationArtifactBridge.artifactReference(
+        return try PDKArtifactReferenceBuilder.artifactReference(
             assetID: assetID,
             path: URL(filePath: path),
             kind: reference.kind,

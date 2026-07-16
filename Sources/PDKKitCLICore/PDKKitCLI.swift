@@ -60,10 +60,10 @@ public enum PDKKitCLI {
     }
 
     private static func failureResult(_ error: PDKKitCLIError) -> PDKKitCLIInvocationResult {
-        let envelope = PDKKitCLIDiagnosticEnvelope(code: error.code, message: error.message)
+        let result = PDKKitCLIDiagnosticOutput(code: error.code, message: error.message)
         let serialized: String
         do {
-            serialized = try PDKKitCLIJSONCoding.encode(envelope, pretty: false)
+            serialized = try PDKKitCLIJSONCoding.encode(result, pretty: false)
         } catch {
             serialized = "{\"code\":\"pdkkit.cli.internal-error\",\"message\":\"failed to encode diagnostic\"}"
         }

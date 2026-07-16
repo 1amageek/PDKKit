@@ -1,8 +1,5 @@
 import Foundation
 import CircuiteFoundation
 
-public protocol PDKStandardViewInspecting: Sendable {
-    func execute(
-        _ request: PDKStandardViewInspectionRequest
-    ) async throws -> PDKStandardViewInspectionResult
-}
+public protocol PDKStandardViewInspecting: Engine
+where Request == PDKStandardViewInspectionRequest, Output == PDKStandardViewInspectionResult {}
