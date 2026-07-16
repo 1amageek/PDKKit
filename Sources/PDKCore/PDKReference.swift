@@ -38,16 +38,11 @@ public struct PDKReference: Sendable, Hashable, Codable {
         } catch {
             throw PDKReferenceError.malformedDigest
         }
-        let manifestDigest = manifest.sha256
-        let manifestContentDigest: ContentDigest
-        do {
-            manifestContentDigest = try ContentDigest(
-                algorithm: .sha256,
-                hexadecimalValue: manifestDigest
-            )
-        } catch {
+        guard manifest.digest.algorithm == .sha256 else {
             throw PDKReferenceError.malformedManifestDigest
         }
+        let manifestContentDigest = manifest.digest
+        let manifestDigest = manifestContentDigest.hexadecimalValue
         if manifestContentDigest != pdkDigest {
             throw PDKReferenceError.manifestDigestMismatch(
                 expected: pdkDigest.hexadecimalValue,
