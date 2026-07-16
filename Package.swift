@@ -5,21 +5,24 @@ import Foundation
 let workspaceRoot = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .deletingLastPathComponent()
-let isFullLSIWorkspace = FileManager.default.fileExists(
-    atPath: workspaceRoot.appendingPathComponent("Xcircuite/Package.swift").path
-)
 
-let swiftMaskDataDependency: Package.Dependency = isFullLSIWorkspace && FileManager.default.fileExists(
+let swiftMaskDataDependency: Package.Dependency = FileManager.default.fileExists(
     atPath: workspaceRoot.appendingPathComponent("swift-mask-data/Package.swift").path
 )
     ? .package(path: "../swift-mask-data")
-    : .package(url: "https://github.com/1amageek/swift-mask-data.git", revision: "9dcad7a886f0c7dc470062f3ab346fac6e1048db")
+    : .package(
+        url: "https://github.com/1amageek/swift-mask-data.git",
+        revision: "69e345fb89b47884bc80fad1c293005a8156e78b"
+    )
 
-let circuiteFoundationDependency: Package.Dependency = isFullLSIWorkspace && FileManager.default.fileExists(
+let circuiteFoundationDependency: Package.Dependency = FileManager.default.fileExists(
     atPath: workspaceRoot.appendingPathComponent("CircuiteFoundation/Package.swift").path
 )
     ? .package(path: "../CircuiteFoundation")
-    : .package(url: "https://github.com/1amageek/CircuiteFoundation.git", revision: "8b5b1427280415e8acb3789cb364284b906f6cab")
+    : .package(
+        url: "https://github.com/1amageek/CircuiteFoundation.git",
+        revision: "2ec6ee13a89ac6885be3c26b41a9ee0ef89948ac"
+    )
 
 let package = Package(
     name: "PDKKit",
