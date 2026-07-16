@@ -8,7 +8,7 @@
 | Immutable PDK identity and manifest digest | `PDKManifestReferenceBuilder`, SHA-256 test | Available |
 | Local recursive discovery | `LocalPDKDiscoverer`, discovery test | Available |
 | Manifest-relative asset resolution | `LocalPDKAssetResolver`, validation fixture | Available |
-| Asset SHA-256 and byte-count integrity | `CircuiteFoundation.LocalArtifactReferencer`/`LocalArtifactVerifier` through asset, standard-view, rule-deck, oracle and qualification paths, negative-path tests | Available |
+| Asset SHA-256 and byte-count integrity | `CircuiteFoundation.LocalArtifactReferencer`/`LocalArtifactVerifier` through asset, standard-view, rule-deck and oracle paths, negative-path tests | Available |
 | Layer, device and extraction semantics | Typed `PDKCore` models and validator | Available when declared |
 | PVT/RC/EM/reliability corner model | `PDKCornerDefinition` and scope export | Available when declared |
 | Cross-view mapping coverage | layer/device/corner coverage checks | Blocked when mappings are absent |
@@ -18,9 +18,8 @@
 | Standard-view detailed inspection | `PDKStandardViews`, `swift-mask-data` readers, SPICE/Liberty text adapters, canonical IR and manifest binding | Available for supported mask structure, numeric SPICE model parameters, Liberty timing tables and units |
 | External backend result parity | `PDKExternalStandardViewResultProviding`, `PDKExternalRuleDeckResultProviding`, external inspectors and contract tests | Available for typed domain results, digest-bearing source-reference binding and canonical artifact identity binding; provider process execution is outside PDKKit |
 | Immutable oracle comparison | `PDKOracleExpectation`, `LocalPDKOracleComparator`, mismatch payload | Available for declared canonical facts |
-| Local qualification gate | `PDKQualificationGate`, digest-bound corpus + oracle evidence | Available for `oracleCorrelated` handoff |
-| Qualification artifact evaluator | `PDKQualificationRequest`, `LocalPDKQualificationEvaluator` | Available for immutable payload/envelope artifacts |
-| Deterministic JSON API surface | `pdkkit inspect/discover/validate/corpus/inspect-view/inspect-rule-deck/oracle/qualify` | Available |
+| Qualification evidence handoff | Digest-bound corpus, oracle and execution provenance artifacts | Available for ToolQualification consumption |
+| Deterministic JSON API surface | `pdkkit inspect/discover/validate/corpus/inspect-view/inspect-rule-deck/oracle` | Available |
 | Flow stage execution | Direct DesignFlowKernel protocol integration, immutable typed results, agent-facing runtime specs and approval/resume flow | Available for the PDK integration slice; concrete `.xcircuite` persistence is owned by Xcircuite |
 
 ## Explicit limitations
@@ -44,8 +43,8 @@
   foundry reference tool, and no process-specific qualification is included.
 - The retained corpus is a contract corpus. It does not contain foundry
   process evidence and does not parse every standard-format view.
-- `qualificationState` remains `unverified`; ToolQualification owns promotion
-  to a process-scoped qualified state.
+- ToolQualification exclusively owns process-scoped trust and qualification
+  decisions; PDKKit publishes evidence without a local qualification state.
 - ToolQualification scope matching is enforced at the Xcircuite trust gate for
   the PDK slice. The workspace also defines an independent
   `ToolProcessQualificationEvidence` artifact and a ReleaseEngine fail-closed

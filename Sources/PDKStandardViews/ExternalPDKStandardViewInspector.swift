@@ -22,12 +22,12 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         _ request: PDKStandardViewInspectionRequest
     ) async throws -> PDKStandardViewInspectionResult {
         let startedAt = clock.now()
-        var receivedArtifacts: [ArtifactLocator] = []
+        var receivedArtifacts: [ArtifactReference] = []
         let data: Data
         do {
             data = try await provider.resultData(for: request)
         } catch {
-            return failureEnvelope(
+            return try failureEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -54,7 +54,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                 receivedArtifacts = artifacts(from: data)
             }
             let status: PDKExecutionStatus = isTrustBoundaryError(error) ? .blocked : .failed
-            return failureEnvelope(
+            return try failureEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: status,
@@ -70,7 +70,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
             if receivedArtifacts.isEmpty {
                 receivedArtifacts = artifacts(from: data)
             }
-            return failureEnvelope(
+            return try failureEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -195,16 +195,16 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         request: PDKStandardViewInspectionRequest,
         startedAt: Date,
         status: PDKExecutionStatus,
-        artifacts: [ArtifactLocator] = [],
+        artifacts: [ArtifactReference] = [],
         finding: PDKValidationFinding
-    ) -> PDKStandardViewInspectionResult {
+    ) throws -> PDKStandardViewInspectionResult {
         PDKStandardViewInspectionResult(
             schemaVersion: PDKStandardViewInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: [PDKStandardViewDiagnosticMapper.map(finding)],
             artifacts: artifacts,
-            metadata: PDKExecutionMetadata(
+            provenance: try PDKExecutionProvenance.make(
                 engineID: "PDKStandardViewInspection",
                 implementationID: "ExternalPDKStandardViewInspector",
                 implementationVersion: "1",
@@ -225,7 +225,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         )
     }
 
-    private func artifacts(from data: Data) -> [ArtifactLocator] {
+    private func artifacts(from data: Data) -> [ArtifactReference] {
         do {
             return try JSONDecoder().decode(ArtifactContainer.self, from: data).artifacts
         } catch {
@@ -234,6 +234,6 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
     }
 
     private struct ArtifactContainer: Decodable {
-        var artifacts: [ArtifactLocator] = []
+        var artifacts: [ArtifactReference] = []
     }
 }

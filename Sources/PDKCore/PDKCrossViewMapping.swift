@@ -35,11 +35,11 @@ public struct PDKCrossViewMapping: Sendable, Hashable, Codable {
         mappingID = try container.decode(String.self, forKey: .mappingID)
         view = try container.decode(PDKViewKind.self, forKey: .view)
         assetID = try container.decode(String.self, forKey: .assetID)
-        logicalNames = try container.decodeIfPresent([String].self, forKey: .logicalNames) ?? []
-        physicalNames = try container.decodeIfPresent([String].self, forKey: .physicalNames) ?? []
-        layerIDs = try container.decodeIfPresent([String].self, forKey: .layerIDs) ?? []
-        deviceIDs = try container.decodeIfPresent([String].self, forKey: .deviceIDs) ?? []
-        cornerIDs = try container.decodeIfPresent([String].self, forKey: .cornerIDs) ?? []
+        logicalNames = try container.decode([String].self, forKey: .logicalNames)
+        physicalNames = try container.decode([String].self, forKey: .physicalNames)
+        layerIDs = try container.decode([String].self, forKey: .layerIDs)
+        deviceIDs = try container.decode([String].self, forKey: .deviceIDs)
+        cornerIDs = try container.decode([String].self, forKey: .cornerIDs)
     }
 
     private enum CodingKeys: String, CodingKey {

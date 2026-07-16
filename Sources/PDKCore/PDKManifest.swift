@@ -75,27 +75,6 @@ public struct PDKManifest: Sendable, Hashable, Codable {
         PDKManifestValidator().validate(self)
     }
 
-    public func qualificationScope(
-        pdkDigest: String,
-        assetDigests: [String: String] = [:]
-    ) -> PDKQualificationScope {
-        let capabilities = Set(crossViewMappings.map { $0.view.rawValue })
-        return PDKQualificationScope(
-            scopeID: "\(processID)@\(version):\(pdkDigest)",
-            processID: processID,
-            version: version,
-            pdkDigest: pdkDigest,
-            capabilityIDs: capabilities.sorted(),
-            layerIDs: layers.map(\.layerID).sorted(),
-            deviceIDs: devices.map(\.deviceID).sorted(),
-            cornerIDs: corners.map(\.cornerID).sorted(),
-            assetDigests: assetDigests,
-            limitations: [
-                "Qualification state is unverified until corpus and oracle evidence are attached."
-            ]
-        )
-    }
-
     public func capabilityReport(
         pdkDigest: String,
         resolvedAssetIDs: Set<String>? = nil

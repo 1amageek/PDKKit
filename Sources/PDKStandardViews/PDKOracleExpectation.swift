@@ -42,7 +42,7 @@ public struct PDKOracleExpectation: Sendable, Hashable, Codable {
             version: try container.decode(String.self, forKey: .version),
             pdkDigest: try container.decode(String.self, forKey: .pdkDigest),
             views: try container.decode([PDKOracleViewExpectation].self, forKey: .views),
-            metadata: try container.decodeIfPresent([String: String].self, forKey: .metadata) ?? [:]
+            metadata: try container.decode([String: String].self, forKey: .metadata)
         )
     }
 

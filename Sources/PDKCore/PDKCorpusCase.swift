@@ -41,12 +41,12 @@ public struct PDKCorpusCase: Sendable, Hashable, Codable {
             caseID: try container.decode(String.self, forKey: .caseID),
             manifestPath: try container.decode(String.self, forKey: .manifestPath),
             expectedOutcome: try container.decode(PDKCorpusExpectedOutcome.self, forKey: .expectedOutcome),
-            expectedFindingCodes: try container.decodeIfPresent([String].self, forKey: .expectedFindingCodes) ?? [],
-            requiredAssetRoles: try container.decodeIfPresent([PDKAssetRole].self, forKey: .requiredAssetRoles) ?? [],
-            validateCrossViews: try container.decodeIfPresent(Bool.self, forKey: .validateCrossViews) ?? true,
-            standardViewChecks: try container.decodeIfPresent([PDKCorpusStandardViewCheck].self, forKey: .standardViewChecks) ?? [],
-            ruleDeckChecks: try container.decodeIfPresent([PDKCorpusRuleDeckCheck].self, forKey: .ruleDeckChecks) ?? [],
-            metadata: try container.decodeIfPresent([String: String].self, forKey: .metadata) ?? [:]
+            expectedFindingCodes: try container.decode([String].self, forKey: .expectedFindingCodes),
+            requiredAssetRoles: try container.decode([PDKAssetRole].self, forKey: .requiredAssetRoles),
+            validateCrossViews: try container.decode(Bool.self, forKey: .validateCrossViews),
+            standardViewChecks: try container.decode([PDKCorpusStandardViewCheck].self, forKey: .standardViewChecks),
+            ruleDeckChecks: try container.decode([PDKCorpusRuleDeckCheck].self, forKey: .ruleDeckChecks),
+            metadata: try container.decode([String: String].self, forKey: .metadata)
         )
     }
 

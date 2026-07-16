@@ -12,7 +12,7 @@ public struct PDKProcessCorner: Sendable, Hashable, Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
-        nominal = try container.decodeIfPresent(Bool.self, forKey: .nominal) ?? false
+        nominal = try container.decode(Bool.self, forKey: .nominal)
     }
 
     private enum CodingKeys: String, CodingKey {

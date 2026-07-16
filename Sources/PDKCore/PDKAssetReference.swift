@@ -72,7 +72,7 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
         required = try container.decode(Bool.self, forKey: .required)
         sha256 = try container.decodeIfPresent(String.self, forKey: .sha256)
         byteCount = try container.decodeIfPresent(Int64.self, forKey: .byteCount)
-        cornerIDs = try container.decodeIfPresent([String].self, forKey: .cornerIDs) ?? []
-        metadata = try container.decodeIfPresent([String: String].self, forKey: .metadata) ?? [:]
+        cornerIDs = try container.decode([String].self, forKey: .cornerIDs)
+        metadata = try container.decode([String: String].self, forKey: .metadata)
     }
 }

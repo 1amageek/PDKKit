@@ -69,10 +69,11 @@ public struct LocalPDKValidator: PDKValidating {
             )
         }
         let completedAt = clock.now()
-        let metadata = PDKExecutionMetadata(
+        let provenance = try PDKExecutionProvenance.make(
             engineID: "PDKValidation",
             implementationID: "LocalPDKValidator",
             implementationVersion: "1",
+            inputs: [request.pdk.manifest] + validationResult.resolvedAssets.map(\.reference),
             startedAt: startedAt,
             completedAt: completedAt
         )
@@ -81,8 +82,8 @@ public struct LocalPDKValidator: PDKValidating {
             runID: request.runID,
             status: validationResult.status,
             diagnostics: validationResult.diagnostics,
-            artifacts: validationResult.resolvedAssets.map { $0.reference.locator },
-            metadata: metadata,
+            artifacts: validationResult.resolvedAssets.map(\.reference),
+            provenance: provenance,
             payload: PDKValidationPayload(
                 isValid: validationResult.status == .completed,
                 missingRequirements: validationResult.missingRequirements,
@@ -90,7 +91,6 @@ public struct LocalPDKValidator: PDKValidating {
                 resolvedAssets: validationResult.resolvedAssets,
                 standardViewResults: validationResult.standardViewResults,
                 ruleDeckResults: validationResult.ruleDeckResults,
-                qualificationScope: validationResult.qualificationScope,
                 capabilityReport: validationResult.capabilityReport
             )
         )
@@ -209,14 +209,6 @@ public struct LocalPDKValidator: PDKValidating {
         let hasBlocker = findings.contains { $0.severity == .blocker }
         let hasError = findings.contains { $0.severity == .error }
         let status: PDKExecutionStatus = hasBlocker ? .blocked : hasError ? .failed : .completed
-        var assetDigests: [String: String] = [:]
-        for resolvedAsset in resolvedAssets {
-            assetDigests[resolvedAsset.assetID] = resolvedAsset.computedSHA256
-        }
-        let scope = manifest.qualificationScope(
-            pdkDigest: request.pdk.digest,
-            assetDigests: assetDigests
-        )
         let capabilityReport = manifest.capabilityReport(
             pdkDigest: request.pdk.digest,
             resolvedAssetIDs: Set(resolvedAssets.map(\.assetID))
@@ -226,7 +218,6 @@ public struct LocalPDKValidator: PDKValidating {
             findings: findings,
             resolvedAssets: resolvedAssets,
             request: request,
-            qualificationScope: scope,
             capabilityReport: capabilityReport,
             manifest: manifest
         )
@@ -632,7 +623,6 @@ public struct LocalPDKValidator: PDKValidating {
         findings: [PDKValidationFinding],
         resolvedAssets: [PDKResolvedAsset] = [],
         request: PDKValidationRequest,
-        qualificationScope: PDKQualificationScope? = nil,
         capabilityReport: PDKCapabilityReport? = nil,
         manifest: PDKManifest? = nil,
         standardViewResults: [PDKStandardViewValidationResult] = [],
@@ -651,7 +641,6 @@ public struct LocalPDKValidator: PDKValidating {
             resolvedAssets: resolvedAssets,
             standardViewResults: standardViewResults,
             ruleDeckResults: ruleDeckResults,
-            qualificationScope: qualificationScope,
             capabilityReport: capabilityReport,
             manifest: manifest
         )
@@ -666,7 +655,6 @@ private struct ValidationResult: Sendable {
     var resolvedAssets: [PDKResolvedAsset]
     var standardViewResults: [PDKStandardViewValidationResult]
     var ruleDeckResults: [PDKRuleDeckValidationResult]
-    var qualificationScope: PDKQualificationScope?
     var capabilityReport: PDKCapabilityReport?
     var manifest: PDKManifest?
 }

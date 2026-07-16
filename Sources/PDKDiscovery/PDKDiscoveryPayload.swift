@@ -16,8 +16,8 @@ public struct PDKDiscoveryPayload: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        candidates = try container.decodeIfPresent([PDKReference].self, forKey: .candidates) ?? []
-        inspectedManifestPaths = try container.decodeIfPresent([String].self, forKey: .inspectedManifestPaths) ?? []
+        candidates = try container.decode([PDKReference].self, forKey: .candidates)
+        inspectedManifestPaths = try container.decode([String].self, forKey: .inspectedManifestPaths)
     }
 
     private enum CodingKeys: String, CodingKey {

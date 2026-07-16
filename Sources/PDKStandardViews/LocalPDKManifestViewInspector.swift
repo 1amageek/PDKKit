@@ -1,7 +1,6 @@
 import Foundation
 import CircuiteFoundation
 import PDKCore
-import CircuiteFoundation
 
 public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
     private let clock: any PDKStandardViewExecutionClock
@@ -39,7 +38,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: request.pdk.manifest.path,
                 suggestedActions: ["provide_project_root", "repair_manifest_reference"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -65,7 +64,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                     entity: manifestURL.path,
                     suggestedActions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
                 )
-                return makeEnvelope(
+                return try makeEnvelope(
                     request: request,
                     startedAt: startedAt,
                     status: .blocked,
@@ -82,7 +81,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: manifestURL.path,
                 suggestedActions: ["repair_pdk_manifest", "run_pdkkit_inspect"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -96,7 +95,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: manifestURL.path,
                 suggestedActions: ["restore_pdk_manifest", "check_file_permissions"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -112,7 +111,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["add_pdk_asset", "repair_pdk_manifest"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -127,7 +126,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["repair_pdk_manifest", "select_matching_view_parser"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -146,7 +145,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["restore_pdk_asset", "check_manifest_relative_path"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: asset.required ? .blocked : .failed,
@@ -219,7 +218,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         case .completed:
             status = bindingIsValid ? .completed : .blocked
         }
-        return makeEnvelope(
+        return try makeEnvelope(
             request: request,
             startedAt: startedAt,
             status: status,
@@ -235,17 +234,17 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         startedAt: Date,
         status: PDKExecutionStatus,
         findings: [PDKValidationFinding],
-        artifacts: [ArtifactLocator] = [],
+        artifacts: [ArtifactReference] = [],
         inspection: PDKStandardViewInspectionPayload? = nil,
         binding: PDKStandardViewBindingReport? = nil
-    ) -> PDKManifestViewInspectionResult {
+    ) throws -> PDKManifestViewInspectionResult {
         PDKManifestViewInspectionResult(
             schemaVersion: PDKManifestViewInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: findings.map(PDKStandardViewDiagnosticMapper.map),
             artifacts: artifacts,
-            metadata: PDKExecutionMetadata(
+            provenance: try PDKExecutionProvenance.make(
                 engineID: "PDKManifestViewInspection",
                 implementationID: "LocalPDKManifestViewInspector",
                 implementationVersion: "1",

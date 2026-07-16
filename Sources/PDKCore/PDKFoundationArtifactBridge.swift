@@ -1,4 +1,4 @@
-@_exported import CircuiteFoundation
+import CircuiteFoundation
 import Foundation
 import CircuiteFoundation
 

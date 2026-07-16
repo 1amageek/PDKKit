@@ -77,7 +77,7 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
         }
 
         let completedAt = clock.now()
-        let metadata = PDKExecutionMetadata(
+        let provenance = try PDKExecutionProvenance.make(
             engineID: "PDKDiscovery",
             implementationID: "LocalPDKDiscoverer",
             implementationVersion: "1",
@@ -89,8 +89,8 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
             runID: request.runID,
             status: status,
             diagnostics: diagnostics,
-            artifacts: candidates.map { $0.manifest.locator },
-            metadata: metadata,
+            artifacts: candidates.map(\.manifest),
+            provenance: provenance,
             payload: PDKDiscoveryPayload(
                 candidates: candidates,
                 inspectedManifestPaths: inspectedPaths

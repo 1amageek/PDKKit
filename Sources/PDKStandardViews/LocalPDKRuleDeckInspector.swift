@@ -29,7 +29,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -52,7 +52,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             let integrity = LocalArtifactVerifier(digester: digester).verify(manifestArtifact)
             guard integrity.isVerified else {
                 let issue = integrity.issues.first
-                return makeEnvelope(
+                return try makeEnvelope(
                     request: request,
                     startedAt: startedAt,
                     status: .blocked,
@@ -68,7 +68,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             let data = try Data(contentsOf: manifestURL)
             manifest = try PDKManifestCodec.decode(data: data)
         } catch let error as PDKManifestError {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -81,7 +81,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 )]
             )
         } catch {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -96,7 +96,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         }
 
         guard let asset = manifest.assets.first(where: { $0.assetID == request.assetID }) else {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -110,7 +110,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             )
         }
         guard asset.role == .ruleDeck else {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -127,7 +127,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         guard let mapping = manifest.crossViewMappings.first(where: {
             $0.assetID == request.assetID && $0.view == .ruleDeck
         }) else {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -145,7 +145,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         do {
             resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
         } catch {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: asset.required ? .blocked : .failed,
@@ -164,11 +164,11 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         do {
             sourceArtifact = try resolved.foundationArtifactReference()
         } catch {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
-                reference: resolved.reference.locator,
+                reference: resolved.reference,
                 findings: [finding(
                     severity: .error,
                     code: "pdk.validation.rule-deck-integrity-failed",
@@ -183,11 +183,11 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         do {
             data = try Data(contentsOf: URL(filePath: resolved.path))
         } catch {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
-                reference: resolved.reference.locator,
+                reference: resolved.reference,
                 sourceArtifact: sourceArtifact,
                 findings: [finding(
                     severity: .error,
@@ -199,11 +199,11 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             )
         }
         guard let text = String(data: data, encoding: .utf8) else {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
-                reference: resolved.reference.locator,
+                reference: resolved.reference,
                 sourceArtifact: sourceArtifact,
                 findings: [finding(
                     severity: .error,
@@ -291,11 +291,11 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         let hasBlocker = findings.contains { $0.severity == .blocker }
         let hasError = findings.contains { $0.severity == .error }
         let status: PDKExecutionStatus = hasBlocker ? .blocked : hasError ? .failed : .completed
-        return makeEnvelope(
+        return try makeEnvelope(
             request: request,
             startedAt: startedAt,
             status: status,
-            reference: resolved.reference.locator,
+            reference: resolved.reference,
             sourceArtifact: sourceArtifact,
             statementCount: statements.count,
             expectedLayerIDs: mapping.layerIDs.sorted(),
@@ -410,21 +410,21 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         request: PDKRuleDeckInspectionRequest,
         startedAt: Date,
         status: PDKExecutionStatus,
-        reference: ArtifactLocator? = nil,
+        reference: ArtifactReference? = nil,
         sourceArtifact: ArtifactReference? = nil,
         statementCount: Int = 0,
         expectedLayerIDs: [String] = [],
         observedLayerIDs: [String] = [],
         layerEvidence: [PDKRuleDeckLayerEvidence] = [],
         findings: [PDKValidationFinding]
-    ) -> PDKRuleDeckInspectionResult {
+    ) throws -> PDKRuleDeckInspectionResult {
         PDKRuleDeckInspectionResult(
             schemaVersion: PDKRuleDeckInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: findings.map(PDKStandardViewDiagnosticMapper.map),
             artifacts: reference.map { [$0] } ?? [],
-            metadata: PDKExecutionMetadata(
+            provenance: try PDKExecutionProvenance.make(
                 engineID: "PDKRuleDeckInspection",
                 implementationID: "LocalPDKRuleDeckInspector",
                 implementationVersion: "1",
@@ -435,7 +435,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 isValid: status == .completed,
                 assetID: request.assetID,
                 pdkDigest: request.pdk.digest,
-                reference: reference,
+                reference: reference?.locator,
                 sourceArtifact: sourceArtifact,
                 statementCount: statementCount,
                 expectedLayerIDs: expectedLayerIDs,

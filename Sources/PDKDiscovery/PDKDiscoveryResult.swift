@@ -7,11 +7,11 @@ public struct PDKDiscoveryResult: Sendable, Hashable, Codable {
     public let runID: String
     public let status: PDKExecutionStatus
     public let diagnostics: [DesignDiagnostic]
-    public let artifacts: [ArtifactLocator]
-    public let metadata: PDKExecutionMetadata
+    public let artifacts: [ArtifactReference]
+    public let provenance: ExecutionProvenance
     public let payload: PDKDiscoveryPayload
 
-    public init(schemaVersion: Int, runID: String, status: PDKExecutionStatus, diagnostics: [DesignDiagnostic] = [], artifacts: [ArtifactLocator] = [], metadata: PDKExecutionMetadata, payload: PDKDiscoveryPayload) {
-        self.schemaVersion = schemaVersion; self.runID = runID; self.status = status; self.diagnostics = diagnostics; self.artifacts = artifacts; self.metadata = metadata; self.payload = payload
+    public init(schemaVersion: Int, runID: String, status: PDKExecutionStatus, diagnostics: [DesignDiagnostic] = [], artifacts: [ArtifactReference] = [], provenance: ExecutionProvenance, payload: PDKDiscoveryPayload) {
+        self.schemaVersion = schemaVersion; self.runID = runID; self.status = status; self.diagnostics = diagnostics; self.artifacts = artifacts; self.provenance = provenance; self.payload = payload
     }
 }

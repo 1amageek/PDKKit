@@ -33,8 +33,8 @@ public struct PDKDeviceDefinition: Sendable, Hashable, Codable {
             PDKExtractionRecognition.self,
             forKey: .extractionRecognition
         )
-        parameterNames = try container.decodeIfPresent([String].self, forKey: .parameterNames) ?? []
-        aliases = try container.decodeIfPresent([String].self, forKey: .aliases) ?? []
+        parameterNames = try container.decode([String].self, forKey: .parameterNames)
+        aliases = try container.decode([String].self, forKey: .aliases)
     }
 
     private enum CodingKeys: String, CodingKey {

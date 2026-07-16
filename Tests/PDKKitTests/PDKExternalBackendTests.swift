@@ -73,7 +73,7 @@ struct PDKExternalBackendTests {
                 format: .text,
                 sha256: String(repeating: "a", count: 64),
                 byteCount: 3
-            ).locator,
+            ),
         ]
         let runResult = try await ExternalPDKStandardViewInspector(
             provider: StaticStandardViewResultProvider(data: try JSONEncoder().encode(wrongRun))

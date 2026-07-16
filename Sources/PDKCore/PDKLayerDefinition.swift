@@ -36,8 +36,8 @@ public struct PDKLayerDefinition: Sendable, Hashable, Codable {
         name = try container.decode(String.self, forKey: .name)
         number = try container.decode(Int.self, forKey: .number)
         purpose = try container.decode(PDKLayerPurpose.self, forKey: .purpose)
-        isRoutingLayer = try container.decodeIfPresent(Bool.self, forKey: .isRoutingLayer) ?? false
-        aliases = try container.decodeIfPresent([String].self, forKey: .aliases) ?? []
+        isRoutingLayer = try container.decode(Bool.self, forKey: .isRoutingLayer)
+        aliases = try container.decode([String].self, forKey: .aliases)
         minimumWidth = try container.decodeIfPresent(Double.self, forKey: .minimumWidth)
         minimumSpacing = try container.decodeIfPresent(Double.self, forKey: .minimumSpacing)
     }

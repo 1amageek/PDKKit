@@ -54,21 +54,21 @@ public struct PDKStandardViewBindingReport: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        isValid = try container.decodeIfPresent(Bool.self, forKey: .isValid) ?? false
+        isValid = try container.decode(Bool.self, forKey: .isValid)
         mappingID = try container.decodeIfPresent(String.self, forKey: .mappingID)
-        expectedLayerNames = try container.decodeIfPresent([String].self, forKey: .expectedLayerNames) ?? []
-        observedLayerNames = try container.decodeIfPresent([String].self, forKey: .observedLayerNames) ?? []
-        missingLayerNames = try container.decodeIfPresent([String].self, forKey: .missingLayerNames) ?? []
-        expectedPhysicalLayerNumbers = try container.decodeIfPresent([Int].self, forKey: .expectedPhysicalLayerNumbers) ?? []
-        observedPhysicalLayerNumbers = try container.decodeIfPresent([Int].self, forKey: .observedPhysicalLayerNumbers) ?? []
-        missingPhysicalLayerNumbers = try container.decodeIfPresent([Int].self, forKey: .missingPhysicalLayerNumbers) ?? []
-        expectedCellNames = try container.decodeIfPresent([String].self, forKey: .expectedCellNames) ?? []
-        observedCellNames = try container.decodeIfPresent([String].self, forKey: .observedCellNames) ?? []
-        missingCellNames = try container.decodeIfPresent([String].self, forKey: .missingCellNames) ?? []
-        expectedCornerNames = try container.decodeIfPresent([String].self, forKey: .expectedCornerNames) ?? []
-        observedCornerNames = try container.decodeIfPresent([String].self, forKey: .observedCornerNames) ?? []
-        missingCornerNames = try container.decodeIfPresent([String].self, forKey: .missingCornerNames) ?? []
-        findings = try container.decodeIfPresent([PDKValidationFinding].self, forKey: .findings) ?? []
+        expectedLayerNames = try container.decode([String].self, forKey: .expectedLayerNames)
+        observedLayerNames = try container.decode([String].self, forKey: .observedLayerNames)
+        missingLayerNames = try container.decode([String].self, forKey: .missingLayerNames)
+        expectedPhysicalLayerNumbers = try container.decode([Int].self, forKey: .expectedPhysicalLayerNumbers)
+        observedPhysicalLayerNumbers = try container.decode([Int].self, forKey: .observedPhysicalLayerNumbers)
+        missingPhysicalLayerNumbers = try container.decode([Int].self, forKey: .missingPhysicalLayerNumbers)
+        expectedCellNames = try container.decode([String].self, forKey: .expectedCellNames)
+        observedCellNames = try container.decode([String].self, forKey: .observedCellNames)
+        missingCellNames = try container.decode([String].self, forKey: .missingCellNames)
+        expectedCornerNames = try container.decode([String].self, forKey: .expectedCornerNames)
+        observedCornerNames = try container.decode([String].self, forKey: .observedCornerNames)
+        missingCornerNames = try container.decode([String].self, forKey: .missingCornerNames)
+        findings = try container.decode([PDKValidationFinding].self, forKey: .findings)
     }
 
     private enum CodingKeys: String, CodingKey {

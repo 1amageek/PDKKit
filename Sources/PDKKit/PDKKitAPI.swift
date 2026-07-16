@@ -1,8 +1,8 @@
 import Foundation
-@_exported import PDKCore
-@_exported import PDKDiscovery
-@_exported import PDKValidation
-@_exported import PDKStandardViews
+import PDKCore
+import PDKDiscovery
+import PDKValidation
+import PDKStandardViews
 
 public enum PDKKitAPI {
     public static let contractVersion = 2
@@ -13,5 +13,4 @@ public enum PDKKitAPI {
     public static let standardViewInspectionStageID = "pdk.inspect-standard-view"
     public static let ruleDeckInspectionStageID = "pdk.inspect-rule-deck"
     public static let oracleComparisonStageID = "pdk.compare-oracle"
-    public static let qualificationStageID = "pdk.qualify"
 }

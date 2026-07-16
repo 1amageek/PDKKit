@@ -6,7 +6,7 @@ Canonical process-design-kit discovery, identity, asset integrity and validation
 
 The PDKKit-owned contract layer is complete and executable for deterministic manifest-driven discovery,
 validation, retained corpus evaluation and parser-backed standard-view
-inspection, detailed numeric semantics, immutable Foundation-backed artifact provenance, oracle comparison and a local qualification gate. The
+inspection, detailed numeric semantics, immutable Foundation-backed artifact provenance and oracle comparison. The
 PDK stage slice is also executable by a flow host with immutable artifacts,
 scope-bound tool evidence, human approval and resume coverage. The larger
 platform goal requires separate provider evidence and foundry approval; PDKKit
@@ -26,17 +26,17 @@ independent evidence required to pass those gates.
 |---|---|
 | `PDKCore` | PDK identity and immutable manifest reference |
 | `PDKDiscovery` | Deterministic local PDK discovery without qualification claims |
-| `PDKValidation` | Manifest, input, asset, digest, parser-backed cross-view, retained corpus and local qualification gate |
+| `PDKValidation` | Manifest, input, asset, digest, parser-backed cross-view and retained corpus validation |
 | `PDKStandardViews` | Canonical standard-view and rule-deck inspection, local/external result providers, manifest binding and immutable oracle comparison |
 | `PDKKit` | Umbrella API and public contract version (2) |
-| `PDKKitCLICore` / `pdkkit` | Deterministic JSON inspection, discovery, validation, corpus, standard-view, rule-deck, oracle and qualification CLI |
+| `PDKKitCLICore` / `pdkkit` | Deterministic JSON inspection, discovery, validation, corpus, standard-view, rule-deck and oracle CLI |
 
 ## Contract
 
 Every executing product uses protocol-first dependency injection, typed request
 records, immutable artifact identities from CircuiteFoundation, and explicit
 completed, blocked, failed and cancelled states. Each domain result carries its
-own payload, diagnostics, artifact locators and execution metadata.
+own payload, diagnostics, immutable artifact references and `ExecutionProvenance`.
 
 The artifact boundary has two representations with different authority:
 
@@ -68,8 +68,8 @@ Xcircuite resolves a PDKReference before constructing downstream stage requests.
 
 The library does not depend on a flow runtime. A flow host owns stage execution, artifact persistence, qualification gates, repair loops and human approval.
 
-The flow host can expose discovery, validation, retained-corpus, standard-view,
-oracle and qualification stages through its own executor implementation. Each
+The flow host can expose discovery, validation, retained-corpus, standard-view
+and oracle stages through its own executor implementation. Each
 stage persists the complete domain result as an immutable run artifact and maps
 completed, blocked, failed and cancelled states to flow gates. Qualification
 evidence is accepted only when the ToolQualification scope matches the
@@ -128,14 +128,12 @@ and failed cases. Corpus success is evidence of the declared local validator
 and failed cases, including manifest-bound standard-view and rule-deck checks.
 Rule-deck corpus results retain expected/observed outcomes and finding codes so
 the artifact can be reviewed or resumed by an agent. Corpus success is evidence
-of the declared local validator contract only; it does not promote the
-qualification state.
+of the declared local validator contract only; it does not establish trust.
 
 `PDKOracleExpectation` binds canonical standard-view facts, numeric SPICE model
 parameters, Liberty timing tables and unit declarations to a manifest digest.
-`LocalPDKOracleComparator` returns structured field mismatches, and
-`PDKQualificationGate` promotes only a matching local corpus plus oracle pair
-to `oracleCorrelated`. It never emits `processQualified`.
+`LocalPDKOracleComparator` returns structured field mismatches. PDKKit emits
+evidence only; ToolQualification owns every trust and qualification decision.
 
 ## CLI
 
@@ -147,7 +145,6 @@ swift run pdkkit corpus --suite <path> --root <path> --pretty
 swift run pdkkit inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> --pretty
 swift run pdkkit inspect-rule-deck --manifest <path> --asset-id <id> --pretty
 swift run pdkkit oracle --manifest <path> --oracle <path> --pretty
-swift run pdkkit qualify --manifest <path> --corpus <report.json> --oracle <report.json> --pretty
 ```
 
 The CLI writes deterministic sorted-key JSON to stdout. Domain blockers use

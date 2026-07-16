@@ -50,10 +50,9 @@ apply process and flow policy.
 
 All outputs are immutable run artifacts with format, digest, producer metadata and the input design/PDK revision needed to reproduce the result.
 
-PDKKit validation emits a `PDKCapabilityReport` and
-`PDKQualificationScope`. Both retain process ID, version and PDK digest. The
-qualification state starts at `unverified`; no local validation result is
-treated as foundry qualification.
+PDKKit validation emits a `PDKCapabilityReport` plus immutable artifacts and
+execution provenance. No local validation result is treated as foundry
+qualification; ToolQualification consumes the evidence and owns trust state.
 
 `PDKAssetReference` is the PDK-owned artifact intent. Its
 `artifactLocator()` projection uses `CircuiteFoundation.ArtifactLocator`.
@@ -62,17 +61,16 @@ treated as foundry qualification.
 `ArtifactReference`. No compatibility envelope or adapter is created at this
 boundary; PDK requests and results use Foundation artifact types directly.
 
-The same boundary applies to standard-view, rule-deck, oracle and
-qualification artifact reads. Local inspectors verify declared artifacts
+The same boundary applies to standard-view, rule-deck and oracle artifact
+reads. Local inspectors verify declared artifacts
 through `LocalArtifactVerifier`, and canonical `ArtifactReference` values are
 retained in standard-view IR, rule-deck payloads and oracle comparison
 payloads. The removed legacy digesting helpers are not part of the public
 implementation; all digesting uses CircuiteFoundation directly.
 
-`PDKQualificationGate` may emit `oracleCorrelated` only when the retained
-corpus and immutable oracle reports are both valid and share the selected PDK
-manifest digest. It never emits `processQualified`; that state requires
-independent process evidence and human approval.
+Corpus and oracle reports retain the selected PDK manifest digest so
+ToolQualification can evaluate their scope together with independent process
+evidence and human approval.
 
 When a format-specific semantic parser or reference oracle is unavailable,
 the validator emits a structured `blocked` result. It does not infer

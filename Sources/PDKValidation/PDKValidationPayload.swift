@@ -9,7 +9,6 @@ public struct PDKValidationPayload: Sendable, Hashable, Codable {
     public var resolvedAssets: [PDKResolvedAsset]
     public var standardViewResults: [PDKStandardViewValidationResult]
     public var ruleDeckResults: [PDKRuleDeckValidationResult]
-    public var qualificationScope: PDKQualificationScope?
     public var capabilityReport: PDKCapabilityReport?
 
     public init(
@@ -19,7 +18,6 @@ public struct PDKValidationPayload: Sendable, Hashable, Codable {
         resolvedAssets: [PDKResolvedAsset] = [],
         standardViewResults: [PDKStandardViewValidationResult] = [],
         ruleDeckResults: [PDKRuleDeckValidationResult] = [],
-        qualificationScope: PDKQualificationScope? = nil,
         capabilityReport: PDKCapabilityReport? = nil
     ) {
         self.isValid = isValid
@@ -28,19 +26,17 @@ public struct PDKValidationPayload: Sendable, Hashable, Codable {
         self.resolvedAssets = resolvedAssets
         self.standardViewResults = standardViewResults
         self.ruleDeckResults = ruleDeckResults
-        self.qualificationScope = qualificationScope
         self.capabilityReport = capabilityReport
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        isValid = try container.decodeIfPresent(Bool.self, forKey: .isValid) ?? false
-        missingRequirements = try container.decodeIfPresent([String].self, forKey: .missingRequirements) ?? []
-        findings = try container.decodeIfPresent([PDKValidationFinding].self, forKey: .findings) ?? []
-        resolvedAssets = try container.decodeIfPresent([PDKResolvedAsset].self, forKey: .resolvedAssets) ?? []
-        standardViewResults = try container.decodeIfPresent([PDKStandardViewValidationResult].self, forKey: .standardViewResults) ?? []
-        ruleDeckResults = try container.decodeIfPresent([PDKRuleDeckValidationResult].self, forKey: .ruleDeckResults) ?? []
-        qualificationScope = try container.decodeIfPresent(PDKQualificationScope.self, forKey: .qualificationScope)
+        isValid = try container.decode(Bool.self, forKey: .isValid)
+        missingRequirements = try container.decode([String].self, forKey: .missingRequirements)
+        findings = try container.decode([PDKValidationFinding].self, forKey: .findings)
+        resolvedAssets = try container.decode([PDKResolvedAsset].self, forKey: .resolvedAssets)
+        standardViewResults = try container.decode([PDKStandardViewValidationResult].self, forKey: .standardViewResults)
+        ruleDeckResults = try container.decode([PDKRuleDeckValidationResult].self, forKey: .ruleDeckResults)
         capabilityReport = try container.decodeIfPresent(PDKCapabilityReport.self, forKey: .capabilityReport)
     }
 
@@ -51,7 +47,6 @@ public struct PDKValidationPayload: Sendable, Hashable, Codable {
         case resolvedAssets
         case standardViewResults
         case ruleDeckResults
-        case qualificationScope
         case capabilityReport
     }
 }

@@ -48,11 +48,11 @@ public struct PDKCorpusCaseResult: Sendable, Hashable, Codable {
         expectedOutcome = try container.decode(PDKCorpusExpectedOutcome.self, forKey: .expectedOutcome)
         observedOutcome = try container.decode(PDKCorpusExpectedOutcome.self, forKey: .observedOutcome)
         passed = try container.decode(Bool.self, forKey: .passed)
-        expectedFindingCodes = try container.decodeIfPresent([String].self, forKey: .expectedFindingCodes) ?? []
-        observedFindingCodes = try container.decodeIfPresent([String].self, forKey: .observedFindingCodes) ?? []
-        missingExpectedFindingCodes = try container.decodeIfPresent([String].self, forKey: .missingExpectedFindingCodes) ?? []
-        standardViewResults = try container.decodeIfPresent([PDKCorpusStandardViewResult].self, forKey: .standardViewResults) ?? []
-        ruleDeckResults = try container.decodeIfPresent([PDKCorpusRuleDeckResult].self, forKey: .ruleDeckResults) ?? []
+        expectedFindingCodes = try container.decode([String].self, forKey: .expectedFindingCodes)
+        observedFindingCodes = try container.decode([String].self, forKey: .observedFindingCodes)
+        missingExpectedFindingCodes = try container.decode([String].self, forKey: .missingExpectedFindingCodes)
+        standardViewResults = try container.decode([PDKCorpusStandardViewResult].self, forKey: .standardViewResults)
+        ruleDeckResults = try container.decode([PDKCorpusRuleDeckResult].self, forKey: .ruleDeckResults)
         manifestReference = try container.decodeIfPresent(ArtifactReference.self, forKey: .manifestReference)
     }
 

@@ -23,8 +23,8 @@ public struct PDKCorpusStandardViewCheck: Sendable, Hashable, Codable {
         self.init(
             assetID: try container.decode(String.self, forKey: .assetID),
             format: try container.decode(String.self, forKey: .format),
-            expectedOutcome: try container.decodeIfPresent(PDKCorpusExpectedOutcome.self, forKey: .expectedOutcome) ?? .valid,
-            expectedFindingCodes: try container.decodeIfPresent([String].self, forKey: .expectedFindingCodes) ?? []
+            expectedOutcome: try container.decode(PDKCorpusExpectedOutcome.self, forKey: .expectedOutcome),
+            expectedFindingCodes: try container.decode([String].self, forKey: .expectedFindingCodes)
         )
     }
 

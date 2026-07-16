@@ -5,7 +5,6 @@ public struct PDKCapabilityReport: Sendable, Hashable, Codable {
     public var processID: String
     public var version: String
     public var pdkDigest: String
-    public var qualificationState: PDKQualificationState
     public var capabilities: [PDKCapability]
     public var limitations: [String]
 
@@ -14,7 +13,6 @@ public struct PDKCapabilityReport: Sendable, Hashable, Codable {
         processID: String,
         version: String,
         pdkDigest: String,
-        qualificationState: PDKQualificationState = .unverified,
         capabilities: [PDKCapability] = [],
         limitations: [String] = []
     ) {
@@ -22,7 +20,6 @@ public struct PDKCapabilityReport: Sendable, Hashable, Codable {
         self.processID = processID
         self.version = version
         self.pdkDigest = pdkDigest
-        self.qualificationState = qualificationState
         self.capabilities = capabilities
         self.limitations = limitations
     }

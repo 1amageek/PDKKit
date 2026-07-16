@@ -1,7 +1,6 @@
 import Foundation
 import CircuiteFoundation
 import PDKCore
-import CircuiteFoundation
 
 public struct LocalPDKOracleComparator: PDKOracleComparing {
     private let clock: any PDKStandardViewExecutionClock
@@ -26,7 +25,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -49,7 +48,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
             let integrity = LocalArtifactVerifier().verify(oracleArtifact)
             let integrityFindings = findings(for: integrity, entity: request.oracle.path)
             guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
-                return makeEnvelope(
+                return try makeEnvelope(
                     request: request,
                     startedAt: startedAt,
                     status: .blocked,
@@ -59,7 +58,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 )
             }
         } catch {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -78,7 +77,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         do {
             data = try Data(contentsOf: oracleURL)
         } catch {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -107,7 +106,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 entity: oracleURL.path,
                 suggestedActions: ["repair_oracle_expectation", "run_pdkkit_oracle_help"]
             ))
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -119,7 +118,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
 
         var findings = validateExpectation(expectation: expectation, request: request)
         guard !findings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -202,7 +201,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         } else {
             status = .completed
         }
-        return makeEnvelope(
+        return try makeEnvelope(
             request: request,
             startedAt: startedAt,
             status: status,
@@ -363,14 +362,14 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         oracleArtifact: ArtifactReference? = nil,
         findings: [PDKValidationFinding],
         comparisons: [PDKOracleViewComparison] = []
-    ) -> PDKOracleComparisonResult {
+    ) throws -> PDKOracleComparisonResult {
         PDKOracleComparisonResult(
             schemaVersion: PDKOracleRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: findings.map(PDKStandardViewDiagnosticMapper.map),
-            artifacts: [request.pdk.manifest.locator, request.oracle.locator],
-            metadata: PDKExecutionMetadata(
+            artifacts: [request.pdk.manifest, request.oracle],
+            provenance: try PDKExecutionProvenance.make(
                 engineID: "PDKOracleComparison",
                 implementationID: "LocalPDKOracleComparator",
                 implementationVersion: "1",

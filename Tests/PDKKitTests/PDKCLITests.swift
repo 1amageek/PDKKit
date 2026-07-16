@@ -123,50 +123,6 @@ struct PDKCLITests {
         #expect(result.standardOutput.contains("\"isValid\":true"))
     }
 
-    @Test("qualification gate requires matching corpus and oracle evidence")
-    func qualificationGateAcceptsMatchingEvidence() async throws {
-        let rootPath = fixtureRootURL().path
-        let manifestPath = fixtureURL().appending(path: "pdk.json").path
-        let corpus = await PDKKitCLI.invoke(arguments: [
-            "corpus",
-            "--suite", fixtureRootURL().appending(path: "pdk-corpus.json").path,
-            "--root", rootPath
-        ])
-        let oracle = await PDKKitCLI.invoke(arguments: [
-            "oracle",
-            "--manifest", manifestPath,
-            "--oracle", fixtureRootURL().appending(path: "standard-view-oracle.json").path
-        ])
-        #expect(corpus.exitCode == 0)
-        #expect(oracle.exitCode == 0)
-
-        let directory = FileManager.default.temporaryDirectory
-            .appending(path: "pdkkit-qualification-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer {
-            do {
-                try FileManager.default.removeItem(at: directory)
-            } catch {
-                Issue.record("Failed to remove qualification reports: \(error)")
-            }
-        }
-        let corpusURL = directory.appending(path: "corpus.json")
-        let oracleURL = directory.appending(path: "oracle.json")
-        try Data(corpus.standardOutput.utf8).write(to: corpusURL, options: [.atomic])
-        try Data(oracle.standardOutput.utf8).write(to: oracleURL, options: [.atomic])
-
-        let result = await PDKKitCLI.invoke(arguments: [
-            "qualify",
-            "--manifest", manifestPath,
-            "--corpus", corpusURL.path,
-            "--oracle", oracleURL.path
-        ])
-        #expect(result.exitCode == 0)
-        #expect(result.standardError.isEmpty)
-        #expect(result.standardOutput.contains("\"state\":\"oracleCorrelated\""))
-        #expect(result.standardOutput.contains("\"isValid\":true"))
-    }
-
     private func fixtureURL() -> URL {
         fixtureRootURL().appending(path: "valid-pdk")
     }

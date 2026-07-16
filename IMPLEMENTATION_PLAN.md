@@ -57,7 +57,7 @@ the corresponding platform packages.
 - Corpus schema version 2 carries `ruleDeckChecks` and per-case
   `ruleDeckResults`; version 1 suites remain readable with an empty collection.
 - M5 immutable manifest-digest-bound oracle expectations, canonical field comparison, structured mismatch blockers and `pdkkit oracle`.
-- M6 `PDKQualificationGate` and `pdkkit qualify`, which require matching retained corpus and oracle evidence and stop at `oracleCorrelated`.
+- M6 immutable digest-bound corpus and oracle evidence handoff for ToolQualification.
 - M7 direct DesignFlowKernel protocol integration with project-root-bounded
   artifact references, ToolQualification scope enforcement, human approval and
   resume regression coverage; concrete `.xcircuite` persistence remains owned
@@ -129,8 +129,8 @@ never claims `processQualified`.
 
 The ToolQualification evidence contract is valid only when its complete scope
 matches the requested implementation ID, binary digest, algorithm version,
-process profile ID and deck digest. Xcircuite applies this requirement before
-running the PDK qualification stage. A mismatched scope is blocked, while a
+process profile ID and deck digest. ToolQualification applies this requirement
+before a flow consumes PDK evidence. A mismatched scope is blocked, while a
 matching scope still requires human approval before a resumed run may continue.
 The PDK-specific regression covers direct protocol execution and persists
 typed stage results; the fixture is contract evidence, not foundry
@@ -138,7 +138,6 @@ qualification.
 
 ## Evidence gate
 
-`PDKCapabilityReport.qualificationState` remains `unverified` until a
-process-scoped corpus, reference-oracle correlation and ToolQualification
-record are attached. This package reports evidence and limitations; it never
-promotes a PDK to foundry-qualified by itself.
+PDKKit reports capability, immutable evidence and limitations. A process-scoped
+corpus, reference-oracle correlation and ToolQualification record are evaluated
+outside this package; PDKKit never promotes a PDK to foundry-qualified.

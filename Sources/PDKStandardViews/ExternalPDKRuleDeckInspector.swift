@@ -25,12 +25,12 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         _ request: PDKRuleDeckInspectionRequest
     ) async throws -> PDKRuleDeckInspectionResult {
         let startedAt = clock.now()
-        var receivedArtifacts: [ArtifactLocator] = []
+        var receivedArtifacts: [ArtifactReference] = []
         let data: Data
         do {
             data = try await provider.resultData(for: request)
         } catch {
-            return failureEnvelope(
+            return try failureEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -57,7 +57,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 receivedArtifacts = artifacts(from: data)
             }
             let status: PDKExecutionStatus = isTrustBoundaryError(error) ? .blocked : .failed
-            return failureEnvelope(
+            return try failureEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: status,
@@ -73,7 +73,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             if receivedArtifacts.isEmpty {
                 receivedArtifacts = artifacts(from: data)
             }
-            return failureEnvelope(
+            return try failureEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -241,16 +241,16 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         request: PDKRuleDeckInspectionRequest,
         startedAt: Date,
         status: PDKExecutionStatus,
-        artifacts: [ArtifactLocator] = [],
+        artifacts: [ArtifactReference] = [],
         finding: PDKValidationFinding
-    ) -> PDKRuleDeckInspectionResult {
+    ) throws -> PDKRuleDeckInspectionResult {
         PDKRuleDeckInspectionResult(
             schemaVersion: PDKRuleDeckInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: [PDKStandardViewDiagnosticMapper.map(finding)],
             artifacts: artifacts,
-            metadata: PDKExecutionMetadata(
+            provenance: try PDKExecutionProvenance.make(
                 engineID: "PDKRuleDeckInspection",
                 implementationID: "ExternalPDKRuleDeckInspector",
                 implementationVersion: "1",
@@ -270,7 +270,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         )
     }
 
-    private func artifacts(from data: Data) -> [ArtifactLocator] {
+    private func artifacts(from data: Data) -> [ArtifactReference] {
         do {
             return try JSONDecoder().decode(ArtifactContainer.self, from: data).artifacts
         } catch {
@@ -279,6 +279,6 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     }
 
     private struct ArtifactContainer: Decodable {
-        var artifacts: [ArtifactLocator] = []
+        var artifacts: [ArtifactReference] = []
     }
 }

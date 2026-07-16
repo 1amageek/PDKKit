@@ -50,9 +50,6 @@ public enum PDKKitCLI {
         case "oracle":
             if commandArguments.contains("--help") { return helpResult(oracleHelp) }
             return try await PDKKitOracleCommand().execute(options: PDKKitOracleCommand.Options(arguments: commandArguments))
-        case "qualify":
-            if commandArguments.contains("--help") { return helpResult(qualifyHelp) }
-            return try PDKKitQualificationCommand().execute(options: PDKKitQualificationCommand.Options(arguments: commandArguments))
         default:
             throw PDKKitCLIError.invalidArguments("Unknown command: \(command). Run 'pdkkit --help' for usage.")
         }
@@ -84,7 +81,6 @@ public enum PDKKitCLI {
       pdkkit inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> [--run-id <id>] [--pretty]
       pdkkit inspect-rule-deck --manifest <path> --asset-id <id> [--run-id <id>] [--pretty]
       pdkkit oracle --manifest <path> --oracle <path> [--run-id <id>] [--pretty]
-      pdkkit qualify --manifest <path> --corpus <path> --oracle <path> [--run-id <id>] [--pretty]
 
     EXIT CODES:
       0  completed validation or at least one discovery candidate
@@ -127,8 +123,4 @@ public enum PDKKitCLI {
     USAGE: pdkkit oracle --manifest <path> --oracle <path> [--run-id <id>] [--pretty]
     """
 
-    static let qualifyHelp = """
-    OVERVIEW: Gate a PDK for local oracle correlation using retained corpus and oracle reports.
-    USAGE: pdkkit qualify --manifest <path> --corpus <path> --oracle <path> [--run-id <id>] [--pretty]
-    """
 }

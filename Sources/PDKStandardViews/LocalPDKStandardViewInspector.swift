@@ -39,7 +39,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["provide_one_standard_view_artifact"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -55,12 +55,11 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: request.assetID,
                 suggestedActions: ["correct_standard_view_format", "rebuild_input_reference"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
-                findings: [finding],
-                artifacts: [input]
+                findings: [finding]
             )
         }
 
@@ -78,12 +77,11 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: input.path,
                 suggestedActions: ["provide_project_root", "repair_standard_view_reference"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
-                findings: [finding],
-                artifacts: [input]
+                findings: [finding]
             )
         }
 
@@ -96,12 +94,12 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             let integrity = LocalArtifactVerifier().verify(sourceArtifact)
             let integrityFindings = findings(for: integrity, entity: input.path)
             guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
-                return makeEnvelope(
+                return try makeEnvelope(
                     request: request,
                     startedAt: startedAt,
                     status: .blocked,
                     findings: integrityFindings,
-                    artifacts: [input]
+                    artifacts: [sourceArtifact]
                 )
             }
         } catch let error as PDKFoundationArtifactError {
@@ -136,12 +134,11 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 )
                 status = .failed
             }
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: status,
-                findings: [finding],
-                artifacts: [input]
+                findings: [finding]
             )
         } catch {
             let finding = PDKValidationFinding(
@@ -151,12 +148,11 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: input.path,
                 suggestedActions: ["rebuild_input_reference", "check_file_permissions"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
-                findings: [finding],
-                artifacts: [input]
+                findings: [finding]
             )
         }
 
@@ -171,12 +167,12 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 entity: inputURL.path,
                 suggestedActions: ["restore_standard_view_artifact", "check_file_permissions"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
                 findings: [finding],
-                artifacts: [input]
+                artifacts: [sourceArtifact]
             )
         }
 
@@ -187,12 +183,12 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             findings.append(contentsOf: semanticFindings(inspection: inspection, request: request))
             let hasBlocker = findings.contains { $0.severity == .blocker }
             let status: PDKExecutionStatus = hasBlocker ? .blocked : .completed
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: status,
                 findings: findings,
-                artifacts: [input],
+                artifacts: [sourceArtifact],
                 inspection: inspection
             )
         } catch {
@@ -204,12 +200,12 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 suggestedActions: ["repair_standard_view_artifact", "run_format_specific_parser"]
             )
             findings.append(finding)
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
                 findings: findings,
-                artifacts: [input]
+                artifacts: [sourceArtifact]
             )
         }
     }
@@ -1238,16 +1234,16 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         startedAt: Date,
         status: PDKExecutionStatus,
         findings: [PDKValidationFinding],
-        artifacts: [ArtifactLocator] = [],
+        artifacts: [ArtifactReference] = [],
         inspection: PDKStandardViewIR? = nil
-    ) -> PDKStandardViewInspectionResult {
+    ) throws -> PDKStandardViewInspectionResult {
         PDKStandardViewInspectionResult(
             schemaVersion: PDKStandardViewInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: findings.map(PDKStandardViewDiagnosticMapper.map),
             artifacts: artifacts,
-            metadata: PDKExecutionMetadata(
+            provenance: try PDKExecutionProvenance.make(
                 engineID: "PDKStandardViewInspection",
                 implementationID: "LocalPDKStandardViewInspector",
                 implementationVersion: "2",

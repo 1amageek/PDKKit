@@ -45,7 +45,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                 entity: suiteURL.path,
                 suggestedActions: ["restore_pdk_corpus_suite"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -73,7 +73,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                 entity: suiteURL.path,
                 suggestedActions: ["repair_pdk_corpus_suite", "run_pdkkit_corpus_help"]
             )
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .failed,
@@ -92,7 +92,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
 
         let suiteReport = suiteValidator.validate(suite)
         guard suiteReport.isValid else {
-            return makeEnvelope(
+            return try makeEnvelope(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
@@ -131,12 +131,12 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
 
         let isValid = caseResults.allSatisfy(\.passed)
         let status: PDKExecutionStatus = isValid ? .completed : .failed
-        return makeEnvelope(
+        return try makeEnvelope(
             request: request,
             startedAt: startedAt,
             status: status,
             diagnostics: diagnostics,
-            artifacts: caseResults.compactMap { $0.manifestReference?.locator },
+            artifacts: caseResults.compactMap(\.manifestReference),
             payload: PDKCorpusValidationPayload(
                 suiteID: suite.suiteID,
                 processID: suite.processID,
@@ -370,16 +370,16 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         startedAt: Date,
         status: PDKExecutionStatus,
         diagnostics: [DesignDiagnostic],
-        artifacts: [ArtifactLocator] = [],
+        artifacts: [ArtifactReference] = [],
         payload: PDKCorpusValidationPayload
-    ) -> PDKCorpusValidationExecutionResult {
+    ) throws -> PDKCorpusValidationExecutionResult {
         PDKCorpusValidationExecutionResult(
             schemaVersion: PDKCorpusValidationRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
             diagnostics: diagnostics,
             artifacts: artifacts,
-            metadata: PDKExecutionMetadata(
+            provenance: try PDKExecutionProvenance.make(
                 engineID: "PDKCorpusValidation",
                 implementationID: "LocalPDKCorpusValidator",
                 implementationVersion: "1",

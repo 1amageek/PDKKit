@@ -19,8 +19,8 @@ public struct PDKCorpusRuleDeckCheck: Sendable, Hashable, Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.init(
             assetID: try container.decode(String.self, forKey: .assetID),
-            expectedOutcome: try container.decodeIfPresent(PDKCorpusExpectedOutcome.self, forKey: .expectedOutcome) ?? .valid,
-            expectedFindingCodes: try container.decodeIfPresent([String].self, forKey: .expectedFindingCodes) ?? []
+            expectedOutcome: try container.decode(PDKCorpusExpectedOutcome.self, forKey: .expectedOutcome),
+            expectedFindingCodes: try container.decode([String].self, forKey: .expectedFindingCodes)
         )
     }
 

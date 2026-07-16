@@ -22,9 +22,6 @@ struct PDKEngineTests {
         #expect(envelope.status == .completed, "\(envelope.diagnostics)")
         #expect(envelope.payload.isValid)
         #expect(envelope.payload.resolvedAssets.count == 7)
-        #expect(envelope.payload.qualificationScope?.qualificationState == .unverified)
-        #expect(envelope.payload.qualificationScope?.pdkDigest == reference.digest)
-        #expect(envelope.payload.capabilityReport?.qualificationState == .unverified)
         #expect(envelope.payload.capabilityReport?.capabilities.contains { $0.capabilityID == "cross-view.mapping" } == true)
         #expect(envelope.payload.standardViewResults.map(\.assetID) == ["cells", "layout", "liberty-view", "spice-view"])
         #expect(envelope.payload.standardViewResults.allSatisfy { $0.status == .completed && $0.payload.isValid })
@@ -374,85 +371,6 @@ struct PDKEngineTests {
         #expect(envelope.payload.isValid)
         #expect(envelope.payload.caseResults.first?.ruleDeckResults.first?.passed == true)
         #expect(envelope.payload.caseResults.first?.ruleDeckResults.first?.observedOutcome == .blocked)
-    }
-
-    @Test("qualification evaluator consumes immutable corpus and oracle payload artifacts")
-    func qualificationEvaluatorConsumesPayloadArtifacts() async throws {
-        let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
-        let directory = FileManager.default.temporaryDirectory
-            .appending(path: "pdkkit-qualification-evaluator-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer {
-            do {
-                try FileManager.default.removeItem(at: directory)
-            } catch {
-                Issue.record("Failed to remove qualification evaluator fixture: \(error)")
-            }
-        }
-
-        let corpusPayload = PDKCorpusValidationPayload(
-            suiteID: "fixture-suite",
-            processID: pdk.processID,
-            version: pdk.version,
-            isValid: true,
-            caseResults: [PDKCorpusCaseResult(
-                caseID: "valid",
-                manifestPath: manifestURL.path,
-                expectedOutcome: .valid,
-                observedOutcome: .valid,
-                passed: true,
-                expectedFindingCodes: [],
-                observedFindingCodes: [],
-                missingExpectedFindingCodes: [],
-                manifestReference: pdk.manifest
-            )]
-        )
-        let oraclePayload = PDKOracleComparisonPayload(
-            isValid: true,
-            oracleID: "fixture-oracle",
-            pdkDigest: pdk.digest,
-            comparisons: [PDKOracleViewComparison(
-                assetID: "cells",
-                format: .lef,
-                isMatch: true
-            )]
-        )
-        let corpusData = try JSONEncoder().encode(corpusPayload)
-        let oracleData = try JSONEncoder().encode(oraclePayload)
-        let corpusURL = directory.appending(path: "corpus.json")
-        let oracleURL = directory.appending(path: "oracle.json")
-        try corpusData.write(to: corpusURL, options: [.atomic])
-        try oracleData.write(to: oracleURL, options: [.atomic])
-        let corpusReference = try makeArtifactReference(
-            artifactID: "corpus",
-            path: "corpus.json",
-            kind: .report,
-            format: .json,
-            sha256: try SHA256ContentDigester().digest(data: corpusData, using: .sha256).hexadecimalValue,
-            byteCount: Int64(corpusData.count)
-        )
-        let oracleReference = try makeArtifactReference(
-            artifactID: "oracle",
-            path: "oracle.json",
-            kind: .report,
-            format: .json,
-            sha256: try SHA256ContentDigester().digest(data: oracleData, using: .sha256).hexadecimalValue,
-            byteCount: Int64(oracleData.count)
-        )
-
-        let envelope = try await LocalPDKQualificationEvaluator().execute(
-            PDKQualificationRequest(
-                runID: "qualification-evaluator",
-                pdk: pdk,
-                corpusReport: corpusReference,
-                oracleReport: oracleReference,
-                projectRootPath: directory.path
-            )
-        )
-        #expect(envelope.status == .completed, "\(envelope.diagnostics)")
-        #expect(envelope.payload.isValid)
-        #expect(envelope.payload.state == .oracleCorrelated)
     }
 
     @Test("requests and payloads round-trip with the shared JSON contract")

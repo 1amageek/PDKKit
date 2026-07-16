@@ -2,7 +2,7 @@
 
 ## Current state
 
-**All PDKKit-owned implementation gates are complete: M0-M6 local evidence contracts, M4c external typed-result parity, the PDK-specific M7 integration slice and canonical CircuiteFoundation artifact provenance. Runtime qualification state is data-dependent and remains fail-closed when independent evidence is absent; this is an input state, not unfinished PDKKit implementation.**
+**All PDKKit-owned evidence gates are complete: M0-M6 local evidence contracts, M4c external typed-result parity, the PDK-specific M7 integration slice and canonical CircuiteFoundation artifact provenance. ToolQualification exclusively owns runtime trust decisions.**
 
 | Maturity gate | Status | Evidence |
 |---|---|---|
@@ -11,14 +11,14 @@
 | Shared Foundation request/result contract | Complete | Codable, Hashable, Sendable requests and typed result payloads |
 | Contract build | Passed | `swift build` |
 | Contract test | Passed | 52 PDKKit Swift Testing cases across 6 suites; Foundation artifact projection, symlink containment, digest binding, external typed-result parity, source-reference binding, corpus retention, schema decoding and CLI evidence included |
-| Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, parser-backed cross-view semantic validation, standard-view IR, oracle comparison and qualification gate |
-| CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `inspect-rule-deck`, `oracle`, `qualify` |
+| Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, parser-backed cross-view semantic validation, standard-view IR and oracle comparison |
+| CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `inspect-rule-deck`, `oracle` |
 | Standard-view semantics | Complete for the PDKKit-owned canonical contract | LEF/GDSII/OASIS structure plus numeric SPICE model parameters, subcircuits, Liberty cells/timing tables/units; unsupported constructs produce structured blocked results |
 | External backend parity | M4c contract complete | Typed JSON domain results, fail-closed schema/run/asset/format/source-reference/digest checks and canonical artifact identity binding; provider execution is outside PDKKit |
 | Fixture corpus | M3/M4/M2b contract-complete | Retained valid, blocked and failed corpus cases plus manifest-bound LEF/SPICE/Liberty/rule-deck checks |
 | Oracle correlation | Complete for immutable local detailed oracle | Manifest-digest-bound expectation, numeric model/table fields, mismatch blocker and CLI evidence |
-| Local qualification gate | Complete for `oracleCorrelated` handoff | Matching corpus/oracle reports required; `processQualified` is never emitted |
-| Process qualification state | Correctly fail-closed | PDKKit exports the complete qualification scope and never fabricates external process evidence |
+| Qualification evidence handoff | Complete | Corpus, oracle, artifact identity and execution provenance are retained for ToolQualification |
+| Process qualification ownership | External by design | PDKKit never creates or promotes trust state |
 | ToolQualification trust scope | Implemented as a generic and PDK-aware contract | Implementation, binary, algorithm, process, deck, PDK ID and PDK digest must match; fixture evidence is not foundry qualification |
 | Flow stage integration | Passed for the PDK slice | Direct DesignFlowKernel protocol integration, runtime-spec round-trip and typed result persistence |
 | End-to-end flow evidence | Passed for PDK and release integration slices | PDK selected test: 6; release integration test: 5; approval/resume and runtime round-trip covered |
@@ -34,7 +34,7 @@
 | Layer and device semantics | Implemented | Typed layers, purposes, terminals and extraction recognition | Retained fixture | Not qualified |
 | Corner model | Implemented | PVT plus RC/EM/reliability references and view mappings | Retained fixture | Not qualified |
 | Cross-view validation | Implemented | Manifest mapping coverage plus parser-backed LEF/GDSII/OASIS/SPICE/Liberty `standardViewResults` and protocol-first rule-deck inspection in `ruleDeckResults` | Valid, comment-filtered and semantic-blocked fixtures | Not qualified |
-| Qualification scope export | Implemented | Capability report and unverified qualification scope | Retained fixture | Not qualified |
+| Qualification evidence export | Implemented | Capability report, immutable evidence and execution provenance | Retained fixture | Evaluated by ToolQualification |
 
 ## Goal progression
 
@@ -49,7 +49,7 @@ corpus validation
       ↓
 immutable oracle correlation
       ↓
-local qualification gate
+typed evidence handoff
       ↓
 process-scoped ToolQualification
       ↓
@@ -62,7 +62,7 @@ release-profile eligibility
 
 The package goal is complete when every P0 function has a concrete backend,
 structured failure behavior, retained corpus, reference correlation where an
-oracle exists, qualification-scope export with fail-closed promotion, a
+oracle exists, immutable evidence handoff, a
 deterministic CLI and a passing Xcircuite headless integration test. External
 process evidence is consumed as a runtime input and is never fabricated by
 PDKKit.

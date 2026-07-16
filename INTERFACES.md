@@ -60,14 +60,11 @@ Umbrella API.
 | `ExternalPDKStandardViewInspector` | Decode and fail closed on external standard-view result contract mismatches |
 | `ExternalPDKRuleDeckInspector` | Decode and fail closed on external rule-deck result, asset and PDK-digest mismatches |
 | `LocalPDKOracleComparator` | Compare manifest-bound canonical facts against digest-bound immutable expectations |
-| `PDKQualificationGate` | Require matching retained corpus and oracle evidence for `oracleCorrelated` |
-| `LocalPDKQualificationEvaluator` | Load immutable corpus/oracle payload artifacts and return a qualification result |
 
 `PDKValidationPayload` exposes findings, resolved immutable references, a
-`standardViewResults` collection, a `PDKQualificationScope` and a
-`PDKCapabilityReport`. Each standard-view result retains its format, execution
-status, parser-backed payload and PDK digest. Both reports retain the PDK digest
-and explicitly preserve the `unverified` qualification state.
+`standardViewResults` collection and a `PDKCapabilityReport`. Each
+standard-view result retains its format, execution status, parser-backed
+payload and PDK digest.
 Each `PDKResolvedAsset` also exposes `foundationArtifactReference()`, the
 canonical immutable identity used by downstream boundary code.
 `PDKStandardViewIR.sourceArtifact`, `PDKRuleDeckInspectionPayload.sourceArtifact`
@@ -93,9 +90,9 @@ numeric SPICE model parameters, subcircuits, Liberty cells, timing tables and
 unit declarations, source artifact references, findings, binding evidence and
 explicit qualification limitations. `PDKOracleExpectation` and
 `PDKOracleRequest` bind those facts to a manifest digest; `PDKOracleComparisonPayload`
-records field-level mismatches. `PDKQualificationGate` consumes retained
-corpus and oracle payloads and emits only the local `oracleCorrelated` state.
-It does not claim complete vendor-specific language coverage or process qualification.
+records field-level mismatches. ToolQualification consumes retained corpus and
+oracle artifacts when evaluating process-scoped trust. PDKKit does not claim
+complete vendor-specific language coverage or process qualification.
 
 `PDKRuleDeckInspectionRequest` is an agent-facing request for a single mapped
 rule-deck asset. Its payload retains the immutable source reference, statement
