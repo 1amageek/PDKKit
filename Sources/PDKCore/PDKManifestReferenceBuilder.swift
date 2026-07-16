@@ -11,7 +11,7 @@ public struct PDKManifestReferenceBuilder: Sendable {
 
     public func makeReference(for url: URL) throws -> PDKReference {
         let data = try Data(contentsOf: url)
-        let decoded = try PDKManifestCodec.decode(data: data)
+        let manifest = try PDKManifestCodec.decode(data: data)
         let location = try ArtifactLocation(fileURL: url)
         let artifactLocator = ArtifactLocator(
             location: location,
@@ -36,8 +36,8 @@ public struct PDKManifestReferenceBuilder: Sendable {
         let digest = foundationReference.digest.hexadecimalValue
         let reference = PDKReference(
             manifest: foundationReference,
-            processID: decoded.manifest.processID,
-            version: decoded.manifest.version,
+            processID: manifest.processID,
+            version: manifest.version,
             digest: digest
         )
         try reference.validate()

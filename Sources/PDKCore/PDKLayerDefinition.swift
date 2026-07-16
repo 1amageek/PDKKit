@@ -32,10 +32,10 @@ public struct PDKLayerDefinition: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        layerID = try container.decodeIfPresent(String.self, forKey: .layerID) ?? ""
-        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
-        number = try container.decodeIfPresent(Int.self, forKey: .number) ?? 0
-        purpose = try container.decodeIfPresent(PDKLayerPurpose.self, forKey: .purpose) ?? .other
+        layerID = try container.decode(String.self, forKey: .layerID)
+        name = try container.decode(String.self, forKey: .name)
+        number = try container.decode(Int.self, forKey: .number)
+        purpose = try container.decode(PDKLayerPurpose.self, forKey: .purpose)
         isRoutingLayer = try container.decodeIfPresent(Bool.self, forKey: .isRoutingLayer) ?? false
         aliases = try container.decodeIfPresent([String].self, forKey: .aliases) ?? []
         minimumWidth = try container.decodeIfPresent(Double.self, forKey: .minimumWidth)

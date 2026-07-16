@@ -40,46 +40,21 @@ public struct PDKManifest: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let sourceSchemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 0
-        guard sourceSchemaVersion <= Self.currentSchemaVersion else {
-            throw PDKManifestError.unsupportedSchemaVersion(sourceSchemaVersion)
+        let decodedSchemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        guard decodedSchemaVersion == Self.currentSchemaVersion else {
+            throw PDKManifestError.unsupportedSchemaVersion(decodedSchemaVersion)
         }
 
-        schemaVersion = Self.currentSchemaVersion
-        processID = try container.decodeIfPresent(String.self, forKey: .processID)
-            ?? container.decodeIfPresent(String.self, forKey: .process)
-            ?? ""
-        version = try container.decodeIfPresent(String.self, forKey: .version)
-            ?? container.decodeIfPresent(String.self, forKey: .pdkVersion)
-            ?? ""
+        schemaVersion = decodedSchemaVersion
+        processID = try container.decode(String.self, forKey: .processID)
+        version = try container.decode(String.self, forKey: .version)
         displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
-        if let currentAssets = try container.decodeIfPresent([PDKAssetReference].self, forKey: .assets) {
-            assets = currentAssets
-        } else {
-            do {
-                assets = try container.decodeIfPresent([PDKAssetReference].self, forKey: .files) ?? []
-            } catch {
-                guard sourceSchemaVersion == 0 else { throw error }
-                let legacyPaths = try container.decode([String].self, forKey: .files)
-                assets = legacyPaths.map { path in
-                    PDKAssetReference(
-                        assetID: URL(filePath: path).deletingPathExtension().lastPathComponent,
-                        role: .other,
-                        path: path,
-                        kind: .other,
-                        format: .unknown
-                    )
-                }
-            }
-        }
-        layers = try container.decodeIfPresent([PDKLayerDefinition].self, forKey: .layers) ?? []
-        devices = try container.decodeIfPresent([PDKDeviceDefinition].self, forKey: .devices) ?? []
-        corners = try container.decodeIfPresent([PDKCornerDefinition].self, forKey: .corners) ?? []
-        crossViewMappings = try container.decodeIfPresent(
-            [PDKCrossViewMapping].self,
-            forKey: .crossViewMappings
-        ) ?? []
-        metadata = try container.decodeIfPresent([String: String].self, forKey: .metadata) ?? [:]
+        assets = try container.decode([PDKAssetReference].self, forKey: .assets)
+        layers = try container.decode([PDKLayerDefinition].self, forKey: .layers)
+        devices = try container.decode([PDKDeviceDefinition].self, forKey: .devices)
+        corners = try container.decode([PDKCornerDefinition].self, forKey: .corners)
+        crossViewMappings = try container.decode([PDKCrossViewMapping].self, forKey: .crossViewMappings)
+        metadata = try container.decode([String: String].self, forKey: .metadata)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -179,12 +154,9 @@ public struct PDKManifest: Sendable, Hashable, Codable {
     private enum CodingKeys: String, CodingKey {
         case schemaVersion
         case processID
-        case process
         case version
-        case pdkVersion
         case displayName
         case assets
-        case files
         case layers
         case devices
         case corners

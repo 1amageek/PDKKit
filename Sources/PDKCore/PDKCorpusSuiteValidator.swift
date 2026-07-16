@@ -5,7 +5,7 @@ public struct PDKCorpusSuiteValidator: Sendable {
 
     public func validate(_ suite: PDKCorpusSuite) -> PDKCorpusSuiteValidationReport {
         var findings: [PDKValidationFinding] = []
-        if suite.schemaVersion < 1 || suite.schemaVersion > PDKCorpusSuite.currentSchemaVersion {
+        if suite.schemaVersion != PDKCorpusSuite.currentSchemaVersion {
             findings.append(blocker(
                 "pdk.corpus.unsupported-schema-version",
                 "Corpus suite schema version is not the current supported version.",

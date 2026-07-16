@@ -26,9 +26,9 @@ public struct PDKDeviceDefinition: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        deviceID = try container.decodeIfPresent(String.self, forKey: .deviceID) ?? ""
-        modelName = try container.decodeIfPresent(String.self, forKey: .modelName) ?? ""
-        terminals = try container.decodeIfPresent([PDKDeviceTerminal].self, forKey: .terminals) ?? []
+        deviceID = try container.decode(String.self, forKey: .deviceID)
+        modelName = try container.decode(String.self, forKey: .modelName)
+        terminals = try container.decode([PDKDeviceTerminal].self, forKey: .terminals)
         extractionRecognition = try container.decodeIfPresent(
             PDKExtractionRecognition.self,
             forKey: .extractionRecognition

@@ -33,9 +33,9 @@ struct PDKKitInspectCommand: Sendable {
         } catch {
             throw PDKKitCLIError.unreadableFile(path: options.manifestPath, reason: error.localizedDescription)
         }
-        let migration: PDKManifestMigrationResult
+        let manifest: PDKManifest
         do {
-            migration = try PDKManifestCodec.decode(data: data)
+            manifest = try PDKManifestCodec.decode(data: data)
         } catch {
             throw PDKKitCLIError.invalidJSON(path: options.manifestPath, reason: String(describing: error))
         }
@@ -52,11 +52,9 @@ struct PDKKitInspectCommand: Sendable {
         let output = PDKKitInspectOutput(
             command: "inspect",
             manifestPath: URL(filePath: options.manifestPath).standardizedFileURL.path,
-            sourceSchemaVersion: migration.sourceSchemaVersion,
-            targetSchemaVersion: migration.targetSchemaVersion,
-            wasMigrated: migration.wasMigrated,
+            schemaVersion: manifest.schemaVersion,
             digest: digest,
-            manifest: migration.manifest
+            manifest: manifest
         )
         return PDKKitCLIInvocationResult(
             exitCode: 0,

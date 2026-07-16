@@ -73,7 +73,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 )
             }
             let data = try Data(contentsOf: manifestURL)
-            manifest = try PDKManifestCodec.decode(data: data).manifest
+            manifest = try PDKManifestCodec.decode(data: data)
         } catch let error as PDKManifestError {
             let finding = PDKValidationFinding(
                 severity: .error,

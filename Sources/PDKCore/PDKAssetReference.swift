@@ -63,20 +63,13 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        assetID = try container.decodeIfPresent(String.self, forKey: .assetID) ?? ""
-        role = try container.decodeIfPresent(PDKAssetRole.self, forKey: .role) ?? .other
-        path = try container.decodeIfPresent(String.self, forKey: .path) ?? ""
-        kind = try container.decodeIfPresent(ArtifactKind.self, forKey: .kind) ?? .other
-        if let rawFormat = try container.decodeIfPresent(String.self, forKey: .format) {
-            do {
-                format = try ArtifactFormat(rawValue: rawFormat.lowercased())
-            } catch {
-                format = .unknown
-            }
-        } else {
-            format = .unknown
-        }
-        required = try container.decodeIfPresent(Bool.self, forKey: .required) ?? true
+        assetID = try container.decode(String.self, forKey: .assetID)
+        role = try container.decode(PDKAssetRole.self, forKey: .role)
+        path = try container.decode(String.self, forKey: .path)
+        kind = try container.decode(ArtifactKind.self, forKey: .kind)
+        let rawFormat = try container.decode(String.self, forKey: .format)
+        format = try ArtifactFormat(rawValue: rawFormat.lowercased())
+        required = try container.decode(Bool.self, forKey: .required)
         sha256 = try container.decodeIfPresent(String.self, forKey: .sha256)
         byteCount = try container.decodeIfPresent(Int64.self, forKey: .byteCount)
         cornerIDs = try container.decodeIfPresent([String].self, forKey: .cornerIDs) ?? []

@@ -10,7 +10,7 @@ public struct PDKCorpusSuiteCodec: Sendable {
         } catch {
             throw PDKCorpusSuiteCodecError.invalidJSON(String(describing: error))
         }
-        guard suite.schemaVersion <= PDKCorpusSuite.currentSchemaVersion else {
+        guard suite.schemaVersion == PDKCorpusSuite.currentSchemaVersion else {
             throw PDKCorpusSuiteCodecError.unsupportedSchemaVersion(suite.schemaVersion)
         }
         return suite

@@ -111,9 +111,9 @@ public struct LocalPDKValidator: PDKValidating {
             return result(status: .blocked, findings: [finding], request: request)
         }
 
-        let decoded: PDKManifestMigrationResult
+        let manifest: PDKManifest
         do {
-            decoded = try PDKManifestCodec.decode(contentsOf: manifestURL)
+            manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
         } catch {
             let finding = PDKValidationFinding(
                 severity: .error,
@@ -125,19 +125,10 @@ public struct LocalPDKValidator: PDKValidating {
             return result(status: .failed, findings: [finding], request: request)
         }
 
-        var findings = manifestValidator.validate(decoded.manifest).findings
+        var findings = manifestValidator.validate(manifest).findings
         validateInputs(request.inputs, projectRootPath: request.projectRootPath, findings: &findings)
-        if decoded.wasMigrated {
-            findings.append(PDKValidationFinding(
-                severity: .warning,
-                code: "pdk.validation.manifest-migrated",
-                message: "Manifest was migrated from schema version \(decoded.sourceSchemaVersion) to \(decoded.targetSchemaVersion).",
-                entity: manifestURL.path,
-                suggestedActions: ["persist_current_manifest_schema"]
-            ))
-        }
 
-        if request.pdk.processID != decoded.manifest.processID {
+        if request.pdk.processID != manifest.processID {
             findings.append(PDKValidationFinding(
                 severity: .blocker,
                 code: "pdk.validation.process-id-mismatch",
@@ -146,7 +137,7 @@ public struct LocalPDKValidator: PDKValidating {
                 suggestedActions: ["rebuild_pdk_reference"]
             ))
         }
-        if request.pdk.version != decoded.manifest.version {
+        if request.pdk.version != manifest.version {
             findings.append(PDKValidationFinding(
                 severity: .blocker,
                 code: "pdk.validation.version-mismatch",
@@ -162,7 +153,7 @@ public struct LocalPDKValidator: PDKValidating {
             findings: &findings
         )
 
-        for role in request.requiredAssetRoles where !decoded.manifest.assets.contains(where: { $0.role == role }) {
+        for role in request.requiredAssetRoles where !manifest.assets.contains(where: { $0.role == role }) {
             findings.append(PDKValidationFinding(
                 severity: .blocker,
                 code: "pdk.validation.required-asset-role-missing",
@@ -173,7 +164,7 @@ public struct LocalPDKValidator: PDKValidating {
         }
 
         var resolvedAssets: [PDKResolvedAsset] = []
-        for asset in decoded.manifest.assets {
+        for asset in manifest.assets {
             do {
                 let resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
                 resolvedAssets.append(resolved)
@@ -209,7 +200,7 @@ public struct LocalPDKValidator: PDKValidating {
 
         if request.validateCrossViews {
             validateCrossViews(
-                manifest: decoded.manifest,
+                manifest: manifest,
                 resolvedAssets: resolvedAssets,
                 findings: &findings
             )
@@ -222,11 +213,11 @@ public struct LocalPDKValidator: PDKValidating {
         for resolvedAsset in resolvedAssets {
             assetDigests[resolvedAsset.assetID] = resolvedAsset.computedSHA256
         }
-        let scope = decoded.manifest.qualificationScope(
+        let scope = manifest.qualificationScope(
             pdkDigest: request.pdk.digest,
             assetDigests: assetDigests
         )
-        let capabilityReport = decoded.manifest.capabilityReport(
+        let capabilityReport = manifest.capabilityReport(
             pdkDigest: request.pdk.digest,
             resolvedAssetIDs: Set(resolvedAssets.map(\.assetID))
         )
@@ -237,7 +228,7 @@ public struct LocalPDKValidator: PDKValidating {
             request: request,
             qualificationScope: scope,
             capabilityReport: capabilityReport,
-            manifest: decoded.manifest
+            manifest: manifest
         )
     }
 

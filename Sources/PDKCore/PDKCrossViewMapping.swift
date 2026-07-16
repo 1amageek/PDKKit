@@ -32,9 +32,9 @@ public struct PDKCrossViewMapping: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        mappingID = try container.decodeIfPresent(String.self, forKey: .mappingID) ?? ""
-        view = try container.decodeIfPresent(PDKViewKind.self, forKey: .view) ?? .other
-        assetID = try container.decodeIfPresent(String.self, forKey: .assetID) ?? ""
+        mappingID = try container.decode(String.self, forKey: .mappingID)
+        view = try container.decode(PDKViewKind.self, forKey: .view)
+        assetID = try container.decode(String.self, forKey: .assetID)
         logicalNames = try container.decodeIfPresent([String].self, forKey: .logicalNames) ?? []
         physicalNames = try container.decodeIfPresent([String].self, forKey: .physicalNames) ?? []
         layerIDs = try container.decodeIfPresent([String].self, forKey: .layerIDs) ?? []

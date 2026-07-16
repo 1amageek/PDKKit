@@ -39,14 +39,21 @@ public struct PDKValidationRequest: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? Self.currentSchemaVersion
+        schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        guard schemaVersion == Self.currentSchemaVersion else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .schemaVersion,
+                in: container,
+                debugDescription: "Unsupported PDK validation request schema version: \(schemaVersion)"
+            )
+        }
         runID = try container.decode(String.self, forKey: .runID)
-        inputs = try container.decodeIfPresent([ArtifactLocator].self, forKey: .inputs) ?? []
+        inputs = try container.decode([ArtifactLocator].self, forKey: .inputs)
         pdk = try container.decode(PDKReference.self, forKey: .pdk)
-        requiredAssetRoles = try container.decodeIfPresent([PDKAssetRole].self, forKey: .requiredAssetRoles) ?? []
-        validateCrossViews = try container.decodeIfPresent(Bool.self, forKey: .validateCrossViews) ?? true
-        validateStandardViews = try container.decodeIfPresent(Bool.self, forKey: .validateStandardViews) ?? true
-        validateRuleDecks = try container.decodeIfPresent(Bool.self, forKey: .validateRuleDecks) ?? true
+        requiredAssetRoles = try container.decode([PDKAssetRole].self, forKey: .requiredAssetRoles)
+        validateCrossViews = try container.decode(Bool.self, forKey: .validateCrossViews)
+        validateStandardViews = try container.decode(Bool.self, forKey: .validateStandardViews)
+        validateRuleDecks = try container.decode(Bool.self, forKey: .validateRuleDecks)
         projectRootPath = try container.decodeIfPresent(String.self, forKey: .projectRootPath)
     }
 

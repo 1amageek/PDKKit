@@ -11,7 +11,7 @@ public struct PDKProcessCorner: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        name = try container.decode(String.self, forKey: .name)
         nominal = try container.decodeIfPresent(Bool.self, forKey: .nominal) ?? false
     }
 

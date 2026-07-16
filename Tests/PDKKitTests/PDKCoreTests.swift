@@ -7,35 +7,40 @@ import CircuiteFoundation
 struct PDKCoreTests {
     @Test("decodes retained fixture and keeps the manifest schema current")
     func retainedFixtureDecodes() throws {
-        let migration = try PDKManifestCodec.decode(contentsOf: fixtureURL().appending(path: "pdk.json"))
-        #expect(migration.sourceSchemaVersion == 1)
-        #expect(migration.wasMigrated == false)
-        #expect(migration.manifest.processID == "fixture-180nm")
-        #expect(migration.manifest.validate().isValid)
+        let manifest = try PDKManifestCodec.decode(contentsOf: fixtureURL().appending(path: "pdk.json"))
+        #expect(manifest.schemaVersion == PDKManifest.currentSchemaVersion)
+        #expect(manifest.processID == "fixture-180nm")
+        #expect(manifest.validate().isValid)
     }
 
-    @Test("migrates the legacy process and file keys")
-    func legacyManifestMigrates() throws {
+    @Test("rejects manifests without the current schema version")
+    func manifestWithoutSchemaVersionIsRejected() {
         let data = Data(
-            "{\"process\":\"legacy-65nm\",\"pdkVersion\":\"0.9\",\"files\":[]}".utf8
+            "{\"processID\":\"fixture-65nm\",\"version\":\"0.9\",\"assets\":[],\"layers\":[],\"devices\":[],\"corners\":[],\"crossViewMappings\":[],\"metadata\":{}}".utf8
         )
-        let migration = try PDKManifestCodec.decode(data: data)
-        #expect(migration.sourceSchemaVersion == 0)
-        #expect(migration.wasMigrated)
-        #expect(migration.manifest.schemaVersion == PDKManifest.currentSchemaVersion)
-        #expect(migration.manifest.processID == "legacy-65nm")
-        #expect(migration.manifest.version == "0.9")
+        #expect(throws: PDKManifestError.self) {
+            try PDKManifestCodec.decode(data: data)
+        }
     }
 
-    @Test("migrates a legacy list of file paths")
-    func legacyFilePathsMigrate() throws {
+    @Test("rejects obsolete manifest field names")
+    func obsoleteManifestFieldNamesAreRejected() {
         let data = Data(
-            "{\"process\":\"legacy-45nm\",\"pdkVersion\":\"0.1\",\"files\":[\"models.spice\"]}".utf8
+            "{\"schemaVersion\":1,\"process\":\"fixture-45nm\",\"pdkVersion\":\"0.1\",\"files\":[],\"layers\":[],\"devices\":[],\"corners\":[],\"crossViewMappings\":[],\"metadata\":{}}".utf8
         )
-        let migration = try PDKManifestCodec.decode(data: data)
-        #expect(migration.manifest.assets.count == 1)
-        #expect(migration.manifest.assets[0].path == "models.spice")
-        #expect(migration.manifest.assets[0].format == .unknown)
+        #expect(throws: PDKManifestError.self) {
+            try PDKManifestCodec.decode(data: data)
+        }
+    }
+
+    @Test("rejects manifests missing canonical collection fields")
+    func manifestMissingCanonicalCollectionsIsRejected() {
+        let data = Data(
+            "{\"schemaVersion\":1,\"processID\":\"fixture-45nm\",\"version\":\"0.1\"}".utf8
+        )
+        #expect(throws: PDKManifestError.self) {
+            try PDKManifestCodec.decode(data: data)
+        }
     }
 
     @Test("computes a stable lowercase SHA-256 digest")
@@ -47,7 +52,7 @@ struct PDKCoreTests {
     @Test("resolved assets expose canonical Foundation artifact identity")
     func resolvedAssetProjectsToFoundation() throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let manifest = try PDKManifestCodec.decode(contentsOf: manifestURL).manifest
+        let manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
         let asset = try #require(manifest.assets.first(where: { $0.assetID == "models" }))
 
         let resolved = try LocalPDKAssetResolver().resolve(asset, relativeTo: manifestURL)

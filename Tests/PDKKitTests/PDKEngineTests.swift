@@ -261,6 +261,31 @@ struct PDKEngineTests {
         #expect(envelope.payload.candidates[0].processID == "fixture-180nm")
     }
 
+    @Test("discovery requests require the current complete schema")
+    func discoveryRequestRequiresCurrentSchema() throws {
+        let request = PDKDiscoveryRequest(
+            runID: "discovery-contract",
+            inputs: [],
+            searchRoots: [fixtureURL().path]
+        )
+        let encoded = try JSONEncoder().encode(request)
+        let decoded = try JSONDecoder().decode(PDKDiscoveryRequest.self, from: encoded)
+        #expect(decoded == request)
+
+        var obsoleteObject = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        obsoleteObject.removeValue(forKey: "schemaVersion")
+        let missingSchemaData = try JSONSerialization.data(withJSONObject: obsoleteObject)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(PDKDiscoveryRequest.self, from: missingSchemaData)
+        }
+
+        obsoleteObject["schemaVersion"] = 0
+        let obsoleteSchemaData = try JSONSerialization.data(withJSONObject: obsoleteObject)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(PDKDiscoveryRequest.self, from: obsoleteSchemaData)
+        }
+    }
+
     @Test("retained corpus evaluates valid and blocked cases deterministically")
     func corpusEvaluatesExpectedOutcomes() async throws {
         let rootURL = fixtureRootURL()
@@ -292,8 +317,8 @@ struct PDKEngineTests {
         #expect(validCase.ruleDeckResults.first?.passed == true)
     }
 
-    @Test("legacy corpus schema remains readable without rule-deck checks")
-    func legacyCorpusSchemaRemainsReadable() throws {
+    @Test("obsolete corpus schema is rejected")
+    func obsoleteCorpusSchemaIsRejected() throws {
         let suiteData = try Data(contentsOf: fixtureRootURL().appending(path: "pdk-corpus.json"))
         var object = try #require(JSONSerialization.jsonObject(with: suiteData) as? [String: Any])
         object["schemaVersion"] = 1
@@ -302,12 +327,10 @@ struct PDKEngineTests {
             cases[index].removeValue(forKey: "ruleDeckChecks")
         }
         object["cases"] = cases
-        let legacyData = try JSONSerialization.data(withJSONObject: object)
-        let suite = try PDKCorpusSuiteCodec().decode(data: legacyData)
-        let report = PDKCorpusSuiteValidator().validate(suite)
-        #expect(report.isValid)
-        #expect(suite.schemaVersion == 1)
-        #expect(suite.cases.first(where: { $0.caseID == "retained-fixture-is-valid" })?.ruleDeckChecks.isEmpty == true)
+        let obsoleteData = try JSONSerialization.data(withJSONObject: object)
+        #expect(throws: PDKCorpusSuiteCodecError.self) {
+            try PDKCorpusSuiteCodec().decode(data: obsoleteData)
+        }
     }
 
     @Test("corpus retains a blocked rule-deck result")
@@ -450,15 +473,20 @@ struct PDKEngineTests {
         #expect(decodedRequest == request)
         #expect(request.schemaVersion == PDKValidationRequest.currentSchemaVersion)
 
-        var legacyObject = try #require(JSONSerialization.jsonObject(with: requestData) as? [String: Any])
-        legacyObject["schemaVersion"] = 1
-        legacyObject.removeValue(forKey: "validateStandardViews")
-        legacyObject.removeValue(forKey: "validateRuleDecks")
-        let legacyData = try JSONSerialization.data(withJSONObject: legacyObject)
-        let decodedLegacyRequest = try JSONDecoder().decode(PDKValidationRequest.self, from: legacyData)
-        #expect(decodedLegacyRequest.schemaVersion == 1)
-        #expect(decodedLegacyRequest.validateStandardViews)
-        #expect(decodedLegacyRequest.validateRuleDecks)
+        var obsoleteObject = try #require(JSONSerialization.jsonObject(with: requestData) as? [String: Any])
+        obsoleteObject["schemaVersion"] = 1
+        obsoleteObject.removeValue(forKey: "validateStandardViews")
+        obsoleteObject.removeValue(forKey: "validateRuleDecks")
+        let obsoleteData = try JSONSerialization.data(withJSONObject: obsoleteObject)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(PDKValidationRequest.self, from: obsoleteData)
+        }
+
+        obsoleteObject.removeValue(forKey: "schemaVersion")
+        let missingSchemaData = try JSONSerialization.data(withJSONObject: obsoleteObject)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(PDKValidationRequest.self, from: missingSchemaData)
+        }
 
         let payload = PDKValidationPayload(isValid: false, missingRequirements: ["models"])
         let payloadData = try encoder.encode(payload)

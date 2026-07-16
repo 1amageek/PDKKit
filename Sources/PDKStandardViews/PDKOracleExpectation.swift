@@ -32,8 +32,8 @@ public struct PDKOracleExpectation: Sendable, Hashable, Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 0
-        guard schemaVersion <= Self.currentSchemaVersion else {
+        let schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        guard schemaVersion == Self.currentSchemaVersion else {
             throw PDKOracleExpectationError.unsupportedSchemaVersion(schemaVersion)
         }
         self.init(

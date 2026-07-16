@@ -176,7 +176,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             )
         }
         do {
-            let manifest = try PDKManifestCodec.decode(data: manifestData).manifest
+            let manifest = try PDKManifestCodec.decode(data: manifestData)
             guard let asset = manifest.assets.first(where: { $0.assetID == request.assetID }) else {
                 throw PDKExternalInspectionError.inputReferenceUnavailable(
                     "PDK manifest does not declare asset \(request.assetID)"

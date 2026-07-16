@@ -9,6 +9,56 @@ import Testing
 
 @Suite("PDK standard-view inspection")
 struct PDKStandardViewTests {
+    @Test("inspection requests reject non-current schemas")
+    func inspectionRequestsRejectNonCurrentSchemas() throws {
+        let standardRequest = PDKStandardViewInspectionRequest(
+            runID: "standard-contract",
+            inputs: [],
+            format: .lef
+        )
+        let standardData = try JSONEncoder().encode(standardRequest)
+        var standardObject = try #require(JSONSerialization.jsonObject(with: standardData) as? [String: Any])
+        standardObject["schemaVersion"] = 1
+        let obsoleteStandardData = try JSONSerialization.data(withJSONObject: standardObject)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(PDKStandardViewInspectionRequest.self, from: obsoleteStandardData)
+        }
+
+        let manifestURL = fixtureURL().appending(path: "pdk.json")
+        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let ruleDeckRequest = PDKRuleDeckInspectionRequest(
+            runID: "rule-deck-contract",
+            inputs: [pdk.manifest.locator],
+            pdk: pdk,
+            assetID: "rules"
+        )
+        let ruleDeckData = try JSONEncoder().encode(ruleDeckRequest)
+        var ruleDeckObject = try #require(JSONSerialization.jsonObject(with: ruleDeckData) as? [String: Any])
+        ruleDeckObject.removeValue(forKey: "schemaVersion")
+        let missingRuleDeckSchemaData = try JSONSerialization.data(withJSONObject: ruleDeckObject)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(PDKRuleDeckInspectionRequest.self, from: missingRuleDeckSchemaData)
+        }
+    }
+
+    @Test("oracle expectations require the current schema")
+    func oracleExpectationRequiresCurrentSchema() throws {
+        let oracleURL = fixtureRootURL().appending(path: "standard-view-oracle.json")
+        let data = try Data(contentsOf: oracleURL)
+        var object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        object.removeValue(forKey: "schemaVersion")
+        let missingSchemaData = try JSONSerialization.data(withJSONObject: object)
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(PDKOracleExpectation.self, from: missingSchemaData)
+        }
+
+        object["schemaVersion"] = 0
+        let obsoleteSchemaData = try JSONSerialization.data(withJSONObject: object)
+        #expect(throws: PDKOracleExpectationError.self) {
+            try JSONDecoder().decode(PDKOracleExpectation.self, from: obsoleteSchemaData)
+        }
+    }
+
     @Test("immutable oracle expectation correlates manifest-bound standard views")
     func oracleCorrelationIsReproducible() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
@@ -346,7 +396,7 @@ struct PDKStandardViewTests {
     @Test("manifest corner binding blocks an unqualified standard view")
     func missingCornerBindingBlocks() throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let manifest = try PDKManifestCodec.decode(contentsOf: manifestURL).manifest
+        let manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
         let source = try makeArtifactReference(
             artifactID: "spice-view",
             path: fixtureURL().appending(path: "models.spice").path,

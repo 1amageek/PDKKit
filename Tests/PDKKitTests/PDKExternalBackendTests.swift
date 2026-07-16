@@ -11,7 +11,7 @@ struct PDKExternalBackendTests {
         let fixture = fixtureURL()
         let manifestURL = fixture.appending(path: "pdk.json")
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
-        let manifest = try PDKManifestCodec.decode(contentsOf: manifestURL).manifest
+        let manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
         let asset = try #require(manifest.assets.first { $0.assetID == "cells" })
         let resolved = try LocalPDKAssetResolver().resolve(asset, relativeTo: manifestURL)
         let rawRequest = PDKStandardViewInspectionRequest(
