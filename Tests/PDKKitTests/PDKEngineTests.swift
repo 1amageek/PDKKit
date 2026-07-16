@@ -60,7 +60,7 @@ struct PDKEngineTests {
             path: "pdk.json",
             kind: absoluteReference.manifest.kind,
             format: absoluteReference.manifest.format,
-            sha256: absoluteReference.manifest.sha256,
+            sha256: absoluteReference.manifest.digest.hexadecimalValue,
             byteCount: Int64(absoluteReference.manifest.byteCount)
         )
         let relativeReference = PDKReference(
@@ -88,7 +88,7 @@ struct PDKEngineTests {
                 path: "../pdk.json",
                 kind: relativeManifest.kind,
                 format: relativeManifest.format,
-                sha256: relativeManifest.sha256,
+                sha256: relativeManifest.digest.hexadecimalValue,
                 byteCount: Int64(relativeManifest.byteCount)
             )
         }
