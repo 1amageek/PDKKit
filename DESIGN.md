@@ -66,8 +66,8 @@ The same boundary applies to standard-view, rule-deck and oracle artifact
 reads. Local inspectors verify declared artifacts
 through `LocalArtifactVerifier`, and canonical `ArtifactReference` values are
 retained in standard-view IR, rule-deck payloads and oracle comparison
-payloads. The removed legacy digesting helpers are not part of the public
-implementation; all digesting uses CircuiteFoundation directly.
+payloads. Old PDK-owned content-hash helpers have been removed; all artifact
+identity and integrity work uses CircuiteFoundation directly.
 
 Corpus and oracle reports retain the selected PDK manifest digest so
 ToolQualification can evaluate their scope together with independent process

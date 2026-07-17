@@ -166,7 +166,7 @@ swift build
 perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Package -destination 'platform=macOS'
 ```
 
-The repository's current verification result is 52 tests in 6 Swift Testing
+The repository's current verification result is 56 tests in 6 Swift Testing
 suites. The detailed standard-view suite passes 12 tests with
 `xcodebuild test-without-building` after an Xcode `build-for-testing` build.
 The Xcircuite PDK integration slice passes 6 tests in 1 suite with `xcodebuild`;

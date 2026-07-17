@@ -10,8 +10,8 @@
 | Public package products | Complete | Package.swift, PDKCore/Discovery/Validation/Kit/CLI products; contract version 2 |
 | Shared engine and evidence contract | Complete | Domain protocols refine `CircuiteFoundation.Engine`; results directly expose artifact, diagnostic and evidence capabilities |
 | Contract build | Passed | `swift build` |
-| Contract test | Passed | 52 PDKKit Swift Testing cases across 6 suites; Foundation artifact projection, symlink containment, digest binding, external typed-result parity, source-reference binding, corpus retention, schema decoding and CLI evidence included |
-| Domain implementation | M4-M6 local evidence complete | Manifest migration, digesting, asset resolution, parser-backed cross-view semantic validation, standard-view IR and oracle comparison |
+| Contract test | Passed | 56 PDKKit Swift Testing cases across 6 suites; Foundation artifact projection, symlink containment, digest binding, external typed-result parity, source-reference binding, corpus retention, obsolete-schema rejection and CLI evidence included |
+| Domain implementation | M4-M6 local evidence complete | Current manifest schema, CircuiteFoundation artifact identity/integrity, asset resolution, parser-backed cross-view semantic validation, standard-view IR and oracle comparison |
 | CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `inspect-rule-deck`, `oracle` |
 | Standard-view semantics | Complete for the PDKKit-owned canonical contract | LEF/GDSII/OASIS structure plus numeric SPICE model parameters, subcircuits, Liberty cells/timing tables/units; unsupported constructs produce structured blocked results |
 | External backend parity | M4c contract complete | Typed JSON domain results, fail-closed schema/run/asset/format/source-reference/digest checks and canonical artifact identity binding; provider execution is outside PDKKit |
@@ -28,7 +28,7 @@
 
 | Function | Contract | Implementation | Validation corpus | Qualification |
 |---|---|---|---|---|
-| Manifest schema and migration | Implemented | Current schema plus legacy key/path migration | Retained fixture | Not qualified |
+| Manifest schema | Implemented | Current schema only; obsolete schemas and obsolete field names are rejected | Retained fixture and negative contract tests | Not qualified |
 | Local discovery | Implemented | Deterministic recursive local discovery | Retained fixture | Not qualified |
 | Asset resolution and hashing | Implemented | CircuiteFoundation locator/reference/verifier boundary, root-bounded symlink-safe resolution, streaming SHA-256 and byte-count checks | Positive/negative tests | Not qualified |
 | Layer and device semantics | Implemented | Typed layers, purposes, terminals and extraction recognition | Retained fixture | Not qualified |
@@ -81,10 +81,11 @@ PDKKit.
   standalone CLI and per-layer evidence. The adapter is intentionally limited
   to integrity, statement and mapping evidence; vendor-specific geometric rule
   semantics remain an external/native qualification gate.
-- `PDKValidationRequest` is schema version 2. Legacy version 1 requests remain
-  decodable and default the new semantic checks to enabled.
+- `PDKValidationRequest` is schema version 2. Older request schemas are
+  rejected explicitly.
 - Corpus schema version 2 retains rule-deck check outcomes in each case result;
-  version 1 suites remain accepted with an empty rule-deck check collection.
+  older corpus suites are rejected instead of interpreted with missing
+  rule-deck evidence.
 - LEF/GDSII/OASIS inspection is backed by the workspace `swift-mask-data`
   parser. SPICE and Liberty detailed numeric model/timing facts are inspected
   by PDKKit-owned text adapters with canonical Foundation artifact provenance.

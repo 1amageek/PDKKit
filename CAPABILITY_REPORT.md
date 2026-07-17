@@ -4,7 +4,7 @@
 
 | Capability | Evidence | Result |
 |---|---|---|
-| Versioned manifest decode and legacy migration | `PDKManifestCodec`, migration tests | Available |
+| Current manifest decode and obsolete-schema rejection | `PDKManifestCodec`, negative schema and obsolete-field tests | Available |
 | Immutable PDK identity and manifest digest | `PDKManifestReferenceBuilder`, SHA-256 test | Available |
 | Local recursive discovery | `LocalPDKDiscoverer`, discovery test | Available |
 | Manifest-relative asset resolution | `LocalPDKAssetResolver`, validation fixture | Available |
@@ -14,7 +14,7 @@
 | Cross-view mapping coverage | layer/device/corner coverage checks | Blocked when mappings are absent |
 | Manifest-bound cross-view semantic validation | `LocalPDKValidator` invokes the manifest-bound LEF/GDSII/OASIS/SPICE/Liberty inspectors and retains `standardViewResults` | Available for declared mappings; parser failures and semantic blockers fail closed |
 | Rule-deck semantic validation | `PDKRuleDeckInspecting`, `LocalPDKRuleDeckInspector`, `PDKRuleDeckInspectionPayload`, `ruleDeckResults` and `pdkkit inspect-rule-deck` | Available for declared text rule decks; grammar limitations and missing layer evidence block |
-| Retained corpus evaluation | `PDKCorpusSuite`, `LocalPDKCorpusValidator`, standard-view and rule-deck case results, valid/blocked/failed fixture cases | Available for declared local cases; schema v2 accepts legacy v1 suites |
+| Retained corpus evaluation | `PDKCorpusSuite`, `LocalPDKCorpusValidator`, standard-view and rule-deck case results, valid/blocked/failed fixture cases | Available for declared local cases; schema v2 is required |
 | Standard-view detailed inspection | `PDKStandardViews`, `swift-mask-data` readers, SPICE/Liberty text adapters, canonical IR and manifest binding | Available for supported mask structure, numeric SPICE model parameters, Liberty timing tables and units |
 | External backend result parity | `PDKExternalStandardViewResultProviding`, `PDKExternalRuleDeckResultProviding`, external inspectors and contract tests | Available for typed domain results, digest-bearing source-reference binding and canonical artifact identity binding; provider process execution is outside PDKKit |
 | Immutable oracle comparison | `PDKOracleExpectation`, `LocalPDKOracleComparator`, mismatch payload | Available for declared canonical facts |
@@ -55,7 +55,7 @@
 
 ```mermaid
 flowchart LR
-  Manifest["PDK manifest"] --> Decode["Decode / migrate"]
+  Manifest["PDK manifest"] --> Decode["Decode current schema"]
   Decode --> Hash["Manifest + asset hashes"]
   Hash --> Semantics["Typed semantics"]
   Semantics --> Coverage["Cross-view coverage"]

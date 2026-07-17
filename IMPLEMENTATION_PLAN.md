@@ -26,7 +26,7 @@ the corresponding platform packages.
 
 ## Implemented slices
 
-- Manifest schema migration and typed process/layer/device/corner semantics.
+- Current manifest schema and typed process/layer/device/corner semantics.
 - Deterministic local discovery and reference digest construction through the
   CircuiteFoundation artifact boundary.
 - Root-bounded, symlink-safe asset resolution with streaming SHA-256 and
@@ -53,9 +53,9 @@ the corresponding platform packages.
   with immutable source references, per-layer evidence and
   `pdkkit inspect-rule-deck`; `LocalPDKValidator` injects the same protocol.
 - Validation request schema version 2 explicitly carries the standard-view and
-  rule-deck controls while preserving version 1 decode defaults.
+  rule-deck controls; older request schemas are rejected.
 - Corpus schema version 2 carries `ruleDeckChecks` and per-case
-  `ruleDeckResults`; version 1 suites remain readable with an empty collection.
+  `ruleDeckResults`; older corpus schemas are rejected.
 - M5 immutable manifest-digest-bound oracle expectations, canonical field comparison, structured mismatch blockers and `pdkkit oracle`.
 - M6 immutable digest-bound corpus and oracle evidence handoff for ToolQualification.
 - M7 direct DesignFlowKernel protocol integration with project-root-bounded

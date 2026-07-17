@@ -42,7 +42,7 @@ Umbrella API.
 
 | Type | Contract |
 |---|---|
-| `PDKManifestCodec` | Decode, migrate and encode versioned manifests |
+| `PDKManifestCodec` | Decode and encode the current manifest schema; obsolete schemas and field names fail closed |
 | `PDKManifestReferenceBuilder` | Build an immutable manifest reference with SHA-256 and byte count |
 | `LocalPDKAssetResolver` | Resolve manifest-relative assets within the manifest root and hash bytes |
 | `PDKManifestValidator` | Validate typed identity, layer, device, corner and mapping semantics |
@@ -80,8 +80,8 @@ validation results.
 observed outcomes, finding codes, missing expected codes and corpus
 limitations. Each case can retain standard-view and rule-deck check results.
 Expected negative cases are successful corpus cases when the validator
-reproduces the declared blocked or failed outcome. Corpus schema version 2
-adds rule-deck checks while decoding version 1 suites without them.
+reproduces the declared blocked or failed outcome. Corpus schema version 2 is
+required and includes rule-deck checks in the case contract.
 
 `PDKStandardViewInspectionRequest` and
 `PDKManifestViewInspectionRequest` are agent-facing engine requests. Their
