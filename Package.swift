@@ -15,7 +15,7 @@ let swiftMaskDataDependency: Package.Dependency = isLSIWorkspace && FileManager.
     ? .package(path: "../swift-mask-data")
     : .package(
         url: "https://github.com/1amageek/swift-mask-data.git",
-        revision: "66a61801607dc8a0f9dd0d3c4a698b89dda0c358"
+        revision: "9f69af09ed8dbac2bf7e7c7b1e97632f7a52de77"
     )
 
 let circuiteFoundationDependency: Package.Dependency = isLSIWorkspace && FileManager.default.fileExists(
@@ -24,7 +24,7 @@ let circuiteFoundationDependency: Package.Dependency = isLSIWorkspace && FileMan
     ? .package(path: "../CircuiteFoundation")
     : .package(
         url: "https://github.com/1amageek/CircuiteFoundation.git",
-        revision: "2ec6ee13a89ac6885be3c26b41a9ee0ef89948ac"
+        revision: "7abcac83517935c9b9f7553d7016d62cffde259d"
     )
 
 let package = Package(

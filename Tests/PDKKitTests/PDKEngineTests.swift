@@ -29,6 +29,13 @@ struct PDKEngineTests {
         #expect(result.payload.ruleDeckResults.first?.observedLayerIDs == ["active", "metal1"])
         #expect(result.payload.ruleDeckResults.first?.statementCount == 3)
         #expect(result.payload.ruleDeckResults.first?.inspection?.layerEvidence.count == 2)
+        let evidenceID = result.evidence.id
+        #expect(result.evidence.id == evidenceID)
+        let decoded = try JSONDecoder().decode(
+            PDKValidationResult.self,
+            from: JSONEncoder().encode(result)
+        )
+        #expect(decoded.evidence.id == evidenceID)
     }
 
     @Test("rule-deck inspection exposes manifest-bound layer evidence")
