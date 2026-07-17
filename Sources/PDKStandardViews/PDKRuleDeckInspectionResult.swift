@@ -9,13 +9,14 @@ public struct PDKRuleDeckInspectionResult: Sendable, Hashable, Codable,
     public var runID: String
     public var status: PDKExecutionStatus
     public var diagnostics: [DesignDiagnostic]
-    public var artifacts: [ArtifactReference]
-    public var provenance: ExecutionProvenance
-    public var payload: PDKRuleDeckInspectionPayload
-
-    public var evidence: EvidenceManifest {
-        EvidenceManifest(provenance: provenance, artifacts: artifacts)
+    public var artifacts: [ArtifactReference] {
+        didSet { evidence = EvidenceManifest(id: evidence.id, provenance: provenance, artifacts: artifacts) }
     }
+    public var provenance: ExecutionProvenance {
+        didSet { evidence = EvidenceManifest(id: evidence.id, provenance: provenance, artifacts: artifacts) }
+    }
+    public var payload: PDKRuleDeckInspectionPayload
+    public private(set) var evidence: EvidenceManifest
 
     public init(
         schemaVersion: Int,
@@ -33,5 +34,6 @@ public struct PDKRuleDeckInspectionResult: Sendable, Hashable, Codable,
         self.artifacts = artifacts
         self.provenance = provenance
         self.payload = payload
+        self.evidence = EvidenceManifest(provenance: provenance, artifacts: artifacts)
     }
 }

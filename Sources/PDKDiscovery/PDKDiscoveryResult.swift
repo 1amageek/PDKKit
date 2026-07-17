@@ -12,10 +12,7 @@ public struct PDKDiscoveryResult: Sendable, Hashable, Codable,
     public let artifacts: [ArtifactReference]
     public let provenance: ExecutionProvenance
     public let payload: PDKDiscoveryPayload
-
-    public var evidence: EvidenceManifest {
-        EvidenceManifest(provenance: provenance, artifacts: artifacts)
-    }
+    public let evidence: EvidenceManifest
 
     public init(schemaVersion: Int, runID: String, status: PDKExecutionStatus, diagnostics: [DesignDiagnostic] = [], artifacts: [ArtifactReference] = [], provenance: ExecutionProvenance, payload: PDKDiscoveryPayload) {
         self.schemaVersion = schemaVersion
@@ -25,5 +22,6 @@ public struct PDKDiscoveryResult: Sendable, Hashable, Codable,
         self.artifacts = artifacts
         self.provenance = provenance
         self.payload = payload
+        self.evidence = EvidenceManifest(provenance: provenance, artifacts: artifacts)
     }
 }
