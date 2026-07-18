@@ -80,7 +80,8 @@ PDKKit.
 - Rule-deck inspection is now an independent protocol-first implementation with a
   standalone CLI and per-layer evidence. The adapter is intentionally limited
   to integrity, statement and mapping evidence; vendor-specific geometric rule
-  semantics remain an external/native qualification gate.
+  semantics require external or native backend assessment before the separate
+  ToolQualification gate can make a trust decision.
 - `PDKValidationRequest` is schema version 2. Older request schemas are
   rejected explicitly.
 - Corpus schema version 2 retains rule-deck check outcomes in each case result;

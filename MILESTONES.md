@@ -16,7 +16,7 @@ flowchart LR
   M4a --> M4b[M4b SPICE/Liberty]
   M4b --> M4c[M4c external typed-result parity]
   M4c --> M5[Immutable oracle correlation]
-  M5 --> M6[Local qualification gate]
+  M5 --> M6[Local corpus assessment]
   M6 --> M6b[Process-scoped qualification]
   M6b --> M7[Xcircuite trust gate and resume]
   M7 --> M8[Release-profile eligibility]
@@ -36,7 +36,7 @@ flowchart LR
 | M4b | SPICE and Liberty detailed numeric inspection and manifest binding | Complete for the PDKKit-owned numeric contract | Unsupported expressions and malformed dimensions are typed blocked results |
 | M4c | Native/local and external backend typed-result parity with fail-closed trust-boundary validation | Contract complete; provider process execution is intentionally outside PDKKit | External result contract tests, schema/run/asset/format/source-reference/digest and canonical artifact mismatch blockers |
 | M5 | Immutable reference-oracle comparison and mismatch classification | Complete for local detailed oracle contract | manifest-bound expectation, numeric field mismatch blocker, CLI and regression fixture |
-| M6 | Local qualification gate from corpus + oracle evidence | Complete for `oracleCorrelated` handoff | digest-bound corpus/oracle reports and explicit non-qualification limitation |
+| M6 | Local corpus assessment from corpus + oracle evidence | Complete for `oracleCorrelated` evidence handoff | digest-bound corpus/oracle reports and explicit non-qualification limitation |
 | M6b | Process-scoped ToolQualification evidence and trust-gate promotion | PDKKit scope export and fail-closed handoff complete | PDKKit emits no false qualification; external evidence is consumed by the owning package |
 | M7 | DesignFlowKernel runtime execution, immutable stage artifacts, human review and resume | Direct protocol integration complete; persistence owned by Xcircuite | clean headless PDK integration build, scope mismatch block and resume test |
 | M8 | Release-profile eligibility and approval record | PDKKit handoff contract complete and fail-closed | PDKKit does not fabricate approval; owning release package consumes the typed artifacts |
@@ -45,7 +45,7 @@ flowchart LR
 
 M3 turned isolated smoke tests into a retained, auditable set of expected
 outcomes. M4-M6 now extend that evidence through canonical standard-view
-inspection, immutable oracle comparison and an explicit local gate. The
+inspection, immutable oracle comparison and an explicit local assessment. The
 pipeline preserves the distinction between:
 
 - `valid`: the local contract is satisfied;

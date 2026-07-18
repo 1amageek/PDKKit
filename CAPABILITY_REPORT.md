@@ -63,8 +63,8 @@ flowchart LR
   Coverage -->|missing semantics| Blocked["Structured blocked result"]
   Scope --> Corpus["Retained corpus report"]
   Scope --> Oracle["Immutable oracle comparison"]
-  Corpus --> Gate["Local qualification gate"]
-  Oracle --> Gate
-  Gate --> Qualified["oracleCorrelated handoff"]
-  Qualified --> External["ToolQualification process gate"]
+  Corpus --> Assessment["Local corpus assessment"]
+  Oracle --> Assessment
+  Assessment --> Evidence["oracleCorrelated evidence handoff"]
+  Evidence --> External["ToolQualification process gate"]
 ```

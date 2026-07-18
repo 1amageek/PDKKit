@@ -4,7 +4,7 @@
 
 The implementation order below is complete for every PDKKit-owned contract:
 standard-view semantics, external typed-result parity, canonical artifact
-provenance, local oracle, qualification-scope handoff and PDK-specific runtime
+provenance, local oracle, implementation-scope evidence handoff and PDK-specific runtime
 integration. Unsupported input is represented as a typed blocked result;
 provider process execution and independent evidence are runtime inputs owned by
 the corresponding platform packages.
@@ -20,7 +20,7 @@ the corresponding platform packages.
 7. M4b SPICE/Liberty detailed numeric inspection and manifest binding
 8. M4c native/local and external typed-result parity
 9. Immutable reference-oracle correlation
-10. Local qualification gate and evidence handoff
+10. Local corpus assessment and oracle-correlation evidence handoff
 11. Process-scoped ToolQualification integration
 12. DesignFlowKernel runtime integration and Xcircuite review/resume evidence
 
@@ -117,13 +117,13 @@ mismatches are blocked. Provider failures, malformed JSON and invalid completed
 payloads are failed with typed findings. This is result and semantic
 integration evidence, not external-tool execution or process qualification.
 
-## M5/M6 evidence gate
+## M5/M6 assessment and evidence handoff
 
 `PDKOracleComparisonPayload.isValid` is true only when every declared
-canonical field matches the selected immutable expectation. The qualification
-gate additionally requires a passing retained corpus case bound to the same
-manifest digest. It returns `oracleCorrelated` as a local evidence handoff and
-never claims `processQualified`.
+canonical field matches the selected immutable expectation. The local corpus
+assessment additionally requires a passing retained case bound to the same
+manifest digest. It returns `oracleCorrelated` as evidence for external policy
+evaluation and never claims `processQualified`.
 
 ## M6b/M7 evidence gate
 

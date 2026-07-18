@@ -6,7 +6,7 @@ Canonical process-design-kit discovery, identity and validation contracts.
 
 The package now includes a local deterministic implementation of these
 contracts, a retained corpus evaluator, standard-view inspection, immutable
-oracle comparison and a local qualification handoff.
+oracle comparison and a local assessment evidence handoff.
 The implementation is intentionally manifest-driven: the manifest is the typed
 semantic index, while standard-format files remain immutable artifacts whose
 bytes are verified by digest and size.
