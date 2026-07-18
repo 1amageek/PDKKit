@@ -9,14 +9,12 @@ import CircuiteFoundation
 
 @Suite("PDKKit contract")
 struct ContractTests {
-    @Test("contract version starts at one")
-    func contractVersion() {
-        #expect(PDKKitAPI.contractVersion == 2)
-        #expect(PDKKitCLICoreAPI.contractVersion == 2)
-        #expect(PDKKitAPI.manifestSchemaVersion == PDKManifest.currentSchemaVersion)
-        #expect(PDKKitAPI.corpusValidationStageID == "pdk.validate-corpus")
-        #expect(PDKKitAPI.standardViewInspectionStageID == "pdk.inspect-standard-view")
-        #expect(PDKKitAPI.ruleDeckInspectionStageID == "pdk.inspect-rule-deck")
+    @Test("operations provide stable flow identifiers")
+    func operationIdentifiers() {
+        #expect(PDKOperation.corpusValidation.rawValue == "pdk.validate-corpus")
+        #expect(PDKOperation.standardViewInspection.rawValue == "pdk.inspect-standard-view")
+        #expect(PDKOperation.ruleDeckInspection.rawValue == "pdk.inspect-rule-deck")
+        #expect(Set(PDKOperation.allCases.map(\.rawValue)).count == PDKOperation.allCases.count)
     }
 
     @Test("domain engines conform directly to the shared engine protocol")
