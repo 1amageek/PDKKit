@@ -24,7 +24,7 @@ public enum PDKKitCLI {
 
     private static func dispatch(arguments: [String]) async throws -> PDKKitCLIInvocationResult {
         guard let command = arguments.first else {
-            throw PDKKitCLIError.invalidArguments("Missing command. Run 'pdkkit --help' for usage.")
+            throw PDKKitCLIError.invalidArguments("Missing command. Run 'pdkkit-cli --help' for usage.")
         }
         let commandArguments = Array(arguments.dropFirst())
         switch command {
@@ -51,7 +51,7 @@ public enum PDKKitCLI {
             if commandArguments.contains("--help") { return helpResult(oracleHelp) }
             return try await PDKKitOracleCommand().execute(options: PDKKitOracleCommand.Options(arguments: commandArguments))
         default:
-            throw PDKKitCLIError.invalidArguments("Unknown command: \(command). Run 'pdkkit --help' for usage.")
+            throw PDKKitCLIError.invalidArguments("Unknown command: \(command). Run 'pdkkit-cli --help' for usage.")
         }
     }
 
@@ -74,13 +74,13 @@ public enum PDKKitCLI {
     OVERVIEW: Headless PDK discovery, inspection and validation.
 
     USAGE:
-      pdkkit inspect --manifest <path> [--pretty]
-      pdkkit validate --manifest <path> [--run-id <id>] [--required-role <role>] [--no-cross-view] [--no-standard-views] [--no-rule-decks] [--pretty]
-      pdkkit discover --root <path> [--root <path> ...] [--process-id <id>] [--pretty]
-      pdkkit corpus --suite <path> --root <path> [--run-id <id>] [--pretty]
-      pdkkit inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> [--run-id <id>] [--pretty]
-      pdkkit inspect-rule-deck --manifest <path> --asset-id <id> [--run-id <id>] [--pretty]
-      pdkkit oracle --manifest <path> --oracle <path> [--run-id <id>] [--pretty]
+      pdkkit-cli inspect --manifest <path> [--pretty]
+      pdkkit-cli validate --manifest <path> [--run-id <id>] [--required-role <role>] [--required-corner <id>] [--require-asset-identity] [--no-cross-view] [--no-standard-views] [--no-rule-decks] [--pretty]
+      pdkkit-cli discover --root <path> [--root <path> ...] [--process-id <id>] [--pretty]
+      pdkkit-cli corpus --suite <path> --root <path> [--run-id <id>] [--pretty]
+      pdkkit-cli inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> [--run-id <id>] [--pretty]
+      pdkkit-cli inspect-rule-deck --manifest <path> --asset-id <id> [--run-id <id>] [--pretty]
+      pdkkit-cli oracle --manifest <path> --oracle <path> [--run-id <id>] [--pretty]
 
     EXIT CODES:
       0  completed validation or at least one discovery candidate
@@ -90,37 +90,37 @@ public enum PDKKitCLI {
 
     static let inspectHelp = """
     OVERVIEW: Decode and inspect one PDK manifest.
-    USAGE: pdkkit inspect --manifest <path> [--pretty]
+    USAGE: pdkkit-cli inspect --manifest <path> [--pretty]
     """
 
     static let validateHelp = """
     OVERVIEW: Validate one PDK manifest, its assets, hashes and cross-view contract.
-    USAGE: pdkkit validate --manifest <path> [--run-id <id>] [--required-role <role>] [--no-cross-view] [--no-standard-views] [--no-rule-decks] [--pretty]
+    USAGE: pdkkit-cli validate --manifest <path> [--run-id <id>] [--required-role <role>] [--required-corner <id>] [--require-asset-identity] [--no-cross-view] [--no-standard-views] [--no-rule-decks] [--pretty]
     """
 
     static let discoverHelp = """
     OVERVIEW: Discover local PDK manifests without claiming semantic qualification.
-    USAGE: pdkkit discover --root <path> [--root <path> ...] [--process-id <id>] [--pretty]
+    USAGE: pdkkit-cli discover --root <path> [--root <path> ...] [--process-id <id>] [--pretty]
     """
 
     static let corpusHelp = """
     OVERVIEW: Evaluate a retained PDK corpus suite against the local validator.
-    USAGE: pdkkit corpus --suite <path> --root <path> [--run-id <id>] [--pretty]
+    USAGE: pdkkit-cli corpus --suite <path> --root <path> [--run-id <id>] [--pretty]
     """
 
     static let inspectViewHelp = """
     OVERVIEW: Parse a standard-view asset and bind its semantics to a PDK manifest.
-    USAGE: pdkkit inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> [--run-id <id>] [--pretty]
+    USAGE: pdkkit-cli inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> [--run-id <id>] [--pretty]
     """
 
     static let inspectRuleDeckHelp = """
     OVERVIEW: Parse a rule-deck asset and bind mapped layer evidence to a PDK manifest.
-    USAGE: pdkkit inspect-rule-deck --manifest <path> --asset-id <id> [--run-id <id>] [--pretty]
+    USAGE: pdkkit-cli inspect-rule-deck --manifest <path> --asset-id <id> [--run-id <id>] [--pretty]
     """
 
     static let oracleHelp = """
     OVERVIEW: Compare manifest-bound standard-view semantics against an immutable oracle expectation.
-    USAGE: pdkkit oracle --manifest <path> --oracle <path> [--run-id <id>] [--pretty]
+    USAGE: pdkkit-cli oracle --manifest <path> --oracle <path> [--run-id <id>] [--pretty]
     """
 
 }

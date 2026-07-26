@@ -9,10 +9,10 @@
 | Responsibility boundary | Complete | README.md and DESIGN.md |
 | Public package products | Complete | Package.swift, PDKCore/Discovery/Validation/Kit/CLI products; contract version 2 |
 | Shared engine and evidence contract | Complete | Domain protocols refine `CircuiteFoundation.Engine`; results directly expose artifact, diagnostic and evidence capabilities |
-| Contract build | Passed | `swift build` |
-| Contract test | Passed | 56 PDKKit Swift Testing cases across 6 suites; Foundation artifact projection, symlink containment, digest binding, external typed-result parity, source-reference binding, corpus retention, obsolete-schema rejection and CLI evidence included |
+| Contract build | Passed | Clean `xcodebuild test` with distinct `PDKKit` and `pdkkit-cli` products on a case-insensitive macOS filesystem |
+| Contract test | Passed | 59 PDKKit Swift Testing cases across 6 suites; Foundation artifact projection, symlink containment, production asset/corner locking, retained schema-v2 decoding, external typed-result parity, source-reference binding, corpus retention, obsolete-schema rejection and CLI evidence included |
 | Domain implementation | M4-M6 local evidence complete | Current manifest schema, CircuiteFoundation artifact identity/integrity, asset resolution, parser-backed cross-view semantic validation, standard-view IR and oracle comparison |
-| CLI implementation | Complete for local evidence | `pdkkit inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `inspect-rule-deck`, `oracle` |
+| CLI implementation | Complete for local evidence | `pdkkit-cli inspect`, `discover`, `validate`, `corpus`, `inspect-view`, `inspect-rule-deck`, `oracle` |
 | Standard-view semantics | Complete for the PDKKit-owned canonical contract | LEF/GDSII/OASIS structure plus numeric SPICE model parameters, subcircuits, Liberty cells/timing tables/units; unsupported constructs produce structured blocked results |
 | External backend parity | M4c contract complete | Typed JSON domain results, fail-closed schema/run/asset/format/source-reference/digest checks and canonical artifact identity binding; provider execution is outside PDKKit |
 | Fixture corpus | M3/M4/M2b contract-complete | Retained valid, blocked and failed corpus cases plus manifest-bound LEF/SPICE/Liberty/rule-deck checks |
@@ -33,6 +33,7 @@
 | Asset resolution and hashing | Implemented | CircuiteFoundation locator/reference/verifier boundary, root-bounded symlink-safe resolution, streaming SHA-256 and byte-count checks | Positive/negative tests | Not qualified |
 | Layer and device semantics | Implemented | Typed layers, purposes, terminals and extraction recognition | Retained fixture | Not qualified |
 | Corner model | Implemented | PVT plus RC/EM/reliability references and view mappings | Retained fixture | Not qualified |
+| Production input locking | Implemented | Validation request schema v3 requires declared SHA-256/byte count and named process corners when enabled; violations block | Complete/incomplete identity and CLI fail-closed tests | Not qualified |
 | Cross-view validation | Implemented | Manifest mapping coverage plus parser-backed LEF/GDSII/OASIS/SPICE/Liberty `standardViewResults` and protocol-first rule-deck inspection in `ruleDeckResults` | Valid, comment-filtered and semantic-blocked fixtures | Not qualified |
 | Qualification evidence export | Implemented | Capability report, immutable evidence and execution provenance | Retained fixture | Evaluated by ToolQualification |
 
@@ -82,7 +83,8 @@ PDKKit.
   to integrity, statement and mapping evidence; vendor-specific geometric rule
   semantics require external or native backend assessment before the separate
   ToolQualification gate can make a trust decision.
-- `PDKValidationRequest` is schema version 2. Older request schemas are
+- `PDKValidationRequest` is schema version 3. Retained schema-v2 requests decode
+  with production locking disabled; schema version 1 and unknown versions are
   rejected explicitly.
 - Corpus schema version 2 retains rule-deck check outcomes in each case result;
   older corpus suites are rejected instead of interpreted with missing

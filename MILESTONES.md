@@ -27,7 +27,7 @@ flowchart LR
 | ID | Deliverable | Status | Proof required to close |
 |---|---|---|---|
 | M0 | Protocol-first package products, typed requests/results, deterministic CLI | Complete | `swift build`, contract tests, CLI output tests |
-| M1 | Current manifest schema, CircuiteFoundation-backed immutable manifest/asset references and SHA-256 checks | Complete | current-schema tests, obsolete-schema rejection, positive and tampered-asset tests |
+| M1 | Current manifest schema, CircuiteFoundation-backed immutable manifest/asset references, production asset identity and locked-corner checks | Complete | current-schema tests, retained validation schema-v2 decoding, obsolete-schema rejection, positive/tampered asset and missing-corner tests |
 | M2 | Layer/device/corner/cross-view coverage and blocked unavailable semantics | Complete at manifest, parser-backed declared-view and rule-deck layer level | validator findings, standard-view/rule-deck results and negative-path fixtures |
 | M2b | Protocol-first rule-deck inspection, per-layer evidence and validation request schema evolution | Complete for text integrity, statements and mapped-layer evidence | standalone request/payload, CLI, comment-filtered negative test, obsolete-schema rejection |
 | M3 | Retained corpus suite schema, deterministic case evaluator and machine-readable corpus report | Complete for contract evidence; schema v2 retains rule-deck checks | corpus fixture, positive/blocked cases, standard-view/rule-deck result artifacts and deterministic report tests |
@@ -96,10 +96,11 @@ mapped manufacturing layer; otherwise `ruleDeckResults` reports a typed blocker.
 
 M2b now exposes that implementation independently as `PDKRuleDeckInspecting`. The
 result retains the immutable source reference, statement count and per-layer
-matched-token/statement-index evidence. `pdkkit inspect-rule-deck` and
+matched-token/statement-index evidence. `pdkkit-cli inspect-rule-deck` and
 manifest validation consume the same implementation. Validation request schema
-version 2 carries the standard-view and rule-deck controls; older request
-schemas are rejected explicitly.
+version 3 carries the standard-view, rule-deck, production asset-identity and
+corner-locking controls. Retained schema-v2 requests decode with production
+locking disabled; schema version 1 and unknown versions are rejected.
 
 This milestone does not claim support for vendor-specific geometric rule
 grammar. Such semantics require a native or external backend with its own

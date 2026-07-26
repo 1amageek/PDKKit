@@ -29,7 +29,7 @@ independent evidence required to pass those gates.
 | `PDKValidation` | Manifest, input, asset, digest, parser-backed cross-view and retained corpus validation |
 | `PDKStandardViews` | Canonical standard-view and rule-deck inspection, local/external result providers, manifest binding and immutable oracle comparison |
 | `PDKKit` | Umbrella API and public contract version (2) |
-| `PDKKitCLICore` / `pdkkit` | Deterministic JSON inspection, discovery, validation, corpus, standard-view, rule-deck and oracle CLI |
+| `PDKKitCLICore` / `pdkkit-cli` | Deterministic JSON inspection, discovery, validation, corpus, standard-view, rule-deck and oracle CLI |
 
 ## Contract
 
@@ -89,7 +89,7 @@ references.
 `PDKManifest` is the canonical process-scoped source of truth. It contains:
 
 - process identity and version;
-- immutable asset references and optional expected SHA-256/byte count;
+- immutable asset references and expected SHA-256/byte count when required by a production profile;
 - manufacturing layer and purpose semantics;
 - device terminals and extraction recognition;
 - PVT, RC, electromigration and reliability corner mappings;
@@ -102,7 +102,14 @@ Raw asset presence is not treated as semantic proof. Missing mappings, missing
 assets, digest mismatches and unavailable semantics produce structured blocked
 diagnostics instead of a false pass.
 
-`pdkkit validate` now executes every declared LEF, GDSII/OASIS, SPICE and
+`PDKValidationRequest` keeps discovery and production validation explicit.
+`requiredCornerIDs` requires every locked process corner to exist, while
+`requireAssetIdentity` requires each production-required asset to declare both
+SHA-256 and byte count before its materialized bytes are compared. These checks
+establish reproducible process input identity; they do not issue a
+ToolQualification trust decision.
+
+`pdkkit-cli validate` now executes every declared LEF, GDSII/OASIS, SPICE and
 Liberty mapping through the same manifest-bound inspectors used by
 `inspect-view`. The payload retains one `standardViewResults` entry per mapped
 view, including parser provenance, canonical facts, binding findings and the
@@ -117,7 +124,7 @@ needs to isolate a contract layer during diagnosis.
 
 `PDKRuleDeckInspectionRequest` and `PDKRuleDeckInspectionPayload` are the
 standalone protocol-first form of that check. `LocalPDKRuleDeckInspector` and
-`pdkkit inspect-rule-deck` expose the same immutable reference, mapped-layer
+`pdkkit-cli inspect-rule-deck` exposes the same immutable reference, mapped-layer
 evidence and structured findings without requiring a full manifest validation
 run. The inspector intentionally reports grammar limitations instead of claiming
 complete vendor-specific DRC rule semantics.
@@ -141,18 +148,22 @@ evidence only; ToolQualification owns every trust and qualification decision.
 ## CLI
 
 ```bash
-swift run pdkkit inspect --manifest <path> --pretty
-swift run pdkkit discover --root <path> [--root <path> ...] --process-id <id>
-swift run pdkkit validate --manifest <path> --required-role layerMap --pretty
-swift run pdkkit corpus --suite <path> --root <path> --pretty
-swift run pdkkit inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> --pretty
-swift run pdkkit inspect-rule-deck --manifest <path> --asset-id <id> --pretty
-swift run pdkkit oracle --manifest <path> --oracle <path> --pretty
+swift run pdkkit-cli inspect --manifest <path> --pretty
+swift run pdkkit-cli discover --root <path> [--root <path> ...] --process-id <id>
+swift run pdkkit-cli validate --manifest <path> --required-role layerMap --required-corner <id> --require-asset-identity --pretty
+swift run pdkkit-cli corpus --suite <path> --root <path> --pretty
+swift run pdkkit-cli inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> --pretty
+swift run pdkkit-cli inspect-rule-deck --manifest <path> --asset-id <id> --pretty
+swift run pdkkit-cli oracle --manifest <path> --oracle <path> --pretty
 ```
 
 The CLI writes deterministic sorted-key JSON to stdout. Domain blockers use
 exit code `2`; argument, read and decode errors use exit code `1` and a single
 structured diagnostic object on stderr.
+
+The executable product is named `pdkkit-cli` so its Xcode build directory does
+not collide case-insensitively with the public `PDKKit` library module on
+default macOS filesystems.
 
 ## Build
 
@@ -166,7 +177,7 @@ swift build
 perl -e 'alarm shift; exec @ARGV' 30 xcodebuild -quiet test -scheme PDKKit-Package -destination 'platform=macOS'
 ```
 
-The repository's current verification result is 56 tests in 6 Swift Testing
+The repository's current verification result is 59 tests in 6 Swift Testing
 suites. The detailed standard-view suite passes 12 tests with
 `xcodebuild test-without-building` after an Xcode `build-for-testing` build.
 The Xcircuite PDK integration slice passes 6 tests in 1 suite with `xcodebuild`;
@@ -198,8 +209,9 @@ timing tables without a declared `time_unit` are blocked. This is a supported
 numeric-semantic subset, not a claim of complete vendor-specific language
 coverage.
 
-Validation requests use schema version 2 and require explicit cross-view
-controls. Manifest-bound standard-view requests include project-root
+Validation requests use schema version 3 and require explicit cross-view
+controls. Schema version 2 remains decodable with non-production defaults for
+retained runs. Manifest-bound standard-view requests include project-root
 resolution whenever it is part of their reproducibility contract.
 
 See `MILESTONES.md`, `CAPABILITY_REPORT.md`, `DESIGN.md`, `INTERFACES.md` and

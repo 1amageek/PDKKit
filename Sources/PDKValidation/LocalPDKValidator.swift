@@ -127,6 +127,11 @@ public struct LocalPDKValidator: PDKValidating {
 
         var findings = manifestValidator.validate(manifest).findings
         validateInputs(request.inputs, projectRootPath: request.projectRootPath, findings: &findings)
+        validateRequiredCorners(
+            request.requiredCornerIDs,
+            manifest: manifest,
+            findings: &findings
+        )
 
         if request.pdk.processID != manifest.processID {
             findings.append(PDKValidationFinding(
@@ -165,6 +170,10 @@ public struct LocalPDKValidator: PDKValidating {
 
         var resolvedAssets: [PDKResolvedAsset] = []
         for asset in manifest.assets {
+            if request.requireAssetIdentity,
+               asset.required || request.requiredAssetRoles.contains(asset.role) {
+                validateDeclaredIdentity(asset, findings: &findings)
+            }
             do {
                 let resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
                 resolvedAssets.append(resolved)
@@ -221,6 +230,77 @@ public struct LocalPDKValidator: PDKValidating {
             capabilityReport: capabilityReport,
             manifest: manifest
         )
+    }
+
+    private func validateRequiredCorners(
+        _ requiredCornerIDs: [String],
+        manifest: PDKManifest,
+        findings: inout [PDKValidationFinding]
+    ) {
+        var seen = Set<String>()
+        let availableCornerIDs = Set(manifest.corners.map(\.cornerID))
+        for cornerID in requiredCornerIDs {
+            guard !cornerID.isEmpty, seen.insert(cornerID).inserted else {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.validation.required-corner-invalid",
+                    message: "Required corner IDs must be non-empty and unique.",
+                    entity: cornerID,
+                    suggestedActions: ["repair_required_corner_inventory"]
+                ))
+                continue
+            }
+            guard availableCornerIDs.contains(cornerID) else {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.validation.required-corner-missing",
+                    message: "The PDK manifest does not declare a required production corner.",
+                    entity: cornerID,
+                    suggestedActions: ["add_required_pdk_corner", "repair_production_profile"]
+                ))
+                continue
+            }
+        }
+    }
+
+    private func validateDeclaredIdentity(
+        _ asset: PDKAssetReference,
+        findings: inout [PDKValidationFinding]
+    ) {
+        guard let sha256 = asset.sha256,
+              let byteCount = asset.byteCount else {
+            findings.append(PDKValidationFinding(
+                severity: .blocker,
+                code: "pdk.validation.asset-identity-missing",
+                message: "A production-required PDK asset must declare SHA-256 and byte count.",
+                entity: asset.assetID,
+                suggestedActions: ["record_asset_digest", "record_asset_byte_count"]
+            ))
+            return
+        }
+        do {
+            _ = try ContentDigest(
+                algorithm: .sha256,
+                hexadecimalValue: sha256
+            )
+        } catch {
+            findings.append(PDKValidationFinding(
+                severity: .blocker,
+                code: "pdk.validation.asset-digest-invalid",
+                message: "A production-required PDK asset has an invalid SHA-256 declaration.",
+                entity: asset.assetID,
+                suggestedActions: ["record_valid_asset_digest"]
+            ))
+        }
+        if byteCount < 0 {
+            findings.append(PDKValidationFinding(
+                severity: .blocker,
+                code: "pdk.validation.asset-size-invalid",
+                message: "A production-required PDK asset has a negative byte count.",
+                entity: asset.assetID,
+                suggestedActions: ["record_valid_asset_byte_count"]
+            ))
+        }
     }
 
     private func validateStandardViews(

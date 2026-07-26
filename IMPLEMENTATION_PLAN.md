@@ -32,14 +32,16 @@ the corresponding platform packages.
 - Root-bounded, symlink-safe asset resolution with streaming SHA-256 and
   byte-count verification. Foundation `ArtifactLocator` and
   `ArtifactReference` are used directly throughout the public boundary.
+- Production-profile validation controls that require immutable identity for
+  required assets and require every locked process corner to be declared.
 - Standard-view, rule-deck, oracle and qualification artifact reads use the
   same Foundation verifier and retain canonical `ArtifactReference`
   provenance.
 - Cross-view mapping coverage and structured blocked diagnostics.
 - Deterministic JSON CLI with inspect/discover/validate/corpus commands.
 - Retained positive fixture, isolated negative-path fixture and request/payload round-trip tests.
-- Retained corpus suite with valid and blocked expected outcomes, expected finding codes, root-bounded paths, deterministic results and `pdkkit corpus` CLI.
-- M4a standard-view contract with canonical LEF/GDSII/OASIS IR, immutable input verification, malformed parser failures, manifest cross-view binding and `pdkkit inspect-view`.
+- Retained corpus suite with valid and blocked expected outcomes, expected finding codes, root-bounded paths, deterministic results and `pdkkit-cli corpus` CLI.
+- M4a standard-view contract with canonical LEF/GDSII/OASIS IR, immutable input verification, malformed parser failures, manifest cross-view binding and `pdkkit-cli inspect-view`.
 - M4b detailed SPICE/Liberty inspection with numeric model parameters,
   engineering-suffix normalization, subcircuits, cells, timing arcs, timing
   table dimensions/values and unit declarations plus manifest binding and
@@ -51,12 +53,13 @@ the corresponding platform packages.
   non-empty statements and mapped manufacturing-layer evidence.
 - Rule-deck inspection is now an independent `PDKRuleDeckInspecting` implementation
   with immutable source references, per-layer evidence and
-  `pdkkit inspect-rule-deck`; `LocalPDKValidator` injects the same protocol.
-- Validation request schema version 2 explicitly carries the standard-view and
-  rule-deck controls; older request schemas are rejected.
+  `pdkkit-cli inspect-rule-deck`; `LocalPDKValidator` injects the same protocol.
+- Validation request schema version 3 carries production asset-identity and
+  corner-locking controls. Retained schema-v2 requests decode with those
+  controls disabled; schema version 1 and unknown versions are rejected.
 - Corpus schema version 2 carries `ruleDeckChecks` and per-case
   `ruleDeckResults`; older corpus schemas are rejected.
-- M5 immutable manifest-digest-bound oracle expectations, canonical field comparison, structured mismatch blockers and `pdkkit oracle`.
+- M5 immutable manifest-digest-bound oracle expectations, canonical field comparison, structured mismatch blockers and `pdkkit-cli oracle`.
 - M6 immutable digest-bound corpus and oracle evidence handoff for ToolQualification.
 - M7 direct DesignFlowKernel protocol integration with project-root-bounded
   artifact references, ToolQualification scope enforcement, human approval and

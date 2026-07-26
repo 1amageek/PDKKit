@@ -91,6 +91,30 @@ struct PDKCLITests {
         #expect(ruleDeckDisabledResults.isEmpty)
     }
 
+    @Test("validate exposes fail-closed production profile controls")
+    func validateProductionControlsFailClosed() async throws {
+        let result = await PDKKitCLI.invoke(arguments: [
+            "validate",
+            "--manifest", fixtureURL().appending(path: "pdk.json").path,
+            "--required-corner", "tt-1v8-25c",
+            "--required-corner", "ss-1v6-100c",
+            "--require-asset-identity",
+            "--no-standard-views",
+            "--no-rule-decks"
+        ])
+
+        #expect(result.exitCode == 2)
+        let data = try #require(result.standardOutput.data(using: .utf8))
+        let object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let diagnostics = try #require(object["diagnostics"] as? [[String: Any]])
+        #expect(diagnostics.contains {
+            ($0["code"] as? String) == "pdk.validation.asset-identity-missing"
+        })
+        #expect(diagnostics.contains {
+            ($0["code"] as? String) == "pdk.validation.required-corner-missing"
+        })
+    }
+
     @Test("inspect-rule-deck exposes typed layer evidence")
     func inspectRuleDeckExposesLayerEvidence() async throws {
         let result = await PDKKitCLI.invoke(arguments: [

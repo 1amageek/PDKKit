@@ -37,7 +37,7 @@ let package = Package(
         .library(name: "PDKStandardViews", targets: ["PDKStandardViews"]),
         .library(name: "PDKKit", targets: ["PDKKit"]),
         .library(name: "PDKKitCLICore", targets: ["PDKKitCLICore"]),
-        .executable(name: "pdkkit", targets: ["PDKKitCLI"]),
+        .executable(name: "pdkkit-cli", targets: ["PDKKitCLI"]),
     ],
     dependencies: [
         circuiteFoundationDependency,

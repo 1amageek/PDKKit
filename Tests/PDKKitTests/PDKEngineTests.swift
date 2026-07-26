@@ -38,6 +38,80 @@ struct PDKEngineTests {
         #expect(decoded.evidence.id == evidenceID)
     }
 
+    @Test("production validation requires exact asset identities and locked corners")
+    func productionValidationRejectsIncompleteIdentity() async throws {
+        let manifestURL = fixtureURL().appending(path: "pdk.json")
+        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let result = try await LocalPDKValidator().execute(
+            PDKValidationRequest(
+                runID: "validation-production-incomplete",
+                inputs: [reference.manifest.locator],
+                pdk: reference,
+                requiredCornerIDs: ["tt-1v8-25c", "ss-1v6-100c"],
+                requireAssetIdentity: true,
+                validateStandardViews: false,
+                validateRuleDecks: false
+            )
+        )
+
+        #expect(result.status == .blocked)
+        #expect(result.payload.findings.filter {
+            $0.code == "pdk.validation.asset-identity-missing"
+        }.count == 7)
+        #expect(result.payload.findings.contains {
+            $0.code == "pdk.validation.required-corner-missing"
+                && $0.entity == "ss-1v6-100c"
+        })
+    }
+
+    @Test("production validation accepts digest-bound assets at every locked corner")
+    func productionValidationAcceptsCompleteIdentity() async throws {
+        let isolatedFixture = try makeIsolatedFixture()
+        defer {
+            do {
+                try FileManager.default.removeItem(at: isolatedFixture)
+            } catch {
+                Issue.record("Failed to remove production validation fixture: \(error)")
+            }
+        }
+        let manifestURL = isolatedFixture.appending(path: "pdk.json")
+        var manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
+        let resolver = LocalPDKAssetResolver()
+        for index in manifest.assets.indices {
+            let resolved = try resolver.resolve(
+                manifest.assets[index],
+                relativeTo: manifestURL
+            )
+            manifest.assets[index].sha256 = resolved.computedSHA256
+            manifest.assets[index].byteCount = resolved.computedByteCount
+        }
+        try PDKManifestCodec.encode(manifest, pretty: true).write(
+            to: manifestURL,
+            options: [.atomic]
+        )
+        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let result = try await LocalPDKValidator().execute(
+            PDKValidationRequest(
+                runID: "validation-production-complete",
+                inputs: [reference.manifest.locator],
+                pdk: reference,
+                requiredAssetRoles: [.layerMap, .model, .cell, .ruleDeck, .gdsii, .spice, .liberty],
+                requiredCornerIDs: ["tt-1v8-25c"],
+                requireAssetIdentity: true,
+                validateStandardViews: false,
+                validateRuleDecks: false
+            )
+        )
+
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        #expect(result.payload.isValid)
+        #expect(result.payload.resolvedAssets.count == 7)
+        #expect(result.payload.findings.allSatisfy {
+            $0.code != "pdk.validation.asset-identity-missing"
+                && $0.code != "pdk.validation.required-corner-missing"
+        })
+    }
+
     @Test("rule-deck inspection exposes manifest-bound layer evidence")
     func ruleDeckInspectorExposesLayerEvidence() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
@@ -397,6 +471,16 @@ struct PDKEngineTests {
         let decodedRequest = try JSONDecoder().decode(PDKValidationRequest.self, from: requestData)
         #expect(decodedRequest == request)
         #expect(request.schemaVersion == PDKValidationRequest.currentSchemaVersion)
+
+        var retainedObject = try #require(JSONSerialization.jsonObject(with: requestData) as? [String: Any])
+        retainedObject["schemaVersion"] = 2
+        retainedObject.removeValue(forKey: "requiredCornerIDs")
+        retainedObject.removeValue(forKey: "requireAssetIdentity")
+        let retainedData = try JSONSerialization.data(withJSONObject: retainedObject)
+        let retainedRequest = try JSONDecoder().decode(PDKValidationRequest.self, from: retainedData)
+        #expect(retainedRequest.schemaVersion == 2)
+        #expect(retainedRequest.requiredCornerIDs.isEmpty)
+        #expect(retainedRequest.requireAssetIdentity == false)
 
         var obsoleteObject = try #require(JSONSerialization.jsonObject(with: requestData) as? [String: Any])
         obsoleteObject["schemaVersion"] = 1

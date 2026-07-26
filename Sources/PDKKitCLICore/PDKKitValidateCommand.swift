@@ -8,6 +8,8 @@ struct PDKKitValidateCommand: Sendable {
         var manifestPath: String
         var runID: String
         var requiredAssetRoles: [PDKAssetRole]
+        var requiredCornerIDs: [String]
+        var requireAssetIdentity: Bool
         var validateCrossViews: Bool
         var validateStandardViews: Bool
         var validateRuleDecks: Bool
@@ -17,6 +19,8 @@ struct PDKKitValidateCommand: Sendable {
             var manifestPath: String?
             var runID = "pdk-validation"
             var requiredAssetRoles: [PDKAssetRole] = []
+            var requiredCornerIDs: [String] = []
+            var requireAssetIdentity = false
             var validateCrossViews = true
             var validateStandardViews = true
             var validateRuleDecks = true
@@ -32,6 +36,9 @@ struct PDKKitValidateCommand: Sendable {
                         throw PDKKitCLIError.invalidArguments("Unknown PDK asset role: \(raw)")
                     }
                     requiredAssetRoles.append(role)
+                case "--required-corner":
+                    requiredCornerIDs.append(try cursor.requireValue(for: argument))
+                case "--require-asset-identity": requireAssetIdentity = true
                 case "--no-cross-view": validateCrossViews = false
                 case "--no-standard-views": validateStandardViews = false
                 case "--no-rule-decks": validateRuleDecks = false
@@ -45,6 +52,8 @@ struct PDKKitValidateCommand: Sendable {
             self.manifestPath = manifestPath
             self.runID = runID
             self.requiredAssetRoles = requiredAssetRoles
+            self.requiredCornerIDs = requiredCornerIDs
+            self.requireAssetIdentity = requireAssetIdentity
             self.validateCrossViews = validateCrossViews
             self.validateStandardViews = validateStandardViews
             self.validateRuleDecks = validateRuleDecks
@@ -65,6 +74,8 @@ struct PDKKitValidateCommand: Sendable {
             inputs: [reference.manifest.locator],
             pdk: reference,
             requiredAssetRoles: options.requiredAssetRoles,
+            requiredCornerIDs: options.requiredCornerIDs,
+            requireAssetIdentity: options.requireAssetIdentity,
             validateCrossViews: options.validateCrossViews,
             validateStandardViews: options.validateStandardViews,
             validateRuleDecks: options.validateRuleDecks
