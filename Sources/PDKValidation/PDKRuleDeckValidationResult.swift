@@ -2,6 +2,7 @@ import Foundation
 import PDKCore
 import PDKStandardViews
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 
 public struct PDKRuleDeckValidationResult: Sendable, Hashable, Codable {
     public var assetID: String

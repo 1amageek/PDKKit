@@ -1,5 +1,6 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 
 public struct PDKCorpusValidationRequest: Sendable {
     public static let currentSchemaVersion = 1

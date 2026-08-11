@@ -1,5 +1,7 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationCrypto
+import CircuiteFoundationFoundation
 import GDSII
 import LayoutIR
 import OASIS
@@ -28,7 +30,7 @@ struct PDKStandardViewTests {
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let ruleDeckRequest = PDKRuleDeckInspectionRequest(
             runID: "rule-deck-contract",
-            inputs: [pdk.manifest.locator],
+            inputs: [pdk.manifestLocator],
             pdk: pdk,
             assetID: "rules"
         )
@@ -76,7 +78,7 @@ struct PDKStandardViewTests {
                 Issue.record("Failed to remove relative oracle fixture: \(error)")
             }
         }
-        let oracle = try makeArtifactReference(
+        let oracle = try makeArtifactBinding(
             artifactID: "fixture-standard-view-oracle",
             path: "oracle.json",
             kind: .technology,
@@ -89,7 +91,8 @@ struct PDKStandardViewTests {
             PDKOracleRequest(
                 runID: "oracle-correlation",
                 pdk: pdk,
-                oracle: oracle,
+                oracle: oracle.reference,
+                oracleLocator: oracle.locator,
                 projectRootPath: directory.path
             )
         )
@@ -123,7 +126,7 @@ struct PDKStandardViewTests {
         }
         let mismatchURL = directory.appending(path: "oracle.json")
         try data.write(to: mismatchURL, options: [.atomic])
-        let oracle = try makeArtifactReference(
+        let oracle = try makeArtifactBinding(
             artifactID: "mismatch-oracle",
             path: mismatchURL.path,
             kind: .technology,
@@ -133,7 +136,12 @@ struct PDKStandardViewTests {
         )
 
         let result = try await LocalPDKOracleComparator().execute(
-            PDKOracleRequest(runID: "oracle-mismatch", pdk: pdk, oracle: oracle)
+            PDKOracleRequest(
+                runID: "oracle-mismatch",
+                pdk: pdk,
+                oracle: oracle.reference,
+                oracleLocator: oracle.locator
+            )
         )
         #expect(result.status == .blocked)
         #expect(result.payload.findings.contains { $0.code == "pdk.oracle.value-mismatch" })
@@ -144,22 +152,24 @@ struct PDKStandardViewTests {
     func lefInspectionBindsManifest() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
-        let relativePdk = PDKReference(
-            manifest: try makeArtifactReference(
+        let relativeManifest = try makeArtifactBinding(
                 artifactID: pdk.manifest.artifactID,
                 path: "pdk.json",
                 kind: pdk.manifest.kind,
                 format: pdk.manifest.format,
                 sha256: pdk.manifest.digest.hexadecimalValue,
                 byteCount: Int64(pdk.manifest.byteCount)
-            ),
+            )
+        let relativePdk = PDKReference(
+            manifest: relativeManifest.reference,
+            manifestLocator: relativeManifest.locator,
             processID: pdk.processID,
             version: pdk.version,
             digest: pdk.digest
         )
         let request = PDKManifestViewInspectionRequest(
             runID: "lef-inspection",
-            inputs: [relativePdk.manifest.locator],
+            inputs: [relativePdk.manifestLocator],
             pdk: relativePdk,
             assetID: "cells",
             format: .lef,
@@ -190,7 +200,7 @@ struct PDKStandardViewTests {
         for (assetID, format) in cases {
             let request = PDKManifestViewInspectionRequest(
                 runID: "\(format.rawValue)-inspection",
-                inputs: [pdk.manifest.locator],
+                inputs: [pdk.manifestLocator],
                 pdk: pdk,
                 assetID: assetID,
                 format: format
@@ -334,7 +344,7 @@ struct PDKStandardViewTests {
                 }
             }
 
-            let reference = try makeArtifactReference(
+            let reference = try makeArtifactBinding(
                 artifactID: format.rawValue,
                 path: fileURL.path,
                 kind: .layout,
@@ -373,7 +383,7 @@ struct PDKStandardViewTests {
         let data = Data("not-gdsii".utf8)
         let fileURL = directory.appending(path: "broken.gdsii")
         try data.write(to: fileURL, options: [.atomic])
-        let reference = try makeArtifactReference(
+        let reference = try makeArtifactBinding(
             artifactID: "broken",
             path: fileURL.path,
             kind: .layout,
@@ -397,7 +407,7 @@ struct PDKStandardViewTests {
     func missingCornerBindingBlocks() throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
-        let source = try makeArtifactReference(
+        let source = try makeArtifactBinding(
             artifactID: "spice-view",
             path: fixtureURL().appending(path: "models.spice").path,
             kind: .model,
@@ -408,6 +418,7 @@ struct PDKStandardViewTests {
         let inspection = PDKStandardViewIR(
             format: .spice,
             source: source.locator,
+            sourceArtifact: source.reference,
             libraryName: "SPICE",
             modelNames: ["nmos_180n"],
             cornerNames: []
@@ -444,7 +455,7 @@ struct PDKStandardViewTests {
             let data = Data(text.utf8)
             let fileURL = directory.appending(path: "broken.\(format.rawValue)")
             try data.write(to: fileURL, options: [.atomic])
-            let reference = try makeArtifactReference(
+            let reference = try makeArtifactBinding(
                 artifactID: "broken-\(format.rawValue)",
                 path: fileURL.path,
                 kind: .model,
@@ -489,7 +500,7 @@ struct PDKStandardViewTests {
                 Issue.record("Failed to remove temporary detailed semantic fixture: \(error)")
             }
         }
-        let reference = try makeArtifactReference(
+        let reference = try makeArtifactBinding(
             artifactID: "detailed-\(format.rawValue)",
             path: fileURL.path,
             kind: .model,

@@ -186,7 +186,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
 
         let validationRequest = PDKValidationRequest(
             runID: runID + ":" + corpusCase.caseID,
-            inputs: [reference.manifest.locator],
+            inputs: [reference.manifestLocator],
             pdk: reference,
             requiredAssetRoles: corpusCase.requiredAssetRoles,
             validateCrossViews: corpusCase.validateCrossViews
@@ -214,7 +214,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                     }
                     let inspectionRequest = PDKManifestViewInspectionRequest(
                         runID: runID + ":" + corpusCase.caseID + ":" + check.assetID + ":" + check.format,
-                        inputs: [reference.manifest.locator],
+                        inputs: [reference.manifestLocator],
                         pdk: reference,
                         assetID: check.assetID,
                         format: format
@@ -244,7 +244,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                 let deckResult: PDKCorpusRuleDeckResult
                 let inspectionRequest = PDKRuleDeckInspectionRequest(
                     runID: runID + ":" + corpusCase.caseID + ":" + check.assetID + ":rule-deck",
-                    inputs: [reference.manifest.locator],
+                    inputs: [reference.manifestLocator],
                     pdk: reference,
                     assetID: check.assetID
                 )
@@ -373,7 +373,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         artifacts: [ArtifactReference] = [],
         payload: PDKCorpusValidationPayload
     ) throws -> PDKCorpusValidationResult {
-        PDKCorpusValidationResult(
+        try PDKCorpusValidationResult(
             schemaVersion: PDKCorpusValidationRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,

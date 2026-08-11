@@ -1,29 +1,39 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 
-func makeArtifactReference(
-    artifactID: String = "artifact",
+struct TestArtifactBinding {
+    let reference: ArtifactReference
+    let locator: ArtifactLocator
+}
+
+func makeArtifactBinding(
+    artifactID _: String = "artifact",
     path: String,
     kind: ArtifactKind,
     format: ArtifactFormat,
     sha256: String? = nil,
     byteCount: Int64? = nil,
     role: ArtifactRole = .input
-) throws -> ArtifactReference {
+) throws -> TestArtifactBinding {
     let digest = try ContentDigest(
         algorithm: .sha256,
         hexadecimalValue: sha256 ?? String(repeating: "0", count: 64)
     )
-    return ArtifactReference(
-        id: try ArtifactID(rawValue: artifactID),
-        locator: ArtifactLocator(
+    let locator = ArtifactLocator(
             location: try makeArtifactLocation(path),
             role: role,
             kind: kind,
             format: format
+        )
+    return TestArtifactBinding(
+        reference: try ArtifactReference(
+            digest: digest,
+            byteCount: UInt64(max(0, byteCount ?? 0)),
+            descriptor: ArtifactDescriptor(role: role, kind: kind, format: format)
         ),
-        digest: digest,
-        byteCount: UInt64(max(0, byteCount ?? 0))
+        locator: locator
     )
 }
 

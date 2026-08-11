@@ -1,5 +1,6 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 import PDKCore
 
 public struct PDKValidationRequest: Sendable, Hashable, Codable {

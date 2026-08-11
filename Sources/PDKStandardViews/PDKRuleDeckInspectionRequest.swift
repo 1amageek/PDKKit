@@ -1,6 +1,7 @@
 import Foundation
 import PDKCore
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 
 public struct PDKRuleDeckInspectionRequest: Sendable, Codable {
     public static let currentSchemaVersion = 1

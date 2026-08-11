@@ -1,5 +1,7 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 import PDKCore
 import CircuiteFoundation
 
@@ -135,8 +137,8 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             guard sourceArtifact.id == expectedArtifact.id,
                   sourceArtifact.digest == expectedArtifact.digest,
                   sourceArtifact.byteCount == expectedArtifact.byteCount,
-                  sourceArtifact.locator.kind == expectedArtifact.locator.kind,
-                  sourceArtifact.locator.format == expectedArtifact.locator.format else {
+                  sourceArtifact.kind == expectedArtifact.kind,
+                  sourceArtifact.format == expectedArtifact.format else {
                 throw PDKExternalInspectionError.canonicalArtifactMismatch(
                     expected: Self.artifactDescription(expectedArtifact),
                     actual: Self.artifactDescription(sourceArtifact)
@@ -151,7 +153,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         let manifestURL: URL
         do {
             manifestURL = try PDKArtifactURLResolver().resolve(
-                request.pdk.manifest.locator,
+                request.pdk.manifestLocator,
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
@@ -163,7 +165,14 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 for: request.pdk.manifest,
                 resolvedURL: manifestURL
             )
-            let integrity = LocalArtifactVerifier().verify(manifestArtifact)
+            let integrity = LocalArtifactVerifier().verify(
+                manifestArtifact,
+                at: try PDKArtifactReferenceBuilder.materializedLocator(
+                    for: request.pdk.manifestLocator,
+                    resolvedURL: manifestURL
+                ),
+                relativeTo: nil
+            )
             guard integrity.isVerified else {
                 throw PDKExternalInspectionError.inputReferenceUnavailable(
                     "PDK manifest integrity failed: " + integrity.issues.map { $0.code.rawValue }.joined(separator: ", ")
@@ -184,7 +193,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             }
             let resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
             return (
-                reference: resolved.reference.locator,
+                reference: resolved.locator,
                 artifact: try resolved.artifactReference()
             )
         } catch let error as PDKExternalInspectionError {
@@ -214,9 +223,9 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
 
     private static func artifactDescription(_ reference: ArtifactReference) -> String {
         [
-            reference.id.rawValue,
-            reference.locator.kind.rawValue,
-            reference.locator.format.rawValue,
+            reference.id.description,
+            reference.kind.rawValue,
+            reference.format.rawValue,
             reference.digest.hexadecimalValue,
             String(reference.byteCount),
         ].joined(separator: "|")
@@ -244,7 +253,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         artifacts: [ArtifactReference] = [],
         finding: PDKValidationFinding
     ) throws -> PDKRuleDeckInspectionResult {
-        PDKRuleDeckInspectionResult(
+        try PDKRuleDeckInspectionResult(
             schemaVersion: PDKRuleDeckInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,

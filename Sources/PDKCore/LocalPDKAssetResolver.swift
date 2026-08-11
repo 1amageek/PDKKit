@@ -1,6 +1,8 @@
 import CircuiteFoundation
+import CircuiteFoundationCrypto
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 import Foundation
-import CircuiteFoundation
 
 public struct LocalPDKAssetResolver: PDKAssetResolving {
     private let referencer: LocalArtifactReferencer
@@ -76,28 +78,23 @@ public struct LocalPDKAssetResolver: PDKAssetResolving {
             )
         }
 
+        let assetURL = try locator.location.resolvedFileURL(relativeTo: rootURL)
         guard foundationReference.byteCount <= UInt64(Int64.max) else {
             throw PDKAssetResolutionError.byteCountOverflow(
                 assetID: asset.assetID,
-                path: foundationReference.locator.location.value
+                path: assetURL.path
             )
         }
-        let assetURL = try foundationReference.locator.location.resolvedFileURL(relativeTo: rootURL)
-        let reference = try ArtifactReference(
-            id: ArtifactID(rawValue: asset.assetID),
-            locator: ArtifactLocator(
-                location: ArtifactLocation(fileURL: assetURL),
-                role: foundationReference.locator.role,
-                kind: foundationReference.locator.kind,
-                format: foundationReference.locator.format
-            ),
-            digest: foundationReference.digest,
-            byteCount: foundationReference.byteCount
-        )
         return PDKResolvedAsset(
             assetID: asset.assetID,
             path: assetURL.path,
-            reference: reference,
+            reference: foundationReference,
+            locator: ArtifactLocator(
+                location: try ArtifactLocation(fileURL: assetURL),
+                role: foundationReference.descriptor.role,
+                kind: foundationReference.kind,
+                format: foundationReference.format
+            ),
             computedSHA256: foundationReference.digest.hexadecimalValue,
             computedByteCount: Int64(foundationReference.byteCount)
         )

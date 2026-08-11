@@ -1,5 +1,6 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 
 public struct PDKStandardViewIR: Sendable, Hashable, Codable {
     public var format: PDKStandardViewFormat

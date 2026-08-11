@@ -1,5 +1,6 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 import PDKCore
 import CircuiteFoundation
 
@@ -131,8 +132,8 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
             guard sourceArtifact.id == expectedArtifact.id,
                   sourceArtifact.digest == expectedArtifact.digest,
                   sourceArtifact.byteCount == expectedArtifact.byteCount,
-                  sourceArtifact.locator.kind == expectedArtifact.locator.kind,
-                  sourceArtifact.locator.format == expectedArtifact.locator.format else {
+                  sourceArtifact.kind == expectedArtifact.kind,
+                  sourceArtifact.format == expectedArtifact.format else {
                 throw PDKExternalInspectionError.canonicalArtifactMismatch(
                     expected: Self.artifactDescription(expectedArtifact),
                     actual: Self.artifactDescription(sourceArtifact)
@@ -168,9 +169,9 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
 
     private static func artifactDescription(_ reference: ArtifactReference) -> String {
         [
-            reference.id.rawValue,
-            reference.locator.kind.rawValue,
-            reference.locator.format.rawValue,
+            reference.id.description,
+            reference.kind.rawValue,
+            reference.format.rawValue,
             reference.digest.hexadecimalValue,
             String(reference.byteCount),
         ].joined(separator: "|")
@@ -198,7 +199,7 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         artifacts: [ArtifactReference] = [],
         finding: PDKValidationFinding
     ) throws -> PDKStandardViewInspectionResult {
-        PDKStandardViewInspectionResult(
+        try PDKStandardViewInspectionResult(
             schemaVersion: PDKStandardViewInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,

@@ -1,6 +1,8 @@
 import Foundation
 import Testing
 import CircuiteFoundation
+import CircuiteFoundationCrypto
+import CircuiteFoundationFoundation
 @testable import PDKCore
 
 @Suite("PDKCore implementation")
@@ -58,11 +60,11 @@ struct PDKCoreTests {
         let resolved = try LocalPDKAssetResolver().resolve(asset, relativeTo: manifestURL)
         let foundationReference = try resolved.artifactReference()
 
-        #expect(foundationReference.id.rawValue == "models")
+        #expect(foundationReference.id == resolved.reference.id)
         #expect(foundationReference.digest.algorithm == .sha256)
         #expect(foundationReference.digest.hexadecimalValue == resolved.computedSHA256)
         #expect(foundationReference.byteCount == UInt64(resolved.computedByteCount))
-        #expect(foundationReference.locator.location.storage == .absoluteFileURL)
+        #expect(resolved.locator.location.storage == .absoluteFileURL)
     }
 
     @Test("asset resolution rejects symlink escapes through Foundation containment")
@@ -108,7 +110,7 @@ struct PDKCoreTests {
     func pdkReferenceValidatesManifestIdentity() throws {
         let manifestDigest = String(repeating: "a", count: 64)
         let pdkDigest = String(repeating: "b", count: 64)
-        let manifest = try makeArtifactReference(
+        let manifest = try makeArtifactBinding(
             artifactID: "pdk-manifest",
             path: "/tmp/pdk.json",
             kind: .technology,
@@ -117,7 +119,8 @@ struct PDKCoreTests {
             byteCount: 16
         )
         let reference = PDKReference(
-            manifest: manifest,
+            manifest: manifest.reference,
+            manifestLocator: manifest.locator,
             processID: "fixture-180nm",
             version: "2026.1",
             digest: pdkDigest
@@ -135,9 +138,10 @@ struct PDKCoreTests {
         )
         let foundationReference = try reference.validatedManifest()
 
-        #expect(foundationReference.id.rawValue == "pdk-manifest")
-        #expect(foundationReference.locator.kind.rawValue == "pdk.technology")
-        #expect(foundationReference.locator.format == .json)
+        #expect(foundationReference.id == reference.manifest.id)
+        #expect(foundationReference.kind.rawValue == "pdk.technology")
+        #expect(foundationReference.format == .json)
+        #expect(reference.manifestLocator.location.storage == .absoluteFileURL)
         #expect(foundationReference.digest.hexadecimalValue == reference.digest)
     }
 
@@ -171,7 +175,7 @@ struct PDKCoreTests {
             }
         }
 
-        let reference = try makeArtifactReference(
+        let reference = try makeArtifactBinding(
             artifactID: "report",
             path: "reports/result.json",
             kind: .report,
@@ -184,7 +188,7 @@ struct PDKCoreTests {
         #expect(resolved.path == root.appending(path: "reports/result.json").path)
         #expect(throws: ArtifactLocationError.self) {
             try PDKArtifactURLResolver().resolve(
-                try makeArtifactReference(
+                try makeArtifactBinding(
                     path: "../outside.json",
                     kind: .report,
                     format: .json

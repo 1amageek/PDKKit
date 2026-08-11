@@ -1,5 +1,7 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 import PDKCore
 
 public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
@@ -27,7 +29,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         let manifestURL: URL
         do {
             manifestURL = try PDKArtifactURLResolver().resolve(
-                request.pdk.manifest.locator,
+                request.pdk.manifestLocator,
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
@@ -35,7 +37,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 severity: .blocker,
                 code: "pdk.standard-view.manifest-path-invalid",
                 message: "PDK manifest reference could not be resolved: \(error.localizedDescription)",
-                entity: request.pdk.manifest.path,
+                entity: request.pdk.manifestLocator.path,
                 suggestedActions: ["provide_project_root", "repair_manifest_reference"]
             )
             return try makeResult(
@@ -51,7 +53,14 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 for: request.pdk.manifest,
                 resolvedURL: manifestURL
             )
-            let integrity = LocalArtifactVerifier().verify(manifestArtifact)
+            let integrity = LocalArtifactVerifier().verify(
+                manifestArtifact,
+                at: try PDKArtifactReferenceBuilder.materializedLocator(
+                    for: request.pdk.manifestLocator,
+                    resolvedURL: manifestURL
+                ),
+                relativeTo: nil
+            )
             guard integrity.isVerified else {
                 let issue = integrity.issues.first
                 let code = issue?.code == .digestMismatch
@@ -185,7 +194,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
 
         let inspectionRequest = PDKStandardViewInspectionRequest(
             runID: request.runID,
-                inputs: [resolved.reference.locator],
+                inputs: [resolved.locator],
             format: request.format,
             assetID: request.assetID,
             requireNonEmpty: request.requireNonEmpty,
@@ -238,7 +247,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         inspection: PDKStandardViewInspectionPayload? = nil,
         binding: PDKStandardViewBindingReport? = nil
     ) throws -> PDKManifestViewInspectionResult {
-        PDKManifestViewInspectionResult(
+        try PDKManifestViewInspectionResult(
             schemaVersion: PDKManifestViewInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,

@@ -1,5 +1,8 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationCrypto
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 import PDKCore
 import CircuiteFoundation
 
@@ -25,7 +28,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         let manifestURL: URL
         do {
             manifestURL = try PDKArtifactURLResolver().resolve(
-                request.pdk.manifest.locator,
+                request.pdk.manifestLocator,
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
@@ -37,7 +40,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                     severity: .blocker,
                     code: "pdk.rule-deck.manifest-path-invalid",
                     message: "PDK manifest reference could not be resolved: " + error.localizedDescription,
-                    entity: request.pdk.manifest.path,
+                    entity: request.pdk.manifestLocator.path,
                     actions: ["provide_project_root", "repair_manifest_reference"]
                 )]
             )
@@ -49,7 +52,14 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 for: request.pdk.manifest,
                 resolvedURL: manifestURL
             )
-            let integrity = LocalArtifactVerifier(digester: digester).verify(manifestArtifact)
+            let integrity = LocalArtifactVerifier(digester: digester).verify(
+                manifestArtifact,
+                at: try PDKArtifactReferenceBuilder.materializedLocator(
+                    for: request.pdk.manifestLocator,
+                    resolvedURL: manifestURL
+                ),
+                relativeTo: nil
+            )
             guard integrity.isVerified else {
                 let issue = integrity.issues.first
                 return try makeResult(
@@ -169,6 +179,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 startedAt: startedAt,
                 status: .failed,
                 reference: resolved.reference,
+                referenceLocator: resolved.locator,
                 findings: [finding(
                     severity: .error,
                     code: "pdk.validation.rule-deck-integrity-failed",
@@ -188,6 +199,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 startedAt: startedAt,
                 status: .failed,
                 reference: resolved.reference,
+                referenceLocator: resolved.locator,
                 sourceArtifact: sourceArtifact,
                 findings: [finding(
                     severity: .error,
@@ -204,6 +216,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 startedAt: startedAt,
                 status: .failed,
                 reference: resolved.reference,
+                referenceLocator: resolved.locator,
                 sourceArtifact: sourceArtifact,
                 findings: [finding(
                     severity: .error,
@@ -296,6 +309,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             startedAt: startedAt,
             status: status,
             reference: resolved.reference,
+            referenceLocator: resolved.locator,
             sourceArtifact: sourceArtifact,
             statementCount: statements.count,
             expectedLayerIDs: mapping.layerIDs.sorted(),
@@ -411,6 +425,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         startedAt: Date,
         status: PDKExecutionStatus,
         reference: ArtifactReference? = nil,
+        referenceLocator: ArtifactLocator? = nil,
         sourceArtifact: ArtifactReference? = nil,
         statementCount: Int = 0,
         expectedLayerIDs: [String] = [],
@@ -418,7 +433,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         layerEvidence: [PDKRuleDeckLayerEvidence] = [],
         findings: [PDKValidationFinding]
     ) throws -> PDKRuleDeckInspectionResult {
-        PDKRuleDeckInspectionResult(
+        try PDKRuleDeckInspectionResult(
             schemaVersion: PDKRuleDeckInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,
@@ -435,7 +450,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 isValid: status == .completed,
                 assetID: request.assetID,
                 pdkDigest: request.pdk.digest,
-                reference: reference?.locator,
+                reference: referenceLocator,
                 sourceArtifact: sourceArtifact,
                 statementCount: statementCount,
                 expectedLayerIDs: expectedLayerIDs,

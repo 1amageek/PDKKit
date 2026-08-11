@@ -1,5 +1,7 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 import GDSII
 import LEF
 import LayoutIR
@@ -91,7 +93,14 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 for: input,
                 resolvedURL: inputURL
             )
-            let integrity = LocalArtifactVerifier().verify(sourceArtifact)
+            let integrity = LocalArtifactVerifier().verify(
+                sourceArtifact,
+                at: try PDKArtifactReferenceBuilder.materializedLocator(
+                    for: input,
+                    resolvedURL: inputURL
+                ),
+                relativeTo: nil
+            )
             let integrityFindings = findings(for: integrity, entity: input.path)
             guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
                 return try makeResult(
@@ -1213,7 +1222,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         artifacts: [ArtifactReference] = [],
         inspection: PDKStandardViewIR? = nil
     ) throws -> PDKStandardViewInspectionResult {
-        PDKStandardViewInspectionResult(
+        try PDKStandardViewInspectionResult(
             schemaVersion: PDKStandardViewInspectionRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,

@@ -1,5 +1,7 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 import PDKCore
 
 public struct LocalPDKOracleComparator: PDKOracleComparing {
@@ -21,7 +23,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         let oracleURL: URL
         do {
             oracleURL = try PDKArtifactURLResolver().resolve(
-                request.oracle.locator,
+                request.oracleLocator,
                 baseDirectoryPath: request.projectRootPath
             )
         } catch {
@@ -34,7 +36,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                     severity: .blocker,
                     code: "pdk.oracle.input-path-invalid",
                     message: "Oracle expectation path could not be resolved: \(error.localizedDescription)",
-                    entity: request.oracle.path,
+                    entity: request.oracleLocator.path,
                     suggestedActions: ["provide_project_root", "repair_oracle_reference"]
                 )]
             )
@@ -45,8 +47,18 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 for: request.oracle,
                 resolvedURL: oracleURL
             )
-            let integrity = LocalArtifactVerifier().verify(oracleArtifact)
-            let integrityFindings = findings(for: integrity, entity: request.oracle.path)
+            let integrity = LocalArtifactVerifier().verify(
+                oracleArtifact,
+                at: try PDKArtifactReferenceBuilder.materializedLocator(
+                    for: request.oracleLocator,
+                    resolvedURL: oracleURL
+                ),
+                relativeTo: nil
+            )
+            let integrityFindings = findings(
+                for: integrity,
+                entity: request.oracleLocator.path
+            )
             guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
                 return try makeResult(
                     request: request,
@@ -134,7 +146,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         for view in expectation.views {
             let inspectionRequest = PDKManifestViewInspectionRequest(
                 runID: request.runID + ":" + view.assetID + ":" + view.format.rawValue,
-                inputs: [request.pdk.manifest.locator],
+                inputs: [request.pdk.manifestLocator],
                 pdk: request.pdk,
                 assetID: view.assetID,
                 format: view.format,
@@ -363,7 +375,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         findings: [PDKValidationFinding],
         comparisons: [PDKOracleViewComparison] = []
     ) throws -> PDKOracleComparisonResult {
-        PDKOracleComparisonResult(
+        try PDKOracleComparisonResult(
             schemaVersion: PDKOracleRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,

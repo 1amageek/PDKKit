@@ -46,7 +46,7 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
         candidates.sort {
             if $0.processID != $1.processID { return $0.processID < $1.processID }
             if $0.version != $1.version { return $0.version < $1.version }
-            return $0.manifest.path < $1.manifest.path
+            return $0.manifestLocator.path < $1.manifestLocator.path
         }
 
         let status: PDKExecutionStatus
@@ -84,7 +84,7 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
             startedAt: startedAt,
             completedAt: completedAt
         )
-        return PDKDiscoveryResult(
+        return try PDKDiscoveryResult(
             schemaVersion: PDKDiscoveryRequest.currentSchemaVersion,
             runID: request.runID,
             status: status,

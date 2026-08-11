@@ -1,10 +1,12 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 
 public struct PDKResolvedAsset: Sendable, Hashable, Codable {
     public var assetID: String
     public var path: String
     public var reference: ArtifactReference
+    public var locator: ArtifactLocator
     public var computedSHA256: String
     public var computedByteCount: Int64
 
@@ -12,12 +14,14 @@ public struct PDKResolvedAsset: Sendable, Hashable, Codable {
         assetID: String,
         path: String,
         reference: ArtifactReference,
+        locator: ArtifactLocator,
         computedSHA256: String,
         computedByteCount: Int64
     ) {
         self.assetID = assetID
         self.path = path
         self.reference = reference
+        self.locator = locator
         self.computedSHA256 = computedSHA256
         self.computedByteCount = computedByteCount
     }
@@ -32,8 +36,6 @@ public struct PDKResolvedAsset: Sendable, Hashable, Codable {
             hexadecimalValue: computedSHA256
         )
         return try PDKArtifactReferenceBuilder.artifactReference(
-            assetID: assetID,
-            path: URL(filePath: path),
             kind: reference.kind,
             format: reference.format,
             digest: digest,

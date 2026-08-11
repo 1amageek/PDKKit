@@ -1,5 +1,8 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationCrypto
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 import PDKCore
 import PDKStandardViews
 import CircuiteFoundation
@@ -35,7 +38,7 @@ public struct LocalPDKValidator: PDKValidating {
         var validationResult: ValidationResult
         do {
             let manifestURL = try PDKArtifactURLResolver().resolve(
-                request.pdk.manifest.locator,
+                request.pdk.manifestLocator,
                 baseDirectoryPath: request.projectRootPath
             )
             validationResult = validate(request: request, manifestURL: manifestURL)
@@ -44,7 +47,7 @@ public struct LocalPDKValidator: PDKValidating {
                 severity: .blocker,
                 code: "pdk.validation.manifest-path-invalid",
                 message: "PDK manifest reference could not be resolved: \(error.localizedDescription)",
-                entity: request.pdk.manifest.path,
+                entity: request.pdk.manifestLocator.path,
                 suggestedActions: ["provide_project_root", "repair_manifest_reference"]
             )
             validationResult = result(status: .blocked, findings: [finding], request: request)
@@ -77,7 +80,7 @@ public struct LocalPDKValidator: PDKValidating {
             startedAt: startedAt,
             completedAt: completedAt
         )
-        return PDKValidationResult(
+        return try PDKValidationResult(
             schemaVersion: PDKValidationRequest.currentSchemaVersion,
             runID: request.runID,
             status: validationResult.status,
@@ -321,7 +324,7 @@ public struct LocalPDKValidator: PDKValidating {
             guard seen.insert(key).inserted else { continue }
             let inspectionRequest = PDKManifestViewInspectionRequest(
                 runID: request.runID + ":" + assetID + ":" + format.rawValue,
-                inputs: [request.pdk.manifest.locator],
+                inputs: [request.pdk.manifestLocator],
                 pdk: request.pdk,
                 assetID: assetID,
                 format: format,
@@ -407,7 +410,7 @@ public struct LocalPDKValidator: PDKValidating {
         for asset in ruleDeckAssets {
             let inspectionRequest = PDKRuleDeckInspectionRequest(
                 runID: request.runID + ":" + asset.assetID + ":rule-deck",
-                inputs: [request.pdk.manifest.locator],
+                inputs: [request.pdk.manifestLocator],
                 pdk: request.pdk,
                 assetID: asset.assetID,
                 projectRootPath: request.projectRootPath
@@ -419,7 +422,7 @@ public struct LocalPDKValidator: PDKValidating {
                     assetID: asset.assetID,
                     status: inspectionResult.status,
                     isValid: payload.isValid,
-                    reference: payload.reference ?? resolvedAssets.first(where: { $0.assetID == asset.assetID })?.reference.locator,
+                    reference: payload.reference ?? resolvedAssets.first(where: { $0.assetID == asset.assetID })?.locator,
                     expectedLayerIDs: payload.expectedLayerIDs,
                     observedLayerIDs: payload.observedLayerIDs,
                     statementCount: payload.statementCount,
@@ -440,7 +443,7 @@ public struct LocalPDKValidator: PDKValidating {
                     assetID: asset.assetID,
                     status: .failed,
                     isValid: false,
-                    reference: resolvedAssets.first(where: { $0.assetID == asset.assetID })?.reference.locator,
+                    reference: resolvedAssets.first(where: { $0.assetID == asset.assetID })?.locator,
                     inspection: PDKRuleDeckInspectionPayload(
                         isValid: false,
                         assetID: asset.assetID,
@@ -608,6 +611,10 @@ public struct LocalPDKValidator: PDKValidating {
                 )
                 let integrity = LocalArtifactVerifier(digester: contentDigester).verify(
                     foundationReference,
+                    at: try PDKArtifactReferenceBuilder.materializedLocator(
+                        for: input,
+                        resolvedURL: url
+                    ),
                     relativeTo: nil
                 )
                 for issue in integrity.issues {
@@ -668,7 +675,14 @@ public struct LocalPDKValidator: PDKValidating {
                 for: request.pdk.manifest,
                 resolvedURL: manifestURL
             )
-            let integrity = LocalArtifactVerifier(digester: contentDigester).verify(artifact)
+            let integrity = LocalArtifactVerifier(digester: contentDigester).verify(
+                artifact,
+                at: try PDKArtifactReferenceBuilder.materializedLocator(
+                    for: request.pdk.manifestLocator,
+                    resolvedURL: manifestURL
+                ),
+                relativeTo: nil
+            )
             for issue in integrity.issues {
                 let code: String
                 switch issue.code {

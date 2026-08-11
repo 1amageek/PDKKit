@@ -1,5 +1,6 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 import Testing
 @testable import PDKCore
 @testable import PDKDiscovery
@@ -14,7 +15,7 @@ struct PDKEngineTests {
         let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKValidationRequest(
             runID: "validation-fixture",
-            inputs: [reference.manifest.locator],
+            inputs: [reference.manifestLocator],
             pdk: reference,
             requiredAssetRoles: [.layerMap, .model, .cell, .ruleDeck]
         )
@@ -45,7 +46,7 @@ struct PDKEngineTests {
         let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-production-incomplete",
-                inputs: [reference.manifest.locator],
+                inputs: [reference.manifestLocator],
                 pdk: reference,
                 requiredCornerIDs: ["tt-1v8-25c", "ss-1v6-100c"],
                 requireAssetIdentity: true,
@@ -93,7 +94,7 @@ struct PDKEngineTests {
         let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-production-complete",
-                inputs: [reference.manifest.locator],
+                inputs: [reference.manifestLocator],
                 pdk: reference,
                 requiredAssetRoles: [.layerMap, .model, .cell, .ruleDeck, .gdsii, .spice, .liberty],
                 requiredCornerIDs: ["tt-1v8-25c"],
@@ -119,7 +120,7 @@ struct PDKEngineTests {
         let result = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-inspection",
-                inputs: [reference.manifest.locator],
+                inputs: [reference.manifestLocator],
                 pdk: reference,
                 assetID: "rules"
             )
@@ -129,14 +130,15 @@ struct PDKEngineTests {
         #expect(result.payload.statementCount == 3)
         #expect(result.payload.observedLayerIDs == ["active", "metal1"])
         #expect(result.payload.layerEvidence.allSatisfy { !$0.matchedTokens.isEmpty })
-        #expect(result.artifacts.map(\.path).contains { $0.hasSuffix("/rules.deck") })
+        #expect(result.payload.reference?.path.hasSuffix("/rules.deck") == true)
+        #expect(result.artifacts == [result.payload.sourceArtifact].compactMap { $0 })
     }
 
     @Test("relative manifest and input references use the explicit project root")
     func validatesRelativeReferences() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let absoluteReference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
-        let relativeManifest = try makeArtifactReference(
+        let relativeManifest = try makeArtifactBinding(
             artifactID: absoluteReference.manifest.artifactID,
             path: "pdk.json",
             kind: absoluteReference.manifest.kind,
@@ -145,7 +147,8 @@ struct PDKEngineTests {
             byteCount: Int64(absoluteReference.manifest.byteCount)
         )
         let relativeReference = PDKReference(
-            manifest: relativeManifest,
+            manifest: relativeManifest.reference,
+            manifestLocator: relativeManifest.locator,
             processID: absoluteReference.processID,
             version: absoluteReference.version,
             digest: absoluteReference.digest
@@ -164,13 +167,13 @@ struct PDKEngineTests {
         #expect(result.payload.resolvedAssets.count == 7)
 
         #expect(throws: ArtifactLocationError.self) {
-            _ = try makeArtifactReference(
-                artifactID: relativeManifest.artifactID,
+            _ = try makeArtifactBinding(
+                artifactID: relativeManifest.reference.artifactID,
                 path: "../pdk.json",
-                kind: relativeManifest.kind,
-                format: relativeManifest.format,
-                sha256: relativeManifest.digest.hexadecimalValue,
-                byteCount: Int64(relativeManifest.byteCount)
+                kind: relativeManifest.reference.kind,
+                format: relativeManifest.reference.format,
+                sha256: relativeManifest.reference.digest.hexadecimalValue,
+                byteCount: Int64(relativeManifest.reference.byteCount)
             )
         }
     }
@@ -182,7 +185,7 @@ struct PDKEngineTests {
         let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKValidationRequest(
             runID: "validation-missing-asset",
-            inputs: [reference.manifest.locator],
+            inputs: [reference.manifestLocator],
             pdk: reference
         )
         let missingURL = isolatedFixture.appending(path: "models.spice")
@@ -220,7 +223,7 @@ struct PDKEngineTests {
         let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-semantic-block",
-                inputs: [reference.manifest.locator],
+                inputs: [reference.manifestLocator],
                 pdk: reference,
                 requiredAssetRoles: [.model]
             )
@@ -252,7 +255,7 @@ struct PDKEngineTests {
         let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-rule-deck-block",
-                inputs: [reference.manifest.locator],
+                inputs: [reference.manifestLocator],
                 pdk: reference,
                 requiredAssetRoles: [.ruleDeck]
             )
@@ -284,7 +287,7 @@ struct PDKEngineTests {
         let result = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-comment-block",
-                inputs: [reference.manifest.locator],
+                inputs: [reference.manifestLocator],
                 pdk: reference,
                 assetID: "rules"
             )
@@ -314,7 +317,7 @@ struct PDKEngineTests {
         let result = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-comment-failure",
-                inputs: [reference.manifest.locator],
+                inputs: [reference.manifestLocator],
                 pdk: reference,
                 assetID: "rules"
             )
@@ -460,7 +463,7 @@ struct PDKEngineTests {
         let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKValidationRequest(
             runID: "round-trip",
-            inputs: [reference.manifest.locator],
+            inputs: [reference.manifestLocator],
             pdk: reference,
             requiredAssetRoles: [.model],
             validateCrossViews: false

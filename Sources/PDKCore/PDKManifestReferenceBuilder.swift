@@ -1,6 +1,8 @@
 import CircuiteFoundation
+import CircuiteFoundationCrypto
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 import Foundation
-import CircuiteFoundation
 
 public struct PDKManifestReferenceBuilder: Sendable {
     private let digester: any ContentDigesting
@@ -23,8 +25,6 @@ public struct PDKManifestReferenceBuilder: Sendable {
             artifactLocator
         )
         let foundationReference = try PDKArtifactReferenceBuilder.artifactReference(
-            assetID: "pdk-manifest",
-            path: url,
             kind: artifactLocator.kind,
             format: artifactLocator.format,
             digest: materializedReference.digest,
@@ -36,6 +36,7 @@ public struct PDKManifestReferenceBuilder: Sendable {
         let digest = foundationReference.digest.hexadecimalValue
         let reference = PDKReference(
             manifest: foundationReference,
+            manifestLocator: artifactLocator,
             processID: manifest.processID,
             version: manifest.version,
             digest: digest

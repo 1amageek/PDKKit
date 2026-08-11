@@ -1,6 +1,7 @@
 import Foundation
 import PDKCore
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 
 public struct PDKOracleRequest: Sendable {
     public static let currentSchemaVersion = 1
@@ -10,19 +11,22 @@ public struct PDKOracleRequest: Sendable {
     public var inputs: [ArtifactLocator]
     public var pdk: PDKReference
     public var oracle: ArtifactReference
+    public var oracleLocator: ArtifactLocator
     public var projectRootPath: String?
 
     public init(
         runID: String,
         pdk: PDKReference,
         oracle: ArtifactReference,
+        oracleLocator: ArtifactLocator,
         projectRootPath: String? = nil
     ) {
         self.schemaVersion = Self.currentSchemaVersion
         self.runID = runID
-        self.inputs = [pdk.manifest.locator, oracle.locator]
+        self.inputs = [pdk.manifestLocator, oracleLocator]
         self.pdk = pdk
         self.oracle = oracle
+        self.oracleLocator = oracleLocator
         self.projectRootPath = projectRootPath
     }
 }

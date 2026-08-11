@@ -1,5 +1,7 @@
 import Foundation
 import CircuiteFoundation
+import CircuiteFoundationCrypto
+import CircuiteFoundationFoundation
 import Testing
 @testable import PDKCore
 @testable import PDKStandardViews
@@ -16,7 +18,7 @@ struct PDKExternalBackendTests {
         let resolved = try LocalPDKAssetResolver().resolve(asset, relativeTo: manifestURL)
         let rawRequest = PDKStandardViewInspectionRequest(
             runID: "external-standard-view",
-            inputs: [resolved.reference.locator],
+            inputs: [resolved.locator],
             format: .lef,
             assetID: "cells",
             expectedCellNames: ["nmos"],
@@ -33,7 +35,7 @@ struct PDKExternalBackendTests {
         ).execute(
             PDKManifestViewInspectionRequest(
                 runID: rawRequest.runID,
-                inputs: [pdk.manifest.locator],
+                inputs: [pdk.manifestLocator],
                 pdk: pdk,
                 assetID: "cells",
                 format: .lef,
@@ -63,18 +65,23 @@ struct PDKExternalBackendTests {
             $0.code == "pdk.external.standard-view-contract-mismatch"
         })
 
-        var wrongRun = localResult
-        wrongRun.runID = "unexpected-run"
-        wrongRun.artifacts = [
-            try makeArtifactReference(
-                artifactID: "external-log",
-                path: "external.log",
-                kind: .report,
-                format: .text,
-                sha256: String(repeating: "a", count: 64),
-                byteCount: 3
-            ),
-        ]
+        let externalLog = try makeArtifactBinding(
+            artifactID: "external-log",
+            path: "external.log",
+            kind: .report,
+            format: .text,
+            sha256: String(repeating: "a", count: 64),
+            byteCount: 3
+        )
+        let wrongRun = try PDKStandardViewInspectionResult(
+            schemaVersion: localResult.schemaVersion,
+            runID: "unexpected-run",
+            status: localResult.status,
+            diagnostics: localResult.diagnostics,
+            artifacts: [externalLog.reference],
+            provenance: localResult.provenance,
+            payload: localResult.payload
+        )
         let runResult = try await ExternalPDKStandardViewInspector(
             provider: StaticStandardViewResultProvider(data: try JSONEncoder().encode(wrongRun))
         ).execute(request)
@@ -82,7 +89,7 @@ struct PDKExternalBackendTests {
         #expect(runResult.payload.findings.contains {
             $0.code == "pdk.external.standard-view-contract-mismatch"
         })
-        #expect(runResult.artifacts.map(\.path) == ["external.log"])
+        #expect(runResult.artifacts == [externalLog.reference])
     }
 
     @Test("external standard-view malformed data remains structured")
@@ -132,7 +139,7 @@ struct PDKExternalBackendTests {
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKRuleDeckInspectionRequest(
             runID: "external-rule-deck",
-            inputs: [pdk.manifest.locator],
+            inputs: [pdk.manifestLocator],
             pdk: pdk,
             assetID: "rules",
             projectRootPath: fixture.path
@@ -185,7 +192,7 @@ struct PDKExternalBackendTests {
         let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
         let request = PDKRuleDeckInspectionRequest(
             runID: "external-rule-deck-artifact",
-            inputs: [pdk.manifest.locator],
+            inputs: [pdk.manifestLocator],
             pdk: pdk,
             assetID: "rules",
             projectRootPath: fixture.path
@@ -225,7 +232,7 @@ struct PDKExternalBackendTests {
         let fixture = fixtureURL()
         let fileURL = fixture.appending(path: "cells.lef")
         let data = try Data(contentsOf: fileURL)
-        let reference = try makeArtifactReference(
+        let reference = try makeArtifactBinding(
             artifactID: "cells",
             path: fileURL.path,
             kind: .technology,

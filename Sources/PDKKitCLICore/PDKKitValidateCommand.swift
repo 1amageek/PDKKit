@@ -71,7 +71,7 @@ struct PDKKitValidateCommand: Sendable {
         }
         let request = PDKValidationRequest(
             runID: options.runID,
-            inputs: [reference.manifest.locator],
+            inputs: [reference.manifestLocator],
             pdk: reference,
             requiredAssetRoles: options.requiredAssetRoles,
             requiredCornerIDs: options.requiredCornerIDs,

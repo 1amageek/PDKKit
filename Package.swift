@@ -48,16 +48,26 @@ let package = Package(
             name: "PDKCore",
             dependencies: [
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
             ]
         ),
         .target(
             name: "PDKDiscovery",
-            dependencies: ["PDKCore"]
+            dependencies: [
+                "PDKCore",
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+            ]
         ),
         .target(
             name: "PDKValidation",
             dependencies: [
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
                 "PDKCore",
                 "PDKStandardViews",
             ]
@@ -66,6 +76,9 @@ let package = Package(
             name: "PDKStandardViews",
             dependencies: [
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
                 "PDKCore",
                 .product(name: "LayoutIR", package: "swift-mask-data"),
                 .product(name: "GDSII", package: "swift-mask-data"),
@@ -79,7 +92,16 @@ let package = Package(
         ),
         .target(
             name: "PDKKitCLICore",
-            dependencies: ["PDKCore", "PDKDiscovery", "PDKValidation", "PDKStandardViews", "PDKKit"]
+            dependencies: [
+                "PDKCore",
+                "PDKDiscovery",
+                "PDKValidation",
+                "PDKStandardViews",
+                "PDKKit",
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+            ]
         ),
         .executableTarget(
             name: "PDKKitCLI",
@@ -95,6 +117,9 @@ let package = Package(
                 "PDKKit",
                 "PDKKitCLICore",
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
                 .product(name: "LayoutIR", package: "swift-mask-data"),
                 .product(name: "GDSII", package: "swift-mask-data"),
                 .product(name: "OASIS", package: "swift-mask-data"),

@@ -1,4 +1,5 @@
 import CircuiteFoundation
+import CircuiteFoundationCrypto
 import Foundation
 import PDKCore
 
@@ -9,14 +10,10 @@ public struct PDKValidationResult: Sendable, Hashable, Codable,
     public var runID: String
     public var status: PDKExecutionStatus
     public var diagnostics: [DesignDiagnostic]
-    public var artifacts: [ArtifactReference] {
-        didSet { evidence = EvidenceManifest(id: evidence.id, provenance: provenance, artifacts: artifacts) }
-    }
-    public var provenance: ExecutionProvenance {
-        didSet { evidence = EvidenceManifest(id: evidence.id, provenance: provenance, artifacts: artifacts) }
-    }
+    public let artifacts: [ArtifactReference]
+    public let provenance: ExecutionProvenance
     public var payload: PDKValidationPayload
-    public private(set) var evidence: EvidenceManifest
+    public let evidence: EvidenceManifest
 
     public init(
         schemaVersion: Int,
@@ -26,7 +23,7 @@ public struct PDKValidationResult: Sendable, Hashable, Codable,
         artifacts: [ArtifactReference] = [],
         provenance: ExecutionProvenance,
         payload: PDKValidationPayload
-    ) {
+    ) throws {
         self.schemaVersion = schemaVersion
         self.runID = runID
         self.status = status
@@ -34,6 +31,10 @@ public struct PDKValidationResult: Sendable, Hashable, Codable,
         self.artifacts = artifacts
         self.provenance = provenance
         self.payload = payload
-        self.evidence = EvidenceManifest(provenance: provenance, artifacts: artifacts)
+        self.evidence = try EvidenceManifest.contentAddressed(
+            provenance: provenance,
+            artifacts: artifacts,
+            digester: SHA256ContentDigester()
+        )
     }
 }

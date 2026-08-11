@@ -47,7 +47,7 @@ struct PDKKitInspectRuleDeckCommand: Sendable {
         }
         let request = PDKRuleDeckInspectionRequest(
             runID: options.runID,
-            inputs: [pdk.manifest.locator],
+            inputs: [pdk.manifestLocator],
             pdk: pdk,
             assetID: options.assetID
         )

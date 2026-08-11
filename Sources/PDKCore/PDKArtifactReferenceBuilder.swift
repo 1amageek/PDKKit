@@ -1,4 +1,6 @@
 import CircuiteFoundation
+import CircuiteFoundationFileSystem
+import CircuiteFoundationFoundation
 import Foundation
 
 /// Builds immutable artifact references for PDK resources.
@@ -13,14 +15,20 @@ public enum PDKArtifactReferenceBuilder {
                 reason: "A resolved URL is required to materialize an artifact locator."
             )
         }
-        let location = try ArtifactLocation(fileURL: resolvedURL)
-        let materializedLocator = ArtifactLocator(
-            location: location,
+        let materializedLocator = try materializedLocator(for: locator, resolvedURL: resolvedURL)
+        return try LocalArtifactReferencer().reference(materializedLocator)
+    }
+
+    public static func materializedLocator(
+        for locator: ArtifactLocator,
+        resolvedURL: URL
+    ) throws -> ArtifactLocator {
+        ArtifactLocator(
+            location: try ArtifactLocation(fileURL: resolvedURL),
             role: locator.role,
             kind: locator.kind,
             format: locator.format
         )
-        return try LocalArtifactReferencer().reference(materializedLocator)
     }
 
     public static func artifactReference(
@@ -28,52 +36,27 @@ public enum PDKArtifactReferenceBuilder {
         resolvedURL: URL? = nil
     ) throws -> ArtifactReference {
         guard let resolvedURL else { return reference }
-        let location = try ArtifactLocation(fileURL: resolvedURL)
-        let locator = ArtifactLocator(
-            location: location,
-            role: reference.locator.role,
-            kind: reference.kind,
-            format: reference.format
-        )
-        return ArtifactReference(
-            id: reference.id,
-            locator: locator,
-            digest: reference.digest,
-            byteCount: reference.byteCount,
-            producer: reference.producer
-        )
+        _ = try ArtifactLocation(fileURL: resolvedURL)
+        return reference
     }
 
     public static func artifactReference(
-        assetID: String,
-        path: URL,
         kind: ArtifactKind,
         format: ArtifactFormat,
         digest: ContentDigest,
         byteCount: UInt64
     ) throws -> ArtifactReference {
-        let location: ArtifactLocation
-        do {
-            location = try ArtifactLocation(fileURL: path)
-        } catch {
-            throw PDKArtifactReferenceError.invalidLocation(
-                path: path.path,
-                reason: error.localizedDescription
-            )
-        }
         let canonicalKind = kind.rawValue.hasPrefix("pdk.")
             ? kind
             : try ArtifactKind(rawValue: "pdk.\(kind.rawValue.lowercased())")
-        return ArtifactReference(
-            id: try ArtifactID(rawValue: assetID),
-            locator: ArtifactLocator(
-                location: location,
+        return try ArtifactReference(
+            digest: digest,
+            byteCount: byteCount,
+            descriptor: ArtifactDescriptor(
                 role: .input,
                 kind: canonicalKind,
                 format: try artifactFormat(for: format)
-            ),
-            digest: digest,
-            byteCount: byteCount
+            )
         )
     }
 

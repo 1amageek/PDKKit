@@ -1,19 +1,23 @@
 import CircuiteFoundation
+import CircuiteFoundationFoundation
 import Foundation
 
 public struct PDKReference: Sendable, Hashable, Codable {
     public var manifest: ArtifactReference
+    public var manifestLocator: ArtifactLocator
     public var processID: String
     public var version: String
     public var digest: String
 
     public init(
         manifest: ArtifactReference,
+        manifestLocator: ArtifactLocator,
         processID: String,
         version: String,
         digest: String
     ) {
         self.manifest = manifest
+        self.manifestLocator = manifestLocator
         self.processID = processID
         self.version = version
         self.digest = digest
