@@ -87,6 +87,7 @@ required and includes rule-deck checks in the case contract.
 `PDKManifestViewInspectionRequest` are agent-facing engine requests. Their
 payloads retain parser identity, canonical layer/cell/model/pin/timing facts,
 numeric SPICE model parameters, subcircuits, Liberty cells, timing tables and
+the standard-owned typed `LEFDocument` for physical declarations,
 unit declarations, source artifact references, findings, binding evidence and
 explicit qualification limitations. `PDKOracleExpectation` and
 `PDKOracleRequest` bind those facts to a manifest digest; `PDKOracleComparisonPayload`

@@ -1,6 +1,6 @@
 # PDKKit Design
 
-## Purpose
+## Purpose and Scope
 
 Canonical process-design-kit discovery, identity and validation contracts.
 
@@ -10,8 +10,10 @@ oracle comparison and a local assessment evidence handoff.
 The implementation is intentionally manifest-driven: the manifest is the typed
 semantic index, while standard-format files remain immutable artifacts whose
 bytes are verified by digest and size.
+Parent: [LSI](../DESIGN.md). The affected child is
+[PDKStandardViews](Sources/PDKStandardViews/DESIGN.md).
 
-## Responsibility boundary
+## Responsibilities and Boundaries
 
 This package owns the schemas and engine protocols listed in its public products. It must remain usable without UI state and without the Xcircuite runtime.
 
@@ -21,7 +23,7 @@ This package owns the schemas and engine protocols listed in its public products
 - Declaring a tool qualified
 - Mutating design data
 
-## Dependency direction
+## Architecture
 
 ```text
 Swift/Foundation
@@ -39,7 +41,7 @@ Xcircuite concrete .xcircuite persistence
 
 Backends may depend on lower-level data packages. This package must never import `Xcircuite` or `circuit-studio`.
 
-## Trust model
+## Contracts and Invariants
 
 Kernel availability, corpus validation, oracle correlation, local evidence
 handoff, process-scoped qualification and release approval are distinct states.
@@ -82,6 +84,28 @@ blocked case as a passing corpus case only when the declared blocker is
 reproduced. This is test evidence, not qualification evidence.
 
 The selected LEF/GDSII/OASIS adapters depend on `swift-mask-data` only in the
-`PDKStandardViews` target. Public payloads contain PDKKit-owned canonical IR,
-so downstream agents do not depend on parser-specific types. SPICE and Liberty
-remain separate M4b adapters.
+`PDKStandardViews` target. LEF physical declarations are retained as the
+standard-owned `LEFDocument`, alongside PDK-owned identity, validation and
+inventory facts. This replaces the names-only physical projection: duplicating
+cell/pin/via/rule fields in a second PDK schema would create another independent
+loss boundary. PDKCore and portable domain manifests do not gain this dependency.
+SPICE and Liberty retain their existing PDK-owned inspection schemas.
+
+The artifact digest and byte count used by the semantic parser must agree with
+the actual in-memory bytes parsed, not only an earlier read of the source path.
+Inspection remains distinct from engine capability and process qualification.
+
+## Related Designs
+
+| Design | Relationship | Contract Used | Summary | Cautions |
+|---|---|---|---|---|
+| [LSI](../DESIGN.md) | Parent | Exact process evidence | Platform composition | Inventory does not establish production closure |
+| [PDKStandardViews](Sources/PDKStandardViews/DESIGN.md) | Child | Retained standard semantics | Inspection boundary | Unsupported grammar fails explicitly |
+| [LEF](../swift-mask-data/Sources/LEF/DESIGN.md) | Depends on | LEFDocument and typed errors | Standard physical schema ownership | Consumers must resolve process names and capability |
+
+## Verification and Change Impact
+
+PDKStandardViewTests verifies actual inspection, source identity, retained
+physical fields, serialization and parser failures. PDK validation/corpus and
+external-provider tests verify composition. Physical engines must separately
+prove placement, pin access, routing and extraction against the retained view.

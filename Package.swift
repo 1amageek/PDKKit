@@ -68,7 +68,8 @@ let package = Package(
                 .product(name: "GDSII", package: "swift-mask-data"),
                 .product(name: "OASIS", package: "swift-mask-data"),
                 .product(name: "LEF", package: "swift-mask-data"),
-            ]
+            ],
+            exclude: ["DESIGN.md", "StandardInspection/DESIGN.md"]
         ),
         .target(
             name: "PDKKit",

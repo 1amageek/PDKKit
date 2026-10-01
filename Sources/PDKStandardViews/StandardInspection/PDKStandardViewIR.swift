@@ -1,12 +1,14 @@
 import Foundation
 import CircuiteFoundation
 import CircuiteFoundationFoundation
+import LEF
 
 public struct PDKStandardViewIR: Sendable, Hashable, Codable {
     public var format: PDKStandardViewFormat
     public var source: ArtifactLocator
     public var sourceArtifact: ArtifactReference?
     public var libraryName: String
+    public var lefDocument: LEFDocument?
     public var layerNames: [String]
     public var physicalLayerNumbers: [Int]
     public var cellNames: [String]
@@ -33,6 +35,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
         source: ArtifactLocator,
         sourceArtifact: ArtifactReference? = nil,
         libraryName: String,
+        lefDocument: LEFDocument? = nil,
         layerNames: [String] = [],
         physicalLayerNumbers: [Int] = [],
         cellNames: [String] = [],
@@ -58,6 +61,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
         self.source = source
         self.sourceArtifact = sourceArtifact
         self.libraryName = libraryName
+        self.lefDocument = lefDocument
         self.layerNames = Self.sortedUnique(layerNames)
         self.physicalLayerNumbers = Array(Set(physicalLayerNumbers)).sorted()
         self.cellNames = Self.sortedUnique(cellNames)
@@ -92,6 +96,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
             source: try container.decode(ArtifactLocator.self, forKey: .source),
             sourceArtifact: try container.decodeIfPresent(ArtifactReference.self, forKey: .sourceArtifact),
             libraryName: try container.decode(String.self, forKey: .libraryName),
+            lefDocument: try container.decodeIfPresent(LEFDocument.self, forKey: .lefDocument),
             layerNames: try container.decode([String].self, forKey: .layerNames),
             physicalLayerNumbers: try container.decode([Int].self, forKey: .physicalLayerNumbers),
             cellNames: try container.decode([String].self, forKey: .cellNames),
@@ -113,6 +118,13 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
             elementCount: try container.decode(Int.self, forKey: .elementCount),
             metadata: try container.decode([String: String].self, forKey: .metadata)
         )
+        guard (format == .lef) == (lefDocument != nil) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .lefDocument,
+                in: container,
+                debugDescription: "LEF inspection requires its retained standard document; other formats must not contain one."
+            )
+        }
     }
 
     private static func sortedUnique(_ values: [String]) -> [String] {
@@ -124,6 +136,7 @@ public struct PDKStandardViewIR: Sendable, Hashable, Codable {
         case source
         case sourceArtifact
         case libraryName
+        case lefDocument
         case layerNames
         case physicalLayerNumbers
         case cellNames

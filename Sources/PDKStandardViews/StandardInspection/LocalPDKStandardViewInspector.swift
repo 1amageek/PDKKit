@@ -2,6 +2,7 @@ import Foundation
 import CircuiteFoundation
 import CircuiteFoundationFileSystem
 import CircuiteFoundationFoundation
+import CircuiteFoundationCrypto
 import GDSII
 import LEF
 import LayoutIR
@@ -93,24 +94,6 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 for: input,
                 resolvedURL: inputURL
             )
-            let integrity = LocalArtifactVerifier().verify(
-                sourceArtifact,
-                at: try PDKArtifactReferenceBuilder.materializedLocator(
-                    for: input,
-                    resolvedURL: inputURL
-                ),
-                relativeTo: nil
-            )
-            let integrityFindings = findings(for: integrity, entity: input.path)
-            guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
-                return try makeResult(
-                    request: request,
-                    startedAt: startedAt,
-                    status: .blocked,
-                    findings: integrityFindings,
-                    artifacts: [sourceArtifact]
-                )
-            }
         } catch let error as PDKArtifactReferenceError {
             let finding = PDKValidationFinding(
                 severity: .error,
@@ -163,6 +146,19 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
 
         var findings: [PDKValidationFinding] = []
         do {
+            let actualDigest = try SHA256ContentDigester().digest(data: data, using: sourceArtifact.digest.algorithm)
+            var integrityIssues: [ArtifactIntegrityIssue] = []
+            if UInt64(data.count) != sourceArtifact.byteCount {
+                integrityIssues.append(.byteCountMismatch(expected: sourceArtifact.byteCount, actual: UInt64(data.count)))
+            }
+            if actualDigest != sourceArtifact.digest {
+                integrityIssues.append(.digestMismatch(expected: sourceArtifact.digest, actual: actualDigest))
+            }
+            let integrityFindings = self.findings(for: ArtifactIntegrity(issues: integrityIssues), entity: input.path)
+            guard integrityFindings.isEmpty else {
+                return try makeResult(request: request, startedAt: startedAt, status: .blocked,
+                                      findings: integrityFindings, artifacts: [sourceArtifact])
+            }
             var inspection = try parse(data: data, reference: input, format: request.format)
             inspection.sourceArtifact = sourceArtifact
             findings.append(contentsOf: semanticFindings(inspection: inspection, request: request))
@@ -243,16 +239,17 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         format: PDKStandardViewFormat
     ) throws -> PDKStandardViewIR {
         switch format {
-        // FIXME(INCOMPLETE_IMPLEMENTATION): Manifest validation and CLI inspection currently publish LEF inventory names only. Physical cell/pin/via geometry and process rules must be retained in typed PDK semantics and behaviorally verified before this projection can establish executable process coverage.
         case .lef:
             let document = try LEFLibraryReader.read(data)
             return PDKStandardViewIR(
                 format: .lef,
                 source: reference,
                 libraryName: "LEF",
+                lefDocument: document,
                 layerNames: document.layers.map(\.name),
                 cellNames: document.macros.map(\.name),
                 viaNames: document.vias.map(\.name),
+                pinNames: document.macros.flatMap { $0.pins.map(\.name) },
                 elementCount: document.layers.count + document.macros.count + document.vias.count,
                 metadata: [
                     "lef.version": document.version,

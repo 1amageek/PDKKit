@@ -11,6 +11,76 @@ import Testing
 
 @Suite("PDK standard-view inspection")
 struct PDKStandardViewTests {
+    @Test("LEF inspection retains physical declarations and rejects semantic loss")
+    func physicalLEFDeclarationsAndLossGate() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "pdkkit-physical-view-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer {
+            do { try FileManager.default.removeItem(at: directory) }
+            catch { Issue.record("Failed to remove physical-view fixture: \(error)") }
+        }
+        let source = """
+        VERSION 5.8 ;
+        UNITS DATABASE MICRONS 1000 ; END UNITS
+        LAYER M1 TYPE ROUTING ; DIRECTION HORIZONTAL ; PITCH 0.2 0.3 ; OFFSET 0.01 0.02 ; WIDTH 0.1 ; SPACING 0.1 ; END M1
+        LAYER V1 TYPE CUT ; END V1
+        LAYER M2 TYPE ROUTING ; DIRECTION VERTICAL ; WIDTH 0.1 ; END M2
+        VIA VIA12 DEFAULT
+          LAYER M1 ; RECT -0.1 -0.1 0.1 0.1 ;
+          LAYER V1 ; RECT -0.05 -0.05 0.05 0.05 ;
+          LAYER M2 ; RECT -0.1 -0.1 0.1 0.1 ;
+          RESISTANCE 2.5 ;
+        END VIA12
+        SITE CORE_SITE CLASS CORE ; SIZE 0.2 BY 1.0 ; END CORE_SITE
+        MACRO INV CLASS CORE ; SIZE 0.4 BY 1.0 ; SITE CORE_SITE ; ORIGIN 0.0 0.0 ;
+          PIN A DIRECTION INPUT ; USE SIGNAL ;
+            PORT LAYER M1 ; RECT 0.01 0.02 0.11 0.22 ; VIA 0.05 0.1 VIA12 ; END
+          END A
+          OBS LAYER M2 ; RECT 0.2 0.1 0.3 0.9 ; END
+        END INV
+        END LIBRARY
+        """
+        let url = directory.appending(path: "physical.lef")
+        let data = Data(source.utf8)
+        try data.write(to: url, options: [.atomic])
+        let binding = try makeArtifactBinding(
+            artifactID: "physical-lef", path: url.path, kind: .technology, format: .lef,
+            sha256: try SHA256ContentDigester().digest(data: data, using: .sha256).hexadecimalValue,
+            byteCount: Int64(data.count)
+        )
+        let request = PDKStandardViewInspectionRequest(runID: "physical-view", inputs: [binding.locator], format: .lef)
+        let result = try await LocalPDKStandardViewInspector().execute(request)
+        #expect(result.status == .completed, "\(result.diagnostics)")
+        let inspection = try #require(result.payload.inspection)
+        let document = try #require(inspection.lefDocument)
+        #expect(document.layers[0].pitch?.x == 0.2)
+        #expect(document.layers[0].pitch?.y == 0.3)
+        #expect(document.layers[0].offset?.y == 0.02)
+        #expect(document.macros[0].pins[0].ports[0].rects[0].x2 == 0.11)
+        #expect(document.macros[0].pins[0].ports[0].vias[0].viaName == "VIA12")
+        #expect(document.macros[0].obs[0].layerName == "M2")
+        #expect(document.macros[0].site == "CORE_SITE")
+        #expect(document.sites[0].width == 0.2)
+        #expect(document.vias[0].layers.count == 3)
+        #expect(document.vias[0].resistance == 2.5)
+        #expect(inspection.pinNames == ["A"])
+        #expect(inspection.sourceArtifact == binding.reference)
+        let encoded = try JSONEncoder().encode(inspection)
+        #expect(try JSONDecoder().decode(PDKStandardViewIR.self, from: encoded) == inspection)
+        var object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "lefDocument")
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(PDKStandardViewIR.self, from: JSONSerialization.data(withJSONObject: object))
+        }
+        try Data("VERSION 5.8 ; NAMESCASESENSITIVE OFF ; LAYER M1 TYPE ROUTING ; END M1 END LIBRARY".utf8)
+            .write(to: url, options: [.atomic])
+        let rejected = try await LocalPDKStandardViewInspector().execute(request)
+        #expect(rejected.status == .failed)
+        #expect(rejected.payload.inspection == nil)
+        #expect(rejected.payload.findings.contains { $0.code == "pdk.standard-view.parse-failed" })
+    }
+
     @Test("inspection requests reject non-current schemas")
     func inspectionRequestsRejectNonCurrentSchemas() throws {
         let standardRequest = PDKStandardViewInspectionRequest(
@@ -184,6 +254,10 @@ struct PDKStandardViewTests {
         #expect(result.payload.inspection?.inspection?.sourceArtifact?.digest.algorithm == .sha256)
         #expect(result.payload.inspection?.inspection?.sourceArtifact?.byteCount ?? 0 > 0)
         #expect(result.payload.binding?.mappingID == "lef-cell-view")
+        let inspection = try #require(result.payload.inspection?.inspection)
+        let encoded = try JSONEncoder().encode(inspection)
+        let object = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        #expect(object["lefDocument"] != nil)
         #expect(result.payload.binding?.isValid == true)
         #expect(result.payload.binding?.missingCellNames.isEmpty == true)
     }

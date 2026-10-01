@@ -4,9 +4,9 @@
 
 Implemented slices cover manifest/discovery, standard-view inspection, typed
 result parity, artifact provenance and evidence handoff. They do not establish
-complete executable process semantics. In particular, the current LEF projection
-retains inventory names but omits physical cell/pin/via geometry and routing-rule
-values from the public PDK IR. Completing this semantic boundary is required by
+complete executable process semantics. The public LEF view now retains the
+standard-owned typed physical document with source identity. Native consumption
+and required process-profile coverage remain in
 [the system task](../PROGRESS.md), before process-constrained native closure.
 Provider process execution, independent trust and human approval retain their
 existing owners.
