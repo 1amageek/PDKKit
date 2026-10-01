@@ -243,6 +243,7 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         format: PDKStandardViewFormat
     ) throws -> PDKStandardViewIR {
         switch format {
+        // FIXME(INCOMPLETE_IMPLEMENTATION): Manifest validation and CLI inspection currently publish LEF inventory names only. Physical cell/pin/via geometry and process rules must be retained in typed PDK semantics and behaviorally verified before this projection can establish executable process coverage.
         case .lef:
             let document = try LEFLibraryReader.read(data)
             return PDKStandardViewIR(

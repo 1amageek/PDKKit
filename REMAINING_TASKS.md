@@ -1,21 +1,24 @@
 # PDKKit Remaining Tasks
 
-Updated: 2026-07-26
+Updated: 2026-10-01
 
-PDKKit is complete for its canonical manifest, standard-view inspection,
-rule-deck inventory, corpus, oracle, and evidence-handoff contract.
+Manifest, discovery, inspection and evidence-handoff slices are implemented.
+LEF inventory inspection is not complete executable process semantics.
+The active cross-package graph is [LSI PROGRESS.md](../PROGRESS.md).
 
 ## Remaining tasks
 
 | ID | Priority | Owner | Task | Exit criteria |
 |---|---|---|---|---|
-| PDK-1 | P2 | PDKKit | Broaden vendor-specific SPICE, Liberty, mask-view, and rule-deck semantic coverage. | Newly supported constructs produce parser-backed typed observations, cross-view validation, negative fixtures, immutable oracle expectations, and no hash-only or silent-success path. |
+| PDK-1 | P1 | PDKKit | Preserve process-relevant LEF layer, cell/pin, site and via/contact meaning in typed standard-view IR. | Consumers receive exact source-bound numeric/geometry semantics with units, mapping and explicit unsupported/loss diagnostics. |
+| PDK-2 | P1 | PDKKit | Close required process-profile coverage across standard views. | Newly supported constructs produce parser-backed typed observations, cross-view validation and behavioral failure evidence; names/counts or hashes cannot prove executable semantics. |
 
 ## External prerequisites
 
 Provider execution and runtime trust decisions remain outside PDKKit.
-Unsupported vendor constructs remain typed blocked results until this optional
-semantic envelope is expanded.
+Unsupported constructs remain typed blocked results. Process semantics needed by
+the selected native profile are required implementation work, not an optional
+qualification asset or provider-execution problem.
 
 ## Evidence reviewed
 

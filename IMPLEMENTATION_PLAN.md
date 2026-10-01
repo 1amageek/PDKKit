@@ -2,12 +2,14 @@
 
 ## Status
 
-The implementation order below is complete for every PDKKit-owned contract:
-standard-view semantics, external typed-result parity, canonical artifact
-provenance, local oracle, implementation-scope evidence handoff and PDK-specific runtime
-integration. Unsupported input is represented as a typed blocked result;
-provider process execution and independent evidence are runtime inputs owned by
-the corresponding platform packages.
+Implemented slices cover manifest/discovery, standard-view inspection, typed
+result parity, artifact provenance and evidence handoff. They do not establish
+complete executable process semantics. In particular, the current LEF projection
+retains inventory names but omits physical cell/pin/via geometry and routing-rule
+values from the public PDK IR. Completing this semantic boundary is required by
+[the system task](../PROGRESS.md), before process-constrained native closure.
+Provider process execution, independent trust and human approval retain their
+existing owners.
 
 ## Order
 
