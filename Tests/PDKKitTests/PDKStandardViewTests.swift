@@ -439,6 +439,29 @@ struct PDKStandardViewTests {
             #expect(result.payload.inspection?.physicalLayerNumbers == [10])
             #expect(result.payload.inspection?.cellNames == ["TOP"])
             #expect(result.payload.inspection?.elementCount == 1)
+            let inspection = try #require(result.payload.inspection)
+            #expect(inspection.sourceArtifact == reference.reference)
+            #expect(result.artifacts == [reference.reference])
+            let encoded = try JSONEncoder().encode(result)
+            let retained = try JSONDecoder().decode(PDKStandardViewInspectionResult.self, from: encoded)
+            #expect(retained == result)
+        }
+    }
+
+    @Test("mask inventory refuses an unbound typed via instead of inventing physical layers")
+    func unboundTypedViaCannotProduceMaskInspection() throws {
+        let library = IRLibrary(name: "typed-via", databaseUnitScale:
+            try DatabaseUnitScale(databaseUnitsPerMicrometer: 1_000), cells: [
+                IRCell(name: "TOP", elements: [.via(IRVia(viaName: "hv", origin: .init(x: 6_500, y: 3_300),
+                    routeLayer: 10))])
+            ])
+        for format in [PDKStandardViewFormat.gdsii, .oasis] {
+            let reference = try makeArtifactLocator(path: "unbound-via.\(format.rawValue)",
+                kind: .layout, format: format.fileFormat)
+            #expect(throws: PDKMaskProjectionError.unboundViaMaster("hv")) {
+                try LocalPDKStandardViewInspector().makeMaskIR(library: library,
+                    reference: reference, format: format)
+            }
         }
     }
 

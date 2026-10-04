@@ -172,6 +172,16 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 artifacts: [sourceArtifact],
                 inspection: inspection
             )
+        } catch let error as PDKMaskProjectionError {
+            let finding = PDKValidationFinding(
+                severity: .blocker,
+                code: "pdk.standard-view.via-master-unbound",
+                message: error.localizedDescription,
+                entity: request.assetID,
+                suggestedActions: ["resolve_via_master_physical_geometry"]
+            )
+            return try makeResult(request: request, startedAt: startedAt, status: .blocked,
+                                  findings: [finding], artifacts: [sourceArtifact])
         } catch {
             let finding = PDKValidationFinding(
                 severity: .error,
@@ -258,10 +268,10 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             )
         case .gdsii:
             let library = try GDSLibraryReader.read(data)
-            return makeMaskIR(library: library, reference: reference, format: .gdsii)
+            return try makeMaskIR(library: library, reference: reference, format: .gdsii)
         case .oasis:
             let library = try OASISLibraryReader.read(data)
-            return makeMaskIR(library: library, reference: reference, format: .oasis)
+            return try makeMaskIR(library: library, reference: reference, format: .oasis)
         case .spice:
             return try parseSPICE(data: data, reference: reference)
         case .liberty:
@@ -1047,13 +1057,13 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         return result
     }
 
-    private func makeMaskIR(
+    func makeMaskIR(
         library: IRLibrary,
         reference: ArtifactLocator,
         format: PDKStandardViewFormat
-    ) -> PDKStandardViewIR {
+    ) throws -> PDKStandardViewIR {
         let elements = library.cells.flatMap(\.elements)
-        let layerNumbers = elements.flatMap(layerNumbers(for:))
+        let layerNumbers = try elements.flatMap(layerNumbers(for:))
         return PDKStandardViewIR(
             format: format,
             source: reference,
@@ -1067,12 +1077,17 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         )
     }
 
-    private func layerNumbers(for element: IRElement) -> [Int] {
+    private func layerNumbers(for element: IRElement) throws -> [Int] {
         switch element {
         case .boundary(let boundary): [Int(boundary.layer)]
         case .path(let path): [Int(path.layer)]
         case .text(let text): [Int(text.layer)]
         case .cellRef, .arrayRef: []
+        case .via(let via):
+            // FIXME(INCOMPLETE_IMPLEMENTATION): Standard-view inspection has no
+            // resolved via-master material geometry. The GDSII/OASIS projection
+            // must refuse until complete cut/enclosure layer inventory is available.
+            throw PDKMaskProjectionError.unboundViaMaster(via.viaName)
         }
     }
 

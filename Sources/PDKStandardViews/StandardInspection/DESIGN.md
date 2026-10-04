@@ -35,12 +35,25 @@ retains both axes, physical cell/pin/via/site declarations and supported rules;
 inventory fields derive from the same document. Non-LEF formats have no LEF
 document. No extra PDK physical schema redefines standard field semantics.
 
+GDSII and OASIS readers use the same fallible Mask IR projection. Its physical
+layer inventory includes explicit boundary, path and text layers. A typed
+`IRVia` names a master and route layer but does not supply its physical cut and
+enclosure layers. This inspector has no master-resolution input contract; it
+therefore refuses such a placement with `PDKMaskProjectionError.unboundViaMaster`
+instead of treating the route layer as a complete physical inventory. The public
+execution boundary returns a blocked result with
+`pdk.standard-view.via-master-unbound` and no inspection. This does not add a
+DEF inspection format or a geometry expansion schema.
+
 ## Failure, Concurrency, and Constraints
 
 Execution state is local to the call. The injected clock is Sendable and owns its
 own synchronization. Invalid input, changed content and parser failure emit
 structured failure results. No successful partial document is published when the
 codec reports an unsupported statement.
+Unbound via projection is an insufficient-semantics blocker; ordinary malformed
+codec input remains a parse failure. Source artifact identity is retained when
+the projection cannot produce an inspection.
 The current codec intentionally rejects unmodeled global controls, layer
 properties and masked polygons. These failures describe grammar coverage and do
 not permit a consumer to substitute weaker physical rules.
@@ -51,3 +64,8 @@ Tests exercise local and manifest inspection, JSON round trips, asymmetric
 physical grid values and typed parser failure. Removing an incomplete marker
 requires successful retained semantics and explicit failure-path evidence;
 retention does not establish downstream native physical closure.
+Actual GDSII/OASIS fixture execution retains exact source identity and round-trips
+the inspection result. The production projection's internal test boundary also
+admits real `IRVia` values and verifies typed refusal, preventing an incomplete
+route-layer inventory from appearing successful. Mask schema changes require
+this shared projection and its public execution callers to be rechecked.
