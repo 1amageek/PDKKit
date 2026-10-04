@@ -3,7 +3,7 @@ import PackageDescription
 
 let swiftMaskDataDependency: Package.Dependency = .package(
     url: "https://github.com/1amageek/swift-mask-data.git",
-    revision: "3a02e30e7a7343d800319feff5c912816f34565a"
+    revision: "6c6fbdd444bb2fb8878d129bd0d5e82bbfd2ab53"
 )
 
 let circuiteFoundationDependency: Package.Dependency = .package(
