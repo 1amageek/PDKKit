@@ -86,7 +86,9 @@ reproduced. This is test evidence, not qualification evidence.
 The selected LEF/GDSII/OASIS adapters depend on `swift-mask-data` only in the
 `PDKStandardViews` target. LEF physical declarations are retained as the
 standard-owned `LEFDocument`, alongside PDK-owned identity, validation and
-inventory facts. This replaces the names-only physical projection: duplicating
+inventory facts. [StandardInspection](Sources/PDKStandardViews/StandardInspection/DESIGN.md)
+owns complete observed layer names, including actual geometry references; engine
+source mapping uses this inventory without synthesizing declarations. This replaces the names-only physical projection: duplicating
 cell/pin/via/rule fields in a second PDK schema would create another independent
 loss boundary. PDKCore and portable domain manifests do not gain this dependency.
 SPICE and Liberty retain their existing PDK-owned inspection schemas.

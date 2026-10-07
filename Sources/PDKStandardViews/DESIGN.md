@@ -33,6 +33,8 @@ flowchart LR
 Completed LEF inspection retains the standard-owned document, source reference
 and inventory facts derived from that document. Missing or unsupported semantics
 cannot be inferred from names or successful JSON decoding.
+The LEF inventory/declaration distinction and external-master inference boundary
+are owned by [StandardInspection](StandardInspection/DESIGN.md).
 
 ## Verification and Change Impact
 

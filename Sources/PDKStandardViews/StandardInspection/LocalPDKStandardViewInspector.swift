@@ -251,12 +251,18 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         switch format {
         case .lef:
             let document = try LEFLibraryReader.read(data)
+            var layerNames = document.layers.map(\.name)
+            for macro in document.macros {
+                for pin in macro.pins { layerNames.append(contentsOf: pin.ports.map(\.layerName)) }
+                layerNames.append(contentsOf: macro.obs.map(\.layerName))
+            }
+            for via in document.vias { layerNames.append(contentsOf: via.layers.map(\.layerName)) }
             return PDKStandardViewIR(
                 format: .lef,
                 source: reference,
                 libraryName: "LEF",
                 lefDocument: document,
-                layerNames: document.layers.map(\.name),
+                layerNames: layerNames,
                 cellNames: document.macros.map(\.name),
                 viaNames: document.vias.map(\.name),
                 pinNames: document.macros.flatMap { $0.pins.map(\.name) },

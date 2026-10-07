@@ -35,6 +35,13 @@ retains both axes, physical cell/pin/via/site declarations and supported rules;
 inventory fields derive from the same document. Non-LEF formats have no LEF
 document. No extra PDK physical schema redefines standard field semantics.
 
+For LEF, `layerNames` is the sorted unique inventory of explicit layer names
+observed in that document: top-level LAYER declarations, macro PIN PORT and OBS
+layer references, and local VIA layer records. A reference does not declare a
+layer rule; `lefDocument.layers` retains the separate source declarations without
+augmentation. An external VIA name supplies no layer inventory. The inspector
+does not resolve external masters or infer layer names from via naming conventions.
+
 GDSII and OASIS readers use the same fallible Mask IR projection. Its physical
 layer inventory includes explicit boundary, path and text layers. A typed
 `IRVia` names a master and route layer but does not supply its physical cut and
@@ -64,6 +71,10 @@ Tests exercise local and manifest inspection, JSON round trips, asymmetric
 physical grid values and typed parser failure. Removing an incomplete marker
 requires successful retained semantics and explicit failure-path evidence;
 retention does not establish downstream native physical closure.
+[PDKReferencedLEFLayerTests](../../../Tests/PDKKitTests/PDKReferencedLEFLayerTests.swift)
+owns actual macro-only PORT mapping, complete observed layer inventory, retained
+document/content identity and absent/external-via-only layer refusal through the
+public inspection and manifest binding APIs.
 Actual GDSII/OASIS fixture execution retains exact source identity and round-trips
 the inspection result. The production projection's internal test boundary also
 admits real `IRVia` values and verifies typed refusal, preventing an incomplete
