@@ -2,8 +2,8 @@
 
 ## Purpose and Scope
 
-Proposed design for the next identity-construction implementation sprint; the
-Swift declarations below are proposed, not implemented. Parent:
+Implemented single-source identity values. The loader and caller migration
+remain owned by the dependent ManifestLoading sprint. Parent:
 [PDKCore](../DESIGN.md). No children.
 
 Own manifest-reference claims and resolved-asset values with one content-identity
@@ -40,7 +40,7 @@ PDKReference                         PDKResolvedAsset
 
 ## Contracts and Invariants
 
-Proposed public shape; each primary type belongs in its own file:
+Public shape; each primary type belongs in its own file:
 
 ```swift
 public struct PDKReference: Sendable, Hashable, Codable {
@@ -104,7 +104,7 @@ No target-conditional storage or Sendable conformance is introduced.
 
 ## Failure, Concurrency, and Constraints
 
-Use typed `PDKReferenceError` and proposed `PDKResolvedAssetError` for invalid
+Use typed `PDKReferenceError` and `PDKResolvedAssetError` for invalid
 metadata, descriptor or schema. Remove errors whose only purpose was detecting
 disagreement between duplicate digest/count fields. No I/O, actor or Mutex is
 needed for these value checks. UInt64 byte counts remain owned by Foundation;
@@ -112,7 +112,7 @@ Int64 conversion belongs only at an existing bounded consumer boundary.
 
 ## Verification and Change Impact
 
-Planned `PDKIdentityValueTests` owns constructor/decoder refusal, full descriptor
+`PDKIdentityValueTests` owns constructor/decoder refusal, full descriptor
 retention, immutable field usage and deterministic serialization. Reject version
 1 and contradictory duplicate-field payloads; round-trip the generic and
 PDK-qualified technology descriptors and producer-defined roles without changing

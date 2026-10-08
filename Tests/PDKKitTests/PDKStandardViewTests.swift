@@ -230,12 +230,11 @@ struct PDKStandardViewTests {
                 sha256: pdk.manifest.digest.hexadecimalValue,
                 byteCount: Int64(pdk.manifest.byteCount)
             )
-        let relativePdk = PDKReference(
+        let relativePdk = try PDKReference(
             manifest: relativeManifest.reference,
             manifestLocator: relativeManifest.locator,
             processID: pdk.processID,
-            version: pdk.version,
-            digest: pdk.digest
+            version: pdk.version
         )
         let request = PDKManifestViewInspectionRequest(
             runID: "lef-inspection",

@@ -58,12 +58,12 @@ struct PDKCoreTests {
         let asset = try #require(manifest.assets.first(where: { $0.assetID == "models" }))
 
         let resolved = try LocalPDKAssetResolver().resolve(asset, relativeTo: manifestURL)
-        let foundationReference = try resolved.artifactReference()
+        let foundationReference = resolved.reference
 
         #expect(foundationReference.id == resolved.reference.id)
         #expect(foundationReference.digest.algorithm == .sha256)
-        #expect(foundationReference.digest.hexadecimalValue == resolved.computedSHA256)
-        #expect(foundationReference.byteCount == UInt64(resolved.computedByteCount))
+        #expect(foundationReference.digest.hexadecimalValue == resolved.reference.digest.hexadecimalValue)
+        #expect(foundationReference.byteCount == UInt64(Int64(resolved.reference.byteCount)))
         #expect(resolved.locator.location.storage == .absoluteFileURL)
     }
 
@@ -103,31 +103,6 @@ struct PDKCoreTests {
             Issue.record("Symlink escape was not rejected")
         } catch let error as PDKAssetResolutionError {
             #expect(error == .outsideManifestRoot(assetID: "escaped", path: outsideFile.path))
-        }
-    }
-
-    @Test("PDK reference requires its manifest digest to match")
-    func pdkReferenceValidatesManifestIdentity() throws {
-        let manifestDigest = String(repeating: "a", count: 64)
-        let pdkDigest = String(repeating: "b", count: 64)
-        let manifest = try makeArtifactBinding(
-            artifactID: "pdk-manifest",
-            path: "/tmp/pdk.json",
-            kind: .technology,
-            format: .json,
-            sha256: manifestDigest,
-            byteCount: 16
-        )
-        let reference = PDKReference(
-            manifest: manifest.reference,
-            manifestLocator: manifest.locator,
-            processID: "fixture-180nm",
-            version: "2026.1",
-            digest: pdkDigest
-        )
-
-        #expect(throws: PDKReferenceError.self) {
-            try reference.validate()
         }
     }
 

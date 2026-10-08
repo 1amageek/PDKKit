@@ -83,8 +83,8 @@ struct PDKEngineTests {
                 manifest.assets[index],
                 relativeTo: manifestURL
             )
-            manifest.assets[index].sha256 = resolved.computedSHA256
-            manifest.assets[index].byteCount = resolved.computedByteCount
+            manifest.assets[index].sha256 = resolved.reference.digest.hexadecimalValue
+            manifest.assets[index].byteCount = Int64(resolved.reference.byteCount)
         }
         try PDKManifestCodec.encode(manifest, pretty: true).write(
             to: manifestURL,
@@ -146,12 +146,11 @@ struct PDKEngineTests {
             sha256: absoluteReference.manifest.digest.hexadecimalValue,
             byteCount: Int64(absoluteReference.manifest.byteCount)
         )
-        let relativeReference = PDKReference(
+        let relativeReference = try PDKReference(
             manifest: relativeManifest.reference,
             manifestLocator: relativeManifest.locator,
             processID: absoluteReference.processID,
-            version: absoluteReference.version,
-            digest: absoluteReference.digest
+            version: absoluteReference.version
         )
         let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(

@@ -107,8 +107,8 @@ Umbrella API.
 `standardViewResults` collection and a `PDKCapabilityReport`. Each
 standard-view result retains its format, execution status, parser-backed
 payload and PDK digest.
-Each `PDKResolvedAsset` also exposes `artifactReference()`, the
-canonical immutable identity used by downstream boundary code.
+Each immutable `PDKResolvedAsset.reference` is its sole content identity.
+Identity values use strict schema 2 and reject obsolete duplicate fields.
 `PDKStandardViewIR.sourceArtifact`, `PDKRuleDeckInspectionPayload.sourceArtifact`
 and `PDKOracleComparisonPayload.oracleArtifact` retain the canonical
 CircuiteFoundation identity directly in the domain payload.

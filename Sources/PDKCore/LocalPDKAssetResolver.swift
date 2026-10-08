@@ -85,18 +85,15 @@ public struct LocalPDKAssetResolver: PDKAssetResolving {
                 path: assetURL.path
             )
         }
-        return PDKResolvedAsset(
+        return try PDKResolvedAsset(
             assetID: asset.assetID,
-            path: assetURL.path,
             reference: foundationReference,
             locator: ArtifactLocator(
                 location: try ArtifactLocation(fileURL: assetURL),
                 role: foundationReference.descriptor.role,
                 kind: foundationReference.kind,
                 format: foundationReference.format
-            ),
-            computedSHA256: foundationReference.digest.hexadecimalValue,
-            computedByteCount: Int64(foundationReference.byteCount)
+            )
         )
     }
 }

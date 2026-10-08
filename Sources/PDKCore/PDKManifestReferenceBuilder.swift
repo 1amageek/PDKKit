@@ -4,6 +4,9 @@ import CircuiteFoundationFileSystem
 import CircuiteFoundationFoundation
 import Foundation
 
+// FIXME(INCOMPLETE_IMPLEMENTATION): Metadata and digest are still read separately.
+// Discovery, CLI and corpus call this path until the ManifestLoading migration.
+// Do not claim consistent generation until metadata is decoded from captured bytes.
 public struct PDKManifestReferenceBuilder: Sendable {
     private let digester: any ContentDigesting
 
@@ -33,13 +36,11 @@ public struct PDKManifestReferenceBuilder: Sendable {
         guard foundationReference.byteCount <= UInt64(Int64.max) else {
             throw PDKReferenceError.manifestByteCountOverflow
         }
-        let digest = foundationReference.digest.hexadecimalValue
-        let reference = PDKReference(
+        let reference = try PDKReference(
             manifest: foundationReference,
             manifestLocator: artifactLocator,
             processID: manifest.processID,
-            version: manifest.version,
-            digest: digest
+            version: manifest.version
         )
         try reference.validate()
         return reference
