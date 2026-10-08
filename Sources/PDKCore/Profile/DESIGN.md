@@ -2,7 +2,7 @@
 
 ## Purpose and Scope
 
-Status: proposed specification; no declarations in this document are implemented.
+Status: implemented S3b value and wire boundary; runtime admission remains owned by the admission module.
 Parent: [PDKCore](../DESIGN.md). No children. Own immutable, location-independent
 profile declarations, input selection, dependency graph and consumption claims.
 Use existing PDK and CircuiteFoundation values rather than a second technology IR.
@@ -36,11 +36,11 @@ Availability maps remain outside all content/selection identities.
 
 ## Contracts and Invariants
 
-The following names describe proposed Swift types. All stored properties are
+The following types define the checked public value contract. All stored properties are
 `let`; values are `Sendable`. Wire values use checked decoding, explicit schemas
 and typed construction errors. Admission-only values have a different owner.
 
-| Proposed type | Required meaning |
+| Type | Required meaning |
 |---|---|
 | `PDKProfileDefinition` | Stable profile ID; exact manifest reference; explicit process/version; required corner IDs; required view bindings; exact expected source table; ordered source-search authority; dependency records; inspection policy identity |
 | `PDKViewRequirement` | Stable requirement ID; purpose ID; existing PDKViewKind/PDKAssetRole; explicit asset IDs; corner IDs; explicit selected section where applicable; demanded source-fact coverage |
@@ -122,10 +122,62 @@ boundary; Codable alone establishes no parser-resource guarantee.
 
 ## Verification and Change Impact
 
-Planned owner: `PDKProfileValueTests`, a dedicated test target using PDKCore and
+Owner: `PDKProfileValueTests`, a dedicated test target using PDKCore and
 CircuiteFoundation without mask codecs or Engine targets. Behavioral cases fix
 PV-01..06: ambiguous/missing views, empty corner binding, same-process/different
 PVT, ordered precedence, source aliasing, root relocation, included-source drift,
-schema rejection and canonical byte vectors. Source files and target declarations
-are added only during implementation. Changes affect admission, consumer intake
+schema rejection and canonical byte vectors. The dedicated test target depends only on PDKCore and Foundation artifact products. Changes affect admission, consumer intake
 and canonical retention together.
+
+## Encoding v1 and Public Boundary
+
+`PDKProfileCoding` / `PDKProfileCodec` own strict current-schema wire encoding.
+Each profile wire value requires `schemaVersion: 1`, every declared field (optional
+values use explicit null), and rejects unknown fields. Decode invokes checked
+construction. The wire codec performs no bounded parser admission: runtime callers
+must supply the admission-owned bounded decode path rather than treating ordinary
+JSONDecoder use as resource evidence.
+
+`PDKProfilePlan` selects the copied manifest through exact `manifestReference`,
+process/version, explicit requirement IDs, roles, corner membership and mappings.
+Mandatory manifest assets remain selected even when no explicit view requires them.
+The plan never authenticates a mutable caller snapshot. `PDKProfileClaim` freezes
+the selected transitive closure and recomputes its semantic digest on decode.
+`PDKSourcePVTFact` distinguishes complete operating and characterization PVT
+facts from `PDKProfileCorner`'s copied manifest declaration; it carries its exact
+source and evidence identity and cannot grant admission. `PDKSourceTemperatureFact`
+retains operating or model-nominal temperature without inventing missing process
+or voltage facts; model nominal temperature cannot satisfy operating PVT.
+
+Canonical encoding v1 uses big-endian UInt64 framing/counts, raw framed UTF-8,
+one-byte boolean/optional tags and big-endian IEEE-754 binary64. All finite zeros
+encode as positive zero. It begins with framed `PDKKit.Profile.Selection` and
+version 1. Artifact references encode algorithm, lowercase digest, byte count,
+role, kind and format. Requirements/corners/source-table entries and set-valued
+fact kinds sort by stable ID; multi-source asset precedence, search routes, logical routes
+and lexical dependency occurrences retain their declared order. No availability
+locator, host path, run, budget or qualification field enters the bytes. The
+complete 900-byte vector and its independent SHA-256 reside in
+`Tests/PDKProfileValueTests/CanonicalGoldenVector.swift`.
+
+Read bytes and hashed bytes have separate cumulative dimensions. Resource dimensions explicitly classify cumulative work versus live capacity.
+`PDKAdmissionBudget` requires a positive limit for every dimension plus one positive
+elapsed-nanosecond limit. No host policy defaults are imposed. Cost construction
+checks accounting version and amount; overflow/limit checks belong to the accountant.
+The trusted accountant constructs `PDKAdmissionReservation` with a release action.
+Its immutable shared owner invokes that action exactly once at last-copy release;
+no explicit release or serialized credential API exists. Production counter state,
+deadline/cancellation sampling and overflow-safe reserve remain admission-owned.
+
+Corner view mapping keys remain manifest-defined names. Selection checks asset
+membership in the mapping values together with the typed cross-view kind/corner,
+asset corner membership and corner asset membership. It does not reinterpret an
+open manifest key as a PDKViewKind; stricter domain mappings remain domain-owned.
+
+Dependency `literalRoute` retains parser syntax, including parent-relative `..`
+segments. It is not source-table authority. Source `logicalRoutes` and search
+routes remain normalized root-relative authority and reject dot/parent segments.
+Admission resolves a literal against the selected parent route and ordered search
+authority, then checks the resulting declared exact child; actual root escape is
+admission-owned. Definition construction checks full parent/child table identity
+without equating lexical syntax to a normalized child route.
