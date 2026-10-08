@@ -286,6 +286,12 @@ capacity; it is not a successful delivery or final deadline check.
 `PDKOwnedProfileOutput` lends a Span and shares immutable storage/receipts until its
 last copy is released. `PDKProfileOutputSink` owns fallible `write` returning an
 actual byte count and `finish`; sink implementations own flush/close semantics.
+`NativePDKProfileOutputSink` supports Darwin descriptors. Before each scoped Span
+write it requires successful per-descriptor `F_SETNOSIGPIPE` configuration; a closed
+pipe or configuration/write failure returns typed `writeFailed`. This does not
+change process-wide signal handling. The non-Darwin branch immediately refuses
+with `writeFailed` and an `INCOMPLETE_IMPLEMENTATION` marker until a verified
+SIGPIPE-safe descriptor writer exists. No Linux runtime support is claimed.
 `PDKProfileOutputDelivering.deliver(_:to:)` rejects short/invalid writes,
 requires finish, then performs the original output-held accountant's final check.
 The delivered value retains the output owner and establishes this delivery only;

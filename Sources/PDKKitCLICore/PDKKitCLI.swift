@@ -2,7 +2,14 @@ import Foundation
 import PDKDiscovery
 
 public enum PDKKitCLI {
-    public static func run(arguments: [String]) async -> Int32 {
+    public static func run(arguments: [String], argumentStart: Int = 0) async -> Int32 {
+        if argumentStart >= 0, argumentStart < arguments.count, arguments[argumentStart] == "profile" {
+            return await NativePDKProfileCommand().execute(arguments: arguments, argumentStart: argumentStart,
+                standardOutput: NativePDKProfileOutputSink(descriptor: 1),
+                standardError: NativePDKProfileOutputSink(descriptor: 2)).exitCode
+        }
+        guard argumentStart >= 0, argumentStart <= arguments.count else { return 1 }
+        if argumentStart > 0 { return await run(arguments: Array(arguments.dropFirst(argumentStart))) }
         let result = await invoke(arguments: arguments)
         if !result.standardOutput.isEmpty {
             FileHandle.standardOutput.write(Data(result.standardOutput.utf8))
@@ -14,6 +21,11 @@ public enum PDKKitCLI {
     }
 
     public static func invoke(arguments: [String]) async -> PDKKitCLIInvocationResult {
+        if arguments.first == "profile" {
+            let result = await NativePDKProfileCommand().execute(arguments: arguments,
+                standardOutput: PDKProfileMemoryOutputSink(), standardError: PDKProfileMemoryOutputSink())
+            return .init(profileResult: result)
+        }
         do {
             return try await dispatch(arguments: arguments)
         } catch let error as PDKManifestLoadingError {
@@ -84,6 +96,8 @@ public enum PDKKitCLI {
       pdkkit-cli inspect-view --manifest <path> --asset-id <id> --format <lef|gdsii|oasis|spice|liberty> [--run-id <id>] [--pretty]
       pdkkit-cli inspect-rule-deck --manifest <path> --asset-id <id> [--run-id <id>] [--pretty]
       pdkkit-cli oracle --manifest <path> --oracle <path> [--run-id <id>] [--pretty]
+      pdkkit-cli profile <propose|plan|admit|replay> --input-root <absolute directory> --input-root-id <id> --budget <relative path> --availability <relative path> --availability-sha256 <hex> --availability-bytes <UInt64>
+        propose additionally: --authoring <relative path> --authoring-sha256 <hex> --authoring-bytes <UInt64>
 
     EXIT CODES:
       0  completed validation or at least one discovery candidate

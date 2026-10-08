@@ -148,6 +148,18 @@ let package = Package(
             dependencies: ["PDKKitCLICore"]
         ),
         .testTarget(
+            name: "PDKProfileCLITests",
+            dependencies: [
+                "PDKKitCLICore", "PDKCore", "PDKProfileAdmission", "PDKDiscovery", "PDKSourceCapture",
+                "PDKSpiceProfileInspection", "PDKStandardViews",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+                .product(name: "TechIR", package: "swift-mask-data"),
+            ]
+        ),
+        .testTarget(
             name: "PDKProfileCLIInputTests",
             dependencies: [
                 "PDKKitCLICore", "PDKCore", "PDKProfileAdmission", "PDKDiscovery", "PDKSourceCapture",
