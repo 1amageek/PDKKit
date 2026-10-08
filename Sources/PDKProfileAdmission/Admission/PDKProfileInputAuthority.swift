@@ -5,9 +5,9 @@ import PDKSourceCapture
 final class PDKProfileInputAuthority: Sendable {
     let definition: PDKDecodedDocument<PDKProfileDefinition>
     let definitionSource: CapturedPDKSource
-    let resources: LocalPDKAdmissionResources
+    let resources: any PDKAdmissionResourceAccounting
     init(definition: PDKDecodedDocument<PDKProfileDefinition>, source: CapturedPDKSource,
-         resources: LocalPDKAdmissionResources) {
+         resources: any PDKAdmissionResourceAccounting) {
         self.definition = definition; definitionSource = source; self.resources = resources
     }
 }

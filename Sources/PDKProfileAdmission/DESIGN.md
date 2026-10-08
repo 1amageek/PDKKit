@@ -303,7 +303,9 @@ overhead, not a variable payload reservation or an RSS guarantee.
 
 The native owner exposes `close()` for its lifetime owner to reject new work; it
 does not erase retained charges or prevent cleanup. Native admitting owns that
-close on every terminal path. Returned source/fact handles continue to retain
+close on every terminal path of `admit(_:)`. The shared-owner `admit(_:resources:)`
+requirement leaves closure to its caller on success and failure and retains that
+same protocol-based owner through immutable authority and receipts. Returned source/fact handles continue to retain
 leases after successful publication. Resource tests own atomic simultaneous
 reserve/refusal, deadline/cancellation/closed rejection, overflow and last-copy
 release; the admitted-profile test owner checks transfer across publication.

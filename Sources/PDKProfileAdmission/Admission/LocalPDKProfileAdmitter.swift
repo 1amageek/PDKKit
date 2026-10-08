@@ -17,6 +17,10 @@ public struct LocalPDKProfileAdmitter: PDKProfileAdmitting {
     public func admit(_ request: PDKProfileAdmissionRequest) async throws(PDKProfileAdmissionError) -> AdmittedPDKProfile {
         let resources = LocalPDKAdmissionResources(budget: request.budget, clock: clock)
         defer { resources.close() }
+        return try await admit(request, resources: resources)
+    }
+    public func admit(_ request: PDKProfileAdmissionRequest, resources: any PDKAdmissionResourceAccounting)
+        async throws(PDKProfileAdmissionError) -> AdmittedPDKProfile {
         let work = PDKAdmissionWork(resources: resources)
         let availability = PDKProfileAvailability(request: request, work: work)
         try availability.validate()
@@ -40,7 +44,7 @@ public struct LocalPDKProfileAdmitter: PDKProfileAdmitting {
         }
     }
     private func finish(_ request: PDKProfileAdmissionRequest, document: PDKDecodedDocument<PDKProfileDefinition>,
-        definitionSource: CapturedPDKSource, registry: PDKProfileSourceRegistry, resources: LocalPDKAdmissionResources,
+        definitionSource: CapturedPDKSource, registry: PDKProfileSourceRegistry, resources: any PDKAdmissionResourceAccounting,
         work: PDKAdmissionWork, availability: PDKProfileAvailability)
         async throws(PDKProfileAdmissionError) -> AdmittedPDKProfile {
         let definition = document.value

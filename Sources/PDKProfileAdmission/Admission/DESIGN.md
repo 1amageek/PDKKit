@@ -135,10 +135,14 @@ for an initial environment, and corner selection does not alter it implicitly.
 
 The standalone CLI requires a new `PDKProfileAdmitting` protocol requirement
 `admit(_:resources:)` accepting a trusted external invocation accountant. This
-entrypoint is specified, not implemented. Its configured limits/accounting version
+entrypoint composes a trusted caller-owned accountant. Its configured limits/accounting version
 must correspond to `request.budget`; composition supplies the same checked budget
 to both. It neither creates another accountant nor closes the external owner.
 Existing `admit(_:)` remains the native convenience owning creation and close.
+The supplied accountant is the owner retained by input authority and all resource
+receipts; no concrete native-accountant cast is required. Budget correspondence is
+a trusted composition assumption because Core accounting exposes operations, not
+configuration introspection. Both entrypoints execute the same admission algorithm.
 External owners retain the original deadline and cumulative charges through input,
 admission and output, then close after their terminal delivery. The
 [CLI owner](../../PDKKitCLICore/ProfileCommands/DESIGN.md) owns that longer lifetime.
@@ -186,8 +190,9 @@ provider resolve -> authorize route + expected occurrence -> record event
     -> capture/join child -> owned lineage -> provider parse and coverage
 provider returns -> sticky failure check -> coverage/identity/mapping/PVT check
 all contexts checked -> exact active union -> canonical claim -> final check
-    -> close resource admission -> retain immutable admitted owner
-failure -> await owned acquisition completion -> close -> release invocation
+    -> retain immutable admitted owner -> convenience entry closes its accountant
+failure -> await owned acquisition completion -> release invocation temporaries
+external entry success/failure -> caller retains original accountant and closes it
 ```
 
 An invocation actor owns linear content records and in-flight waiter continuations;
@@ -259,3 +264,9 @@ mismatch, same-content descriptor aliases, cumulative quotas, cancellation and
 last-copy profile/facts/failure lifetime, and copied collection mutation/refusal.
 Lower capture/decode evidence is reused; this sprint
 owns their composition and checked publication, not another parser implementation.
+
+[`SharedAccountantAdmissionTests`](../../../Tests/PDKProfileAdmissionTests/SharedAccountantAdmissionTests.swift)
+owns the external-accountant composition proof: protocol witness invocation,
+preceding cumulative charges, post-admission work, original deadline, unchanged
+failure counters, no implicit close, and final-copy capacity release. The native
+convenience ownership regression remains with the existing lifecycle tests.

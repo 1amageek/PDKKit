@@ -34,11 +34,16 @@
     - [x] PN4.2.3 Fixed reviewed IRTechLibrary specialization, strict typed-key decode, data-only leaf and explicit opaque codec refusal; source remains unimplemented `depends:PN4.1` `parallel:adapter-contracts`
     - [x] PN4.2.4 Fixed standalone authoring/exact replay, shared-owner budget/bootstrap and charged terminal output contracts; source remains unimplemented `depends:PN4.1` `parallel:adapter-contracts`
   - [ ] PN4.3 Implement and review native profile inspectors from checked lower contracts `depends:PN4.2` `parallel:none`
-    - [ ] PN4.3.1 Implement, review, verify and commit CoreSpice source storage, Span intake and contextual document boundary `depends:PN4.2` `parallel:format-adapters`
-    - [x] PN4.3.3 Implemented and reviewed audited strict IRTechLibrary JSON inspection; quota/cancellation/deadline/last-copy proof passed; affected bounded decode regression 11 methods passed `depends:PN4.2` `parallel:format-adapters`
+    - [x] PN4.3.1 Implemented and reviewed CoreSpice source storage, Span intake and contextual document boundary; 11 focused methods passed; commit CoreSpice `f5f954a` `depends:PN4.2` `parallel:format-adapters`
+    - [x] PN4.3.3 Implemented and reviewed audited strict IRTechLibrary JSON inspection; quota/cancellation/deadline/last-copy proof passed; affected bounded decode regression 11 methods passed; commit `05bcb40` `depends:PN4.2` `parallel:format-adapters`
     - [x] PN4.3.5 Verified actual standard JSON admission, deleted-file no-reopen, observed mappings/leaf/provenance and missing-purpose/full-descriptor/opaque capability refusal; 15 methods covered by whole product 14 passed plus corrected cumulative test 1 passed; evidence ../.verification/runs/pdk-source-foundation/standard-profile-runtime.json and standard-profile-quota-green.json `depends:PN4.2` `parallel:format-adapters`
-    - [ ] PN4.3.6 Implement Core-owned immutable preprocessing environment fingerprint and focused evidence `depends:PN4.2` `parallel:format-adapters`
-    - [ ] PN4.3.4 Implement, review, verify and commit CoreSpice actual bounded grammar integration `depends:PN4.3.1,PN4.3.6` `parallel:none`
+    - [x] PN4.3.6 Implemented Core-owned immutable preprocessing environment fingerprint; 8 focused methods passed; commit CoreSpice `f5f954a` `depends:PN4.2` `parallel:format-adapters`
+    - [x] PN4.3.7 Implemented and reviewed external invocation-accountant admission; actual protocol owner, original deadline/cumulative quotas, caller-owned close and final-copy release passed; affected Native product 53 methods passed; evidence ../.verification/runs/pdk-source-foundation/shared-accountant-tests.json `depends:PN4.2` `parallel:grammar-composition`
+    - [ ] PN4.3.8 Fix and implement shared invocation-local grammar allocation hooks and stable interface; focused capacity proof `depends:PN4.3.1,PN4.3.6` `parallel:grammar-composition`
+    - [ ] PN4.3.9 Integrate bounded lexer/expression grammar and long-token allocation proof `depends:PN4.3.8` `parallel:grammar-paths`
+    - [ ] PN4.3.10 Integrate bounded conditional preprocessing with original inheritance/scope semantics and focused proof `depends:PN4.3.8` `parallel:grammar-paths`
+    - [ ] PN4.3.11 Integrate parser/contextual resolver, owned parse result and occurrence origins on the ordinary grammar `depends:PN4.3.8` `parallel:grammar-paths`
+    - [ ] PN4.3.4 Review, verify and commit actual CoreSpice bounded grammar composition `depends:PN4.3.9,PN4.3.10,PN4.3.11` `parallel:none`
     - [ ] PN4.3.2 Implement and review PDK SPICE adapter using the checked lower contract `depends:PN4.3.4` `parallel:none`
   - [ ] PN4.4 Verify frozen native adapter products and commit complete format composition `depends:PN4.3` `parallel:none`
   - [ ] PN4.5 Implement and review standalone CLI propose/plan/admit/replay with exact profile artifacts `depends:PN4.3,PN4.4` `parallel:none`
