@@ -47,7 +47,7 @@ let package = Package(
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
             ],
-            exclude: ["DESIGN.md", "Identity/DESIGN.md"]
+            exclude: ["DESIGN.md", "Identity/DESIGN.md", "Profile/DESIGN.md"]
         ),
         .target(
             name: "PDKDiscovery",
@@ -111,6 +111,15 @@ let package = Package(
         .executableTarget(
             name: "PDKKitCLI",
             dependencies: ["PDKKitCLICore"]
+        ),
+        .testTarget(
+            name: "PDKProfileValueTests",
+            dependencies: [
+                "PDKCore",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+            ]
         ),
         .testTarget(
             name: "PDKDiscoveryTests",

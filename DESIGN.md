@@ -14,10 +14,9 @@ Parent: [LSI](../DESIGN.md). The affected child is
 [PDKStandardViews](Sources/PDKStandardViews/DESIGN.md), alongside the independently
 buildable [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) admission module.
 Manifest validation is owned by [PDKValidation](Sources/PDKValidation/DESIGN.md).
-The proposed profile foundation is indexed below. New types/targets are design
-specifications only: Package.swift and production sources have not been changed.
-Implementation adds the corresponding DESIGN.md exclusions and target/product
-registrations at the same time as their actual Swift declarations.
+The profile foundation is indexed below. PDKCore profile values and their isolated
+test target are implemented; admission and format composition remain planned.
+Each implemented boundary records its behavioral evidence in its owning design.
 
 ## Responsibilities and Boundaries
 
@@ -146,7 +145,9 @@ evidence covers the four API paths, not that complete test product.
 
 ## Profile Foundation Specification and Implementation Order
 
-Status: proposed requirements/design, not implementation or qualification.
+Status: implementation in progress, not process qualification. S1 requiredness/
+structural dependency refusal and S3b value contracts are implemented; the remaining
+sprint boundaries below are not yet complete.
 Scope: close requested-requiredness, exact corner/view/source closure, cooperative
 invocation budgets, domain-consumption comparison and standard verification
 ownership. Existing numerical algorithms, foundry grammar coverage, process

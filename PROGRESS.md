@@ -22,3 +22,15 @@
 - [x] DS2 Specified profile values, isolated admission target, shared invocation accounting, Foundation public discovery prerequisite and CoreSpice-owned exact source/grammar intake; proposed APIs only; PDK `51a38c7`, Foundation `f836680`, CoreSpice `6c6b0ac` `depends:DS1` `parallel:none`
 - [x] DS3 Specified validation/CLI, actual Engine consumption, host/database retention, wire migration and standard shard ownership; fixed eight sprint stages and lower-contract dependencies in PDKKit DESIGN; PDK `51a38c7`, Xcircuite `b90ebb6`, Timing `387b31f`, database integration `f660564` `depends:DS2` `parallel:none`
 - [x] DS4 Reviewed the complete specification and requirement traceability; 22 local design documents have valid links/fences and all new designs have required sections. All six repositories contain task-only design commits; existing user changes remain unstaged, including Xcircuite module edits. Production source/manifests unchanged; no implementation/runtime test claim. Root master saved outside Git `depends:DS1,DS2,DS3` `parallel:none`
+
+- [ ] PN1 Implement and review independent foundation contracts; preserve existing user changes and commit each coherent sprint `depends:DS4` `parallel:none`
+  - [x] PN1.4 Immutable profile values, canonical identity and shared accounting boundary; 10 dedicated native tests, reviewed commit `b2208f5` `depends:DS4` `parallel:foundation`
+  - [ ] PN1.1 Effective requiredness and active unsupported dependency refusal; API/CLI red-green evidence and reviewed commit `depends:PN1.4` `parallel:none`
+  - [ ] PN1.2 Standard workspace ownership for PDK products and identity handoff; nonzero actual method execution `depends:DS4` `parallel:foundation`
+  - [x] PN1.3 Foundation bounded public discovery/enumeration; Native 91 tests, ASan/TSan 17 focused methods each, reviewed commit `5e1b24f`; normally pushed, no tag `depends:DS4` `parallel:foundation`
+  - [ ] PN1.5 CoreSpice grammar dependency events, exact intake and cooperative work; real grammar/refusal evidence and reviewed commit `depends:DS4` `parallel:foundation`
+- [ ] PN2 Implement and review bounded capture/discovery/manifest decode, adopting verified lower contracts `depends:PN1` `parallel:none`
+- [ ] PN3 Implement and review isolated checked profile admission, graph closure, resource lifetime and consumption comparison `depends:PN2` `parallel:none`
+- [ ] PN4 Implement and review native format adapters and standalone profile CLI, including exact replay/refusal `depends:PN3` `parallel:none`
+- [ ] PN5 Implement and review Engine consumption, retained database claims and host schema handoff; preserve existing strict STA `depends:PN4` `parallel:none`
+- [ ] PN6 Verify cumulative normal dependency graph, standard focused products and resume refusal; remove overrides and complete commit/push rules `depends:PN1,PN2,PN3,PN4,PN5` `parallel:none`
