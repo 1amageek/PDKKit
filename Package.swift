@@ -128,12 +128,15 @@ let package = Package(
         .target(
             name: "PDKKitCLICore",
             dependencies: [
+                "PDKProfileAdmission",
+                "PDKSpiceProfileInspection",
                 "PDKCore",
                 "PDKDiscovery",
                 "PDKValidation",
                 "PDKStandardViews",
                 "PDKKit",
                 "PDKSourceCapture",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
@@ -143,6 +146,24 @@ let package = Package(
         .executableTarget(
             name: "PDKKitCLI",
             dependencies: ["PDKKitCLICore"]
+        ),
+        .testTarget(
+            name: "PDKProfileCLIInputTests",
+            dependencies: [
+                "PDKKitCLICore", "PDKCore", "PDKProfileAdmission", "PDKDiscovery", "PDKSourceCapture",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+            ]
+        ),
+        .testTarget(
+            name: "PDKProfileOutputTests",
+            dependencies: [
+                "PDKKitCLICore", "PDKCore", "PDKProfileAdmission",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+            ]
         ),
         .testTarget(
             name: "PDKSpiceProfileInspectionTests",

@@ -5,8 +5,9 @@
 Status: implementation contract. Parent: [PDK CLI Core](../DESIGN.md). No children.
 Own candidate authoring, exact planning/admission, retained-claim replay and bounded
 operational output. All profile command sources belong in this component directory.
-The borrowed-span budget parser is implemented and behaviorally verified. File
-acquisition and complete profile dispatch/output remain later implementation work.
+The borrowed-span budget parser, native file acquisition/operational intake and
+cooperative output owners are implemented and behaviorally verified. Complete
+profile dispatch/composition remains implementation work.
 
 ## Responsibilities and Boundaries
 
@@ -50,6 +51,26 @@ Use a CLI-owned operational availability document for existing exact bindings,
 root bindings and `PDKProfileSourceBinding` values. This document has strict schema
 1, required fields, checked construction and bounded decoding. Its URLs, per-source
 capture policy and runtime bindings never enter Core selection identity.
+
+The native command surface is:
+
+```text
+profile <propose|plan|admit|replay> --input-root <absolute directory> --input-root-id <id> --budget <relative path> --availability <relative path> --availability-sha256 <hex> --availability-bytes <UInt64>
+propose additionally: --authoring <relative path> --authoring-sha256 <hex> --authoring-bytes <UInt64>
+```
+
+Input root/ID and budget-path setup belong to the bounded bootstrap exception;
+other option conversions/copies wait for the one profile accountant. Unknown and
+duplicate options fail. The raw argument count is bounded at 20 from six common
+and three propose flag/value pairs plus the two command words; it adds no new
+semantic limit. Operational full descriptors are fixed by
+`PDKProfileCLIAvailability.artifactDescriptor` (input / pdk.profile-availability /
+JSON) and `PDKProfileCLIAuthoring.artifactDescriptor` (input / pdk.profile-authoring /
+JSON). Expected SHA-256 and byte counts come from explicit arguments, not decoded
+operational JSON. Document total capture capacity derives from that exact count;
+pages/work/duration derive from the selected invocation limits and existing native
+page policy. Bootstrap uses the selected policy's single-page bound. No cwd,
+environment root or default identity substitutes for these inputs.
 
 | Command | Required semantic input | Completion result |
 |---|---|---|
@@ -110,8 +131,8 @@ Choose the default from the verified maximum current schema/dimension vocabulary
 full UInt64 decimal widths and an explicit finite whitespace allowance. A 16,384-byte
 default is permissible only after that sizing fixture and oversize-refusal behavior
 are verified; it is a host policy default, not a universal correctness constant or
-Core semantic field. Enforce the selected bound before each read into one bounded
-owned buffer. Its grammar accepts only the existing `PDKAdmissionBudget` schema,
+Core semantic field. Enforce the selected bound before the single immutable input
+buffer read. Its grammar accepts only the existing `PDKAdmissionBudget` schema,
 known finite field/dimension vocabulary and checked UInt64 values. No arbitrary
 string collection, generic unbounded decoder or whole-file allocation participates.
 Reject extra bytes, duplicate/unknown keys, unsupported schema/accounting version,
@@ -137,7 +158,7 @@ The independent `PDKBudgetBootstrapDecoding` requirement takes a borrowed
 and bootstrap observations. The native cursor retains no span or pointer and
 constructs only fixed-vocabulary key scratch and the bounded 21-entry limit table.
 This entry owns typed parsing, not file acquisition or full CLI completion; the
-later bounded file reader owns its one input buffer. Observations report input
+later bounded file reader retains its immutable input owner. Observations report input
 bytes, scanned work and managed dimension-entry capacity, not process RSS.
 The standard 16,384-byte policy admits the verified maximum 2,524-byte fully
 ASCII-escaped wire plus at most 13,860 bytes of JSON whitespace. Its sizing test
@@ -196,6 +217,98 @@ the returned checked delivery outcome and retained owner instead of process exit
 
 ## Runtime Flows
 
+### Command Composition and Legacy Dispatch
+
+`PDKProfileCommandExecuting.execute(arguments:argumentStart:standardOutput:standardError:)`
+is the public asynchronous composition boundary. It consumes the existing argument
+array at the explicit start index and returns `PDKProfileCommandResult`. The native
+implementation injects input loading, capture/discovery, audited decoding, manifest
+loading, candidate discovery, admission, clock, encoding and delivery through their
+public protocols. Its fixed registry composes the existing native SPICE and JSON
+inspectors under the requested inspection policy.
+
+`PDKKitCLI.run` selects profile dispatch before any legacy argument-array copy and
+uses native Span-based POSIX output sinks. The executable passes the original
+`CommandLine.arguments` and explicit start index. Bootstrap or option failure before
+accountant construction writes only a finite static failure through checked sink
+byte counts and finish; no variable error formatting occurs at that boundary.
+Reserved terminal bytes remain available after exhaustion and always produce a
+nonzero result, without a successful admission or delivery check.
+
+The immutable command result retains its owned output, typed failure, decoded
+operational inputs, bootstrap source and resource leases. The command accountant
+closes only after terminal delivery has been determined. The legacy `invoke` route
+uses an in-memory receipt sink that acknowledges borrowed bytes without copying;
+its profile invocation result retains the command result and leaves legacy output
+strings empty. Consumers borrow the owned profile output. Existing non-profile
+invocation values and equality remain unchanged; profile equality compares immutable
+invocation-owner identity, not semantic claim equality.
+
+### Cooperative Encoding and Delivery Owner
+
+`PDKProfileOutputEncoding` owns `reserveCompletion(resources:policy:)` followed by
+`prepare(_:completion:)`. Completion reserves the fixed terminal failure envelope
+before payload work; retaining the completion keeps it available after payload
+failure. Preparation runs the existing trusted cooperative `Encodable` witnesses
+through a native bounded Encoder, then writes their current JSON schema into owned
+bytes. Keyed/unkeyed/single-value containers, exact integers, finite floating-point
+values and UTF-8 escaping preserve the current wire semantics. Key order is witness
+order, not canonical identity. Invalid container use, nonfinite numbers and codec
+errors fail explicitly. Codec-supplied input values/strings remain caller-owned;
+Resource failures remain sticky, including nonthrowing container operations.
+new encoder nodes, container/path capacity, numeric scratch, output capacity and
+traversal/copy/escaping work are admitted before allocation or work. Native allocator
+rounding and receipt bookkeeping remain implementation overhead, not an RSS claim.
+Native floating-point numeric scratch is bounded at 32 bytes: finite IEEE Float64
+uses at most 17 significant digits and 24 characters including sign, decimal point
+and exponent; integer decimal conversion uses at most 20 characters.
+
+Preparation accepts a keyed envelope whose `operationalObservations` field is absent.
+It reserves a second complete destination buffer, body-copy work, finite suffix
+capacity/work and numeric scratch before returning immutable prepared bytes.
+`PDKPreparedProfileOutput.complete(observations:)` consumes an exactly-once token
+under Mutex, then uses those reservations to copy the envelope and add the one
+fixed `operationalObservations` field. Prepared copies cannot create independent
+buffers under one reservation. Output bytes are never shared mutably. This field
+accepts only `PDKProfileOutputObservations(snapshot:bootstrap:)` and contains
+`boundary: prepared-output`, the admission-owned snapshot and separate parser
+bootstrap counters (`inputByteCount`, `scannedWorkUnitCount`,
+`dimensionEntryCapacity`). Separate prebudget acquisition observations belong to
+the command envelope body. Its fixed native vocabulary includes every current dimension,
+limits, cumulative totals or live current/peak, accounting version, closed/deadline
+flags and checked elapsed/max-elapsed UInt64 nanoseconds. An unrepresentable elapsed
+sample fails explicitly. The standard completion policy derives its finite bound
+from current fixed ASCII vocabulary and full UInt64 decimal widths; positive
+host-representable custom bounds must fit the same maximum representation. No
+reservation is made after this prepared boundary. Snapshot is evidence of prepared
+capacity; it is not a successful delivery or final deadline check.
+
+`PDKOwnedProfileOutput` lends a Span and shares immutable storage/receipts until its
+last copy is released. `PDKProfileOutputSink` owns fallible `write` returning an
+actual byte count and `finish`; sink implementations own flush/close semantics.
+`PDKProfileOutputDelivering.deliver(_:to:)` rejects short/invalid writes,
+requires finish, then performs the original output-held accountant's final check.
+The delivered value retains the output owner and establishes this delivery only;
+the command owner determines exit status and closes its accountant. A failed or
+late write cannot yield a delivered value or completed artifact. Resource failures
+retain their original typed cause; sink and codec failures remain typed without
+unbounded error-string formatting. Static terminal output is already reserved and
+can be lent to the sink even after exhaustion; it never claims successful admission.
+Generic encoding/delivery never closes or creates another accountant.
+
+| State | Owner / isolation | Mutation | Release |
+|---|---|---|---|
+| Encoder tree, paths and writer | One synchronous call / exclusive local state | Checked witness/container methods | Encoding end or failure |
+| Prepared completion token | Completion owner / Mutex | Exactly-once take; no callback under lock | Failed completion or final output owner |
+| Output bytes and receipts | Immutable Sendable owner | None after freeze | Last prepared/owned/delivered copy |
+| Sink progress | Injected sink | Actual write and finish outside accountant locks | Sink-owned finish contract |
+
+`PDKProfileOutputTests` owns exact Core-codec roundtrips, escaping/numeric fidelity,
+preallocation refusal, cumulative work across fields, prepared-boundary no-reserve,
+suffix maximum sizing, copy/final-owner release, duplicate completion refusal and
+short/failed/late/cancelled delivery. Evidence is native host only. CLI dispatch,
+actual stdout routing and complete command-envelope policy remain composing work.
+
 ```text
 bootstrap -> resources -> input -> selected command -> payload encoding
     -> snapshot + bounded suffix -> delivery -> final check -> terminal exit
@@ -203,6 +316,67 @@ failure/cancel -> await owned cleanup -> bounded terminal diagnostic -> nonzero 
 ```
 
 ## State, Ownership, and Lifecycle
+
+### Operational intake realization
+
+`PDKProfileCLIInputLoading` owns three protocol requirements. `loadBudget` takes
+one checked authorized root, relative path, bootstrap policy and finite
+`ArtifactAccessBudget`; it returns `PDKLoadedBudgetBootstrap`. The acquisition's
+total byte limit equals the bootstrap policy. It uses the public secure
+root discovery operation and awaits shutdown before parsing/publication. Its
+retained observed source and separate acquisition/parse observations never enter
+the later profile accountant. No budget file establishes another profile deadline.
+Both page and total acquisition limits must equal the selected bootstrap bound;
+an incompatible policy is rejected before root open. Foundation's fixed
+`SourceDiscoveryReader` caps data pages at 1,048,576 bytes, so this native file leaf
+explicitly refuses larger policies as unsupported single-page acquisition before
+I/O. The independent Span parser retains its host-representable policy contract.
+The standard 16KiB file scope owns one immutable data page and lends a zero-copy
+contiguous borrow. Bootstrap owned capacity includes that payload and the exact
+page/retention slots; read/hash/page/work and current/peak capacity observations
+are separate. Native `openat` path-name scratch is observed as temporary capacity;
+the single-page borrow adds no temporary input copy. The reader's resource-control
+state is one fixed Mutex-protected record. Reservation handles release at their
+last copy; no resources callback runs under its lock.
+The native composition default reuses `PDKSourceCapturePolicy.defaultBudget`'s
+public work and duration limits (currently 4,100 units and 30,000,000,000
+nanoseconds), with page/total bytes equal to the selected bootstrap bound and
+maximum page count 1. An explicitly injected checked override remains finite,
+positive and single-page. This host acquisition selection is an operational
+policy owner/rule, not a Core semantic constant. Changes recheck the standard real
+read, pre-read oversize/capability refusal and executable boundary evidence.
+`loadAvailability` and `loadAuthoring` take an exact document binding, its explicit
+authorized root and the existing invocation accountant. They capture exact bytes
+and use `NativePDKBoundedDocumentDecoder.decodeAudited`; the returned
+`PDKDecodedDocument` retains all decode/checked-construction backing.
+
+The availability schema has exactly `schemaVersion`, `roots`, `definition`,
+`manifest`, `sources`, `claim`, and `inspectionPolicyIdentity`. Definition and
+claim are required nullable keys; manifest is nonnull. Command composition owns
+which nullable binding a command requires. Roots carry `rootID` and absolute
+`directoryPath`. Exact bindings carry `reference`, `rootID`, `relativePath` and
+`budget`; source bindings additionally carry `sourceKey` and `logicalRoute` and
+do not carry another reference. Relative paths are arrays of checked segments.
+Each access budget carries the five existing ArtifactAccessBudget fields, without
+a new semantic budget or synthesized defaults. Nested operational records also
+carry schemaVersion 1 and require every declared field.
+
+Authoring schema has exactly `schemaVersion`, `profileID`, `requiredCornerIDs`,
+`requirements`, `orderedSearchRoutes`, `inspectionPolicyIdentity` and
+`candidateSources`. A candidate carries `sourceKey`, required nullable `assetID`,
+`descriptor`, `logicalRoutes` and `bindings`. Bindings use the source-binding wire
+above; all aliases for a candidate identify the same explicit physical root/path
+and policy. Candidate and root IDs/routes are preflighted with cooperative work
+before invocation use. Catalog selection, corner/context entry selection and
+draft construction belong to command/format composition, not operational intake.
+
+Intake rejects unknown/missing/duplicate fields, obsolete schemas, duplicate root
+or source/route identities, contradictory descriptor/binding aliases, unknown root
+IDs, nonabsolute roots, invalid relative paths and nonfinite source policies.
+Constructor loops, comparisons and Foundation conversion capacities are admitted
+through the decoder's accounting context before execution. Source/decoded owners
+must be retained while their raw fields are borrowed. Static bookkeeping and
+native allocator/URL implementation overhead do not constitute an RSS guarantee.
 
 Decoded operational inputs, candidate documents, captures, plans and admitted
 profiles retain their original charged owners until output release. New output
