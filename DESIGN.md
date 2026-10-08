@@ -16,7 +16,8 @@ buildable [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) admission modul
 Manifest validation is owned by [PDKValidation](Sources/PDKValidation/DESIGN.md).
 The profile foundation is indexed below. PDKCore profile values and their isolated
 test target, checked admission and stage consumption matching are implemented;
-format adapters and host composition remain in progress.
+bounded native SPICE/JSON adapters and profile CLI are implemented with macOS
+evidence; Engine/host composition remains in progress.
 Each implemented boundary records its behavioral evidence in its owning design.
 
 ## Responsibilities and Boundaries
@@ -118,8 +119,8 @@ Inspection remains distinct from engine capability and process qualification.
 | [PDKValidation](Sources/PDKValidation/DESIGN.md) | Child | Manifest and composed validation | Validation results | Admission does not imply qualification |
 | [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) | Child | Bounded exact owned parser input | Manifest/view/rule-deck admission | Successful cleanup is part of source admission; captures do not imply a closed PDK graph |
 | [PDKProfileAdmission](Sources/PDKProfileAdmission/DESIGN.md) | Child | Checked exact profile admission and stage consumption comparison | Independent host module without Engine codecs | Native format adapters and host adoption remain separate |
-| [PDKSpiceProfileInspection](Sources/PDKSpiceProfileInspection/DESIGN.md) | Planned child | CoreSpice grammar adapter | Optional standalone host product | No CoreSpice-to-PDK reverse dependency |
-| [PDKKitCLICore](Sources/PDKKitCLICore/DESIGN.md) | Child | Standalone command composition and scoped output | Inventory implemented; bounded profile commands specified | Actual output delivery is part of completion |
+| [PDKSpiceProfileInspection](Sources/PDKSpiceProfileInspection/DESIGN.md) | Child | CoreSpice grammar adapter | Optional standalone host product | No CoreSpice-to-PDK reverse dependency |
+| [PDKKitCLICore](Sources/PDKKitCLICore/DESIGN.md) | Child | Standalone command composition and scoped output | Bounded profile commands implemented; macOS runtime verified | Actual output delivery is part of completion |
 | [PDKDesignDatabaseIntegration](../PDKDesignDatabaseIntegration/DESIGN.md) | Used by | Canonical exact profile/source retention | Host-only schema/runtime | Existing database locks/plans remain authoritative |
 | [LEF](../swift-mask-data/Sources/LEF/DESIGN.md) | Depends on | LEFDocument and typed errors | Standard physical schema ownership | Consumers must resolve process names and capability |
 
@@ -150,8 +151,10 @@ evidence covers the four API paths, not that complete test product.
 Status: implementation in progress, not process qualification. S1 requiredness/
 structural dependency refusal, S3 lower contracts, S4 bounded source/discovery and
 S5 checked admission/consumption comparison are implemented with focused Native
-evidence. S6 adapters/CLI, S7 host adoption and S8 cumulative integration remain
-in progress; implementation of lower contracts does not establish those upper paths.
+evidence. S6 native SPICE/JSON adapters and profile CLI are implemented with
+macOS runtime evidence and explicit unsupported-codec/platform refusal. S7 host
+adoption and S8 cumulative integration remain in progress; lower evidence does
+not establish those upper paths.
 Scope: close requested-requiredness, exact corner/view/source closure, cooperative
 invocation budgets, domain-consumption comparison and standard verification
 ownership. Existing numerical algorithms, foundry grammar coverage, process
@@ -159,9 +162,9 @@ qualification and release policy remain domain/system responsibilities. A backen
 without required meaning/accounting must block; unsupported production inputs are
 not reclassified as complete. Backward compatibility is not required.
 
-Confirmed current facts and requirement deltas:
+Confirmed pre-implementation observations and the contracts closing their gaps:
 
-| Observed implementation path | Current fact | Contract closing the gap |
+| Observed implementation path | Pre-implementation observation | Contract closing the gap |
 |---|---|---|
 | LocalPDKValidator asset-resolution catch | Uses manifest requiredness only; required-role CLI can complete with a missing optional extraction asset | Validation VV-01 |
 | LocalPDKStandardViewInspector SPICE default branch | Active include can be ignored while inspect/validate complete | StandardInspection refusal + grammar adapter PA-03 |
