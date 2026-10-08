@@ -120,3 +120,10 @@ PDKStandardViewTests verifies actual inspection, source identity, retained
 physical fields, serialization and parser failures. PDK validation/corpus and
 external-provider tests verify composition. Physical engines must separately
 prove placement, pin access, routing and extraction against the retained view.
+
+For the identity-composition correction, native verification includes the full
+106-test package, seven real CLI cases and four real Xcircuite public-API stage
+executions with immutable artifact verification and ledger retention. The changed
+PDK objects were verified under a temporary consumer override, which was removed.
+The large Xcircuite test product did not execute within its build timeouts; this
+evidence covers the four API paths, not that complete test product.

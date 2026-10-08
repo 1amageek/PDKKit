@@ -5,7 +5,7 @@ import PDKStandardViews
 import Testing
 
 struct PDKSourceAdmissionRegressionTests {
-    @Test("Manifest binding refuses a fresh local parse of a view changed after resolution")
+    @Test("Manifest binding rejects changed source bytes before parsing")
     func changedViewCannotReplaceResolvedIdentity() async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         try FileManager.default.copyItem(at: PDKTestFixtures.validPDKURL, to: root)
@@ -22,8 +22,8 @@ struct PDKSourceAdmissionRegressionTests {
         ))
         #expect(result.status == .blocked)
         #expect(result.payload.binding == nil)
-        #expect(result.payload.inspection?.inspection?.lefDocument != nil)
-        #expect(result.payload.findings.contains { $0.code == "pdk.standard-view.source-artifact-mismatch" })
+        #expect(result.payload.inspection?.inspection == nil)
+        #expect(result.payload.findings.contains { $0.code == "pdk.standard-view.digest-mismatch" })
     }
 
     @Test("Rule text changed after resolution cannot execute under the original content identity")

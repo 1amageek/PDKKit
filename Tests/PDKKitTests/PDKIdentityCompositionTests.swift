@@ -151,6 +151,41 @@ struct PDKIdentityCompositionTests {
         #expect(external.status == .blocked)
     }
 
+    @Test(arguments: [false, true])
+    func externalRuleRejectsUpstreamAndDeclaredIdentityMismatch(declared: Bool) async throws {
+        let fixture = try BoundCaptureFixture()
+        defer { fixture.cleanup() }
+        let manifestURL = fixture.root.appending(path: "pdk.json")
+        var manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
+        let index = try #require(manifest.assets.firstIndex { $0.assetID == "rules" })
+        let resolved = try LocalPDKAssetResolver().resolve(manifest.assets[index], relativeTo: manifestURL)
+        var request = fixture.ruleRequest()
+        request.expectedSourceArtifact = resolved.reference
+        let local = try await LocalPDKRuleDeckInspector().execute(request)
+        if declared {
+            manifest.assets[index].sha256 = String(repeating: "0", count: 64)
+            try PDKManifestCodec.encode(manifest).write(to: manifestURL)
+            request.pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+            request.expectedSourceArtifact = nil
+            var response = local
+            response.payload.pdkDigest = request.pdk.digest
+            let result = try await ExternalPDKRuleDeckInspector(
+                provider: BoundRuleResultProvider(data: JSONEncoder().encode(response))
+            ).execute(request)
+            #expect(result.status == .blocked)
+        } else {
+            try "WIDTH M1 0.3\nWIDTH ACTIVE 0.2\n".write(to: URL(filePath: resolved.path), atomically: true, encoding: .utf8)
+            var unpinned = request
+            unpinned.expectedSourceArtifact = nil
+            let substituted = try await LocalPDKRuleDeckInspector().execute(unpinned)
+            #expect(substituted.status == .completed)
+            let result = try await ExternalPDKRuleDeckInspector(
+                provider: BoundRuleResultProvider(data: JSONEncoder().encode(substituted))
+            ).execute(request)
+            #expect(result.status == .blocked)
+        }
+    }
+
     @Test
     func externalProvidersPreserveCancellation() async throws {
         let fixture = try BoundCaptureFixture()

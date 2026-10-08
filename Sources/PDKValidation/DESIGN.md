@@ -17,6 +17,7 @@ tool execution and storage remain outside this module.
 | Design | Relationship | Contract Used | Summary | Cautions |
 |---|---|---|---|---|
 | [PDKKit](../../DESIGN.md) | Parent | Validation results | Package composition | Validation does not establish process qualification |
+| [PDKCore](../PDKCore/DESIGN.md) | Depends on | Asset identity findings and resolver protocol | Authoritative declaration checks | Current availability does not authenticate declarations |
 | [PDKSourceCapture](../PDKSourceCapture/DESIGN.md) | Depends on | Exact immutable admitted bytes | Manifest input | Identity materialization and parser allocations have separate owners |
 | [PDKStandardViews](../PDKStandardViews/DESIGN.md) | Depends on | Manifest-bound typed evidence | Cross-view and rule checks | Failed/cancelled/blocked checks cannot become completed |
 
