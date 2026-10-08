@@ -3,7 +3,8 @@
 ## Purpose and Scope
 
 Own local candidate discovery and manifest loading. Parent:
-[PDKKit](../../DESIGN.md). Child: [ManifestLoading](ManifestLoading/DESIGN.md).
+[PDKKit](../../DESIGN.md). Children: [ManifestLoading](ManifestLoading/DESIGN.md) and
+[CandidateDiscovery](CandidateDiscovery/DESIGN.md).
 ManifestLoading implements discovered/exact reads. The obsolete Core builder is
 removed; metadata is decoded only from successful source capture.
 
@@ -20,6 +21,7 @@ existing owners.
 | Design | Relationship | Contract Used | Summary | Cautions |
 |---|---|---|---|---|
 | [PDKKit](../../DESIGN.md) | Parent | Discovery product | Independent library composition | No Xcircuite import |
+| [CandidateDiscovery](CandidateDiscovery/DESIGN.md) | Child | PDKBoundedDiscovering | Invocation-bounded candidates | Explicit roots and shared accounting |
 | [ManifestLoading](ManifestLoading/DESIGN.md) | Child | PDKManifestLoading | Discovered/exact manifest loading | Exact capture precedes decoding |
 | [PDKCore](../PDKCore/DESIGN.md) | Depends on | Manifest and identity values | Candidate metadata | No reverse dependency |
 | [PDKSourceCapture](../PDKSourceCapture/DESIGN.md) | Depends on | Exact immutable bytes | Admission before decoding | Its budget does not bound prior discovery |
@@ -28,6 +30,7 @@ existing owners.
 ## Architecture
 
 ```text
+LocalPDKBoundedDiscoverer -> controlled inventory + bounded manifest loading
 LocalPDKDiscoverer / CLI / corpus / Xcircuite
                -> PDKManifestLoading
                     -> PDKCore values and codec
@@ -51,29 +54,16 @@ global cache or new shared state is introduced.
 
 ## Failure, Concurrency, and Constraints
 
-Existing enumeration limits and full discovery resource bounds are outside the
-identity-construction sprint. Per-candidate source admission uses the child's
-explicit capture budget. Discovery warnings are not qualification findings.
+Legacy enumeration retains its existing scope. Bounded discovery composes the
+children's whole-invocation contracts. Discovery warnings are not qualification
+findings.
 
-### Whole-invocation discovery specification
+### Whole-invocation discovery
 
-Status: proposed profile migration. Use bounded root enumeration and candidate
-source discovery from [LocalCapture](../PDKSourceCapture/LocalCapture/DESIGN.md)
-and the shared [admission accounting](../PDKProfileAdmission/DESIGN.md).
-Count roots, every visited entry, candidates, source reads, decode elements and
-retained candidate bytes before continued work. Do not reset the deadline or
-total work for each manifest. Cancellation stops enumeration immediately at the
-next cooperative boundary; an incomplete search is not a complete inventory.
-Candidates are neither admitted profiles nor process qualification.
-
-Manifest loading adds invocation-accounted decoding: enforce nesting, element,
-scalar-byte and work limits before constructing values. Unbounded JSONDecoder
-does not prove this contract. Reuse the existing manifest schema and codec
-meaning; the bounded decoder is not a second technology schema. Exact loading
-continues to verify supplied identity and discovered loading uses the new
-same-read capture instead of the old unbudgeted reference-then-capture path.
-Existing ManifestLoading behavior remains implemented until this migration;
-no resource claim is inferred from its per-capture default.
+[CandidateDiscovery](CandidateDiscovery/DESIGN.md) owns the implemented explicit-root
+bounded inventory and selection contract. [ManifestLoading](ManifestLoading/DESIGN.md)
+owns invocation-accounted source association and decoding. The legacy discovery API
+retains its existing per-source scope; it does not claim these whole-invocation bounds.
 
 ## Verification and Change Impact
 

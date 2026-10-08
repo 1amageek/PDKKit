@@ -59,7 +59,7 @@ let package = Package(
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
             ],
-            exclude: ["DESIGN.md", "ManifestLoading/DESIGN.md"]
+            exclude: ["DESIGN.md", "ManifestLoading/DESIGN.md", "CandidateDiscovery/DESIGN.md"]
         ),
         .target(
             name: "PDKValidation",
