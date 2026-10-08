@@ -7,6 +7,49 @@ import Testing
 
 @Suite(.timeLimit(.minutes(1)))
 struct SpiceCandidateDiscoveryTests {
+    @Test func initialIdentityNeedsNoSPICESourceAndOwnsCoreReceipts() async throws {
+        let resources = LocalPDKAdmissionResources(budget: try SpiceProfileFixture.budget())
+        defer { resources.close() }
+        let provider: any PDKSpiceCandidateDiscovering = LocalPDKSpiceCandidateDiscoverer(policyIdentity: SpiceProfileFixture.policy)
+        _ = try resources.reserve(PDKAdmissionCost(dimension: .hashedBytes, amount: 1))
+        var identity: PDKSpiceInitialPreprocessingIdentity? = try provider.initialPreprocessingIdentity(resources: resources)
+        var expected: SPICEPreprocessingEnvironment? = try SPICEPreprocessingEnvironment.empty(
+            policyIdentity: SpiceProfileFixture.policy, configuration: .init(resolveIncludes: true),
+            resources: PDKSpiceResourceBridge(resources: resources), maximumPageByteCount: 4096)
+        #expect(identity?.identity == expected?.identity)
+        expected = nil
+        var retained = identity
+        identity = nil
+        #expect(retained?.identity.hasPrefix("sha256:") == true)
+        let snapshot = try resources.snapshot()
+        #expect(snapshot.dimensions.first { $0.dimension == .readBytes }?.usage == .cumulative(total: 0))
+        let hashObservation = try #require(snapshot.dimensions.first { $0.dimension == .hashedBytes })
+        if case .cumulative(let hashes) = hashObservation.usage {
+            #expect(hashes > 1)
+        } else { Issue.record("Cumulative hash evidence lost") }
+        let liveObservation = try #require(snapshot.dimensions.first { $0.dimension == .liveOwnedBytes })
+        if case .live(let current, _) = liveObservation.usage {
+            #expect(current > 0)
+        } else { Issue.record("Live receipt evidence lost") }
+        retained = nil
+        let released = try resources.snapshot()
+        let releasedObservation = try #require(released.dimensions.first { $0.dimension == .liveOwnedBytes })
+        if case .live(let current, _) = releasedObservation.usage {
+            #expect(current == 0)
+        } else { Issue.record("Live receipt evidence lost") }
+        let limited = LocalPDKAdmissionResources(budget: try SpiceProfileFixture.budget(overrides: [.hashedBytes: 1]))
+        defer { limited.close() }
+        do { _ = try provider.initialPreprocessingIdentity(resources: limited); Issue.record("Hash quota ignored") }
+        catch let error as PDKSpiceCandidateDiscoveryError {
+            if case .resource(.exhausted(let dimension, _, _)) = error { #expect(dimension == .hashedBytes) }
+            else { Issue.record("Hash quota cause lost") }
+        }
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try provider.initialPreprocessingIdentity(resources: resources)
+        }
+        await #expect(throws: PDKSpiceCandidateDiscoveryError.resource(.cancelled)) { try await task.value }
+    }
     @Test func nestedRepeatedGraphIsObservedWithoutExactSeed() async throws {
         let fixture = try SpiceCandidateFixture.make(files: [
             "root": "* root\n.include child.sp\n.include child.sp\n",

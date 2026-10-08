@@ -250,3 +250,18 @@ alias routes, unknown/escape/ambiguity/conflicting backing/cycle refusal, parser
 syntax location, shared read/hash/work quota, cancellation and final-copy lifetime.
 Prior exact-adapter proof is reused; only new candidate state and its shared bridge
 assumptions require verification.
+
+### Initial Identity Without a SPICE Entry
+
+`PDKSpiceCandidateDiscovering.initialPreprocessingIdentity(resources:)` returns
+`PDKSpiceInitialPreprocessingIdentity`, retaining the actual Core-owned empty
+`SPICEPreprocessingEnvironment` under the provider's same policy/configuration.
+It performs fingerprint work and checked storage admission through the same
+bridge, without source acquisition or parsing. A proposal containing only other
+formats can use this checked initial identity; it does not manufacture an empty
+SPICE graph or weaken candidate discovery's nonempty SPICE-entry requirement.
+The caller keeps the handle alive while consuming its raw String in bounded
+construction/serialization. Last copied handle release ends the Core receipts.
+Resource refusal and cancellation retain the candidate error contract. One
+focused candidate method owns actual identity equivalence, zero read work,
+shared cumulative accounting/cancellation and last-copy lifetime proof.
