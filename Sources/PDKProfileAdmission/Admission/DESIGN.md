@@ -327,3 +327,33 @@ remains reusable because reservation decisions and receipt ownership are unchang
 
 Native Swift 6.4.0 dedicated-product proof passed 8 methods / 28 argument
 executions, including concurrent reserve/release/snapshot and clock reentry.
+
+## Native Syntax Diagnostics
+
+`PDKProfileSyntaxDiagnostic` reuses CircuiteFoundation `DesignDiagnostic` for a
+static syntax classification, severity and actual parser message. It adds the
+observed source key, diagnostic filename and physical line/column because the
+Foundation diagnostic has no physical source-location contract. All strings are
+checked copies with diagnostic-byte and live-storage reservations before copy;
+the final copied diagnostic owns these receipts. Equality compares facts, not
+receipt lifetime. Unknown location/identity stays nil; no offsets are guessed.
+The adapter retains the lower parser failure until this copy is complete.
+`PDKProfileInspectionError.syntax` preserves this typed cause. Exact resolver
+failures retain their existing admission-resolver authority and are not converted
+into syntax errors. Native adapter tests own syntax/location and final-copy lifetime.
+
+## Native Model Facts
+
+Mapping facts optionally carry `PDKProfileModelDetail` and
+`PDKProfilePhysicalOrigin`. The input is the single exact source/context
+authority; origin stores only Core-observed physical byte offset, local statement
+ordinal and line/column. Model detail preserves observed model type, optional
+level and named parameter values (number, numeric vector, string, boolean or
+Core-owned bounded canonical expression text). Subcircuit terminals preserve
+source order. Models never synthesize terminals from model type.
+
+These are runtime inspection observations, not new canonical claim/wire identity.
+Other format adapters retain nil detail/origin defaults. Facts publication reserves
+all parameter/vector/string storage before checked copy; parser/formatter owners
+stay retained until publication completes. Native SPICE adapter tests own source
+origin/type/parameter observations and lifetime/capacity refusal.

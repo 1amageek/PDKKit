@@ -2,7 +2,7 @@
 
 ## Purpose and Scope
 
-Status: proposed optional host SwiftPM product/target, not implemented. Parent:
+Status: implementation in progress; optional native host SwiftPM product/target. Parent:
 [PDKKit](../../DESIGN.md). No children; production source is an explicit platform
 adapter at the module boundary. Translate the CoreSpice-owned grammar into the
 profile admission contract without implementing another include parser.
@@ -94,7 +94,7 @@ intake/events; standalone CLI and consumer composition follow after both pass.
 
 ### Bounded lower-contract composition
 
-Status: designed, not implemented. The exact lower requirements are owned by
+The exact lower requirements are owned by
 [Parser](../../../CoreSpice/Sources/CoreSpiceParser/DESIGN.md#bounded-contextual-source-contract),
 [ParserSPICE](../../../CoreSpice/Sources/CoreSpiceParserSPICE/DESIGN.md#bounded-profile-grammar)
 and [IO](../../../CoreSpice/Sources/CoreSpiceIO/DESIGN.md#bounded-profile-source-intake).
@@ -169,3 +169,25 @@ refusal and final-copy facts lifetime to the existing planned graph fixtures.
 Lower contracts must pass first. Build affected products on one frozen native
 snapshot, separate build/runtime timeouts, then verify only upper composition;
 do not repeat numerical/CLI/GPU qualification as source-intake evidence.
+
+### Native adapter implementation boundary
+
+`LocalPDKSpiceProfileInspector` uses the public CoreSpiceIO profile grammar.
+`PDKSpiceResourceBridge` forwards actual work and hashed bytes into the same
+PDK accountant, and retains each PDK reservation in a lower receipt callback.
+The sourceBytes notification only checks cancellation: capture already charged
+actual reads; it is not a second filesystem read.
+
+`PDKSpiceOccurrenceResolver` owns an accounted occurrence/input/document table in
+an actor. Each occurrence has a unique admitted diagnostic filename; this is
+only a correlation token for Core-owned physical line/column evidence, never
+source authority. Child input registration happens before returning the child
+document. Exact source keys and full references remain acquisition authority.
+Resolver failures remain recorded by the invocation resolver and are rethrown by
+admission before the inspector failure is wrapped.
+
+Parser and document owners survive through the checked upper facts copy. Every
+intermediate array uses admitted concrete temporary capacity. Raw model names,
+ports, sections and diagnostic text retain their lower owner until their checked
+copy. Unavailable source PVT and expression-dependent temperatures fail explicitly.
+No analysis defaults or model terminal synthesis enter source facts.

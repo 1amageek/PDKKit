@@ -13,7 +13,9 @@ public struct PDKSourceTemperatureFact: Sendable, Hashable, Codable {
         let work = PDKProfileConstructionWork(resources)
         try work.check()
         if try !work.equal(kind, "operatingTemperature") {
-            guard try work.equal(kind, "modelNominalTemperature") else { throw .invalidID(work.context(kind)) }
+            if try !work.equal(kind, "modelNominalTemperature") {
+                guard try work.equal(kind, "circuitNominalTemperature") else { throw .invalidID(work.context(kind)) }
+            }
         }
         guard temperatureCelsius.isFinite, temperatureCelsius > -273.15 else { throw .invalidPVT(work.context(evidenceIdentity)) }
         try PDKProfileWire.id(evidenceIdentity, resources: resources)

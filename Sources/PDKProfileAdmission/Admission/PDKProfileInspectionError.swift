@@ -1,6 +1,7 @@
 import PDKCore
 
 public enum PDKProfileInspectionError: Error, Sendable, Equatable {
+    case syntax(PDKProfileSyntaxDiagnostic)
     case resource(PDKAdmissionResourceError)
     case unsupportedFormat
     case malformedSource

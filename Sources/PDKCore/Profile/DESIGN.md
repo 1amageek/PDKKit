@@ -324,3 +324,13 @@ round trips preserve all new fields, terminal order and independently optional/s
 layer observations, including an unrelated half-layer record. Changes affect native
 consumption projection/matching and serialized consumer claims; selection v1 golden
 evidence remains unchanged.
+
+### Observed Source Temperatures
+
+`PDKSourceTemperatureFact` preserves three different explicitly observed source
+meanings: operatingTemperature (TEMP), modelNominalTemperature (model TNOM), and
+circuitNominalTemperature (circuit option TNOM). Nominal temperature is not
+operating temperature or complete PVT. No default or expected corner supplies a
+source fact. Existing physical temperature/reference checks apply equally to all
+three kinds; the wire schema remains unchanged. Native adapter tests and the
+profile value codec test own this distinction.

@@ -11,6 +11,11 @@ let circuiteFoundationDependency: Package.Dependency = .package(
     exact: "26.812.0"
 )
 
+let coreSpiceDependency: Package.Dependency = .package(
+    url: "https://github.com/1amageek/CoreSpice.git",
+    revision: "8e92b8eebefc6508fdc2f8edd68b355691e15a05"
+)
+
 let package = Package(
     name: "PDKKit",
     platforms: [.macOS(.v26)],
@@ -19,6 +24,7 @@ let package = Package(
         .library(name: "PDKSourceCapture", targets: ["PDKSourceCapture"]),
         .library(name: "PDKDiscovery", targets: ["PDKDiscovery"]),
         .library(name: "PDKProfileAdmission", targets: ["PDKProfileAdmission"]),
+        .library(name: "PDKSpiceProfileInspection", targets: ["PDKSpiceProfileInspection"]),
         .library(name: "PDKValidation", targets: ["PDKValidation"]),
         .library(name: "PDKStandardViews", targets: ["PDKStandardViews"]),
         .library(name: "PDKKit", targets: ["PDKKit"]),
@@ -28,6 +34,7 @@ let package = Package(
     dependencies: [
         circuiteFoundationDependency,
         swiftMaskDataDependency,
+        coreSpiceDependency,
     ],
     targets: [
         .target(
@@ -71,6 +78,15 @@ let package = Package(
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
             ],
             exclude: ["DESIGN.md", "Admission/DESIGN.md", "Consumption/DESIGN.md"]
+        ),
+        .target(
+            name: "PDKSpiceProfileInspection",
+            dependencies: [
+                "PDKCore", "PDKProfileAdmission", "PDKSourceCapture",
+                .product(name: "CoreSpiceIO", package: "CoreSpice"),
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+            ],
+            exclude: ["DESIGN.md"]
         ),
         .target(
             name: "PDKValidation",
@@ -127,6 +143,15 @@ let package = Package(
         .executableTarget(
             name: "PDKKitCLI",
             dependencies: ["PDKKitCLICore"]
+        ),
+        .testTarget(
+            name: "PDKSpiceProfileInspectionTests",
+            dependencies: [
+                "PDKSpiceProfileInspection", "PDKProfileAdmission", "PDKCore", "PDKDiscovery", "PDKSourceCapture",
+                .product(name: "CoreSpiceIO", package: "CoreSpice"),
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+            ]
         ),
         .testTarget(
             name: "PDKBudgetBootstrapTests",
