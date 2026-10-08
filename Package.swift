@@ -90,6 +90,8 @@ let package = Package(
             name: "PDKStandardViews",
             dependencies: [
                 "PDKSourceCapture",
+                "PDKProfileAdmission",
+                "PDKDiscovery",
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
@@ -99,6 +101,7 @@ let package = Package(
                 .product(name: "GDSII", package: "swift-mask-data"),
                 .product(name: "OASIS", package: "swift-mask-data"),
                 .product(name: "LEF", package: "swift-mask-data"),
+                .product(name: "TechIR", package: "swift-mask-data"),
             ],
             exclude: ["DESIGN.md", "StandardInspection/DESIGN.md", "ProfileInspection/DESIGN.md"]
         ),
@@ -124,6 +127,17 @@ let package = Package(
         .executableTarget(
             name: "PDKKitCLI",
             dependencies: ["PDKKitCLICore"]
+        ),
+        .testTarget(
+            name: "PDKStandardProfileInspectionTests",
+            dependencies: [
+                "PDKStandardViews", "PDKProfileAdmission", "PDKCore", "PDKDiscovery", "PDKSourceCapture",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+                .product(name: "TechIR", package: "swift-mask-data"),
+            ]
         ),
         .testTarget(
             name: "PDKProfileAdmissionTests",

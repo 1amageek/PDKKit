@@ -8,6 +8,7 @@ internal struct PDKJSONValueDecoder: Decoder {
     let resources: PDKDecodeResourceAccounting
     let codingPath: [any CodingKey]
     let userInfo: [CodingUserInfoKey: Any]
+    var rejectUnknownFields = false
 
     func container<Key: CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
         guard case .object(let members) = syntax else { throw PDKBoundedDecodeError.typeMismatch(expected: "object") }
@@ -23,6 +24,7 @@ internal struct PDKJSONValueDecoder: Decoder {
             try resources.charge(.parserWork, UInt64(key.utf8.count + 1))
             table[key] = value
             if let codingKey = Key(stringValue: key) { keys.append(codingKey) }
+            else if rejectUnknownFields { throw PDKBoundedDecodeError.unsupportedValue("Unknown typed field") }
         }
         return KeyedDecodingContainer(PDKJSONKeyedContainer<Key>(decoder: self, members: table, keys: keys))
     }
@@ -39,7 +41,8 @@ internal struct PDKJSONValueDecoder: Decoder {
     func child(_ node: Int, key: any CodingKey) throws -> PDKJSONValueDecoder {
         try resources.check()
         try resources.capacity(codingPath.count + 1, stride: MemoryLayout<any CodingKey>.stride)
-        return PDKJSONValueDecoder(document: document, node: node, resources: resources, codingPath: codingPath + [key], userInfo: userInfo)
+        return PDKJSONValueDecoder(document: document, node: node, resources: resources, codingPath: codingPath + [key],
+            userInfo: userInfo, rejectUnknownFields: rejectUnknownFields)
     }
 
     func decode<T: Decodable>(_ type: T.Type) throws -> T {

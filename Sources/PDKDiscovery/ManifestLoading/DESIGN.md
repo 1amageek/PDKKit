@@ -309,8 +309,8 @@ is made by this host component.
 
 ### Audited typed decoding specialization
 
-The proposed concrete native convenience `decodeAudited(_:source:accounting:
-rejectUnknownFields:)` reuses this syntax/typed decoder, returns a full-source-bound
+The concrete native convenience `decodeAudited(_:source:accounting:
+rejectUnknownFields:validate:)` reuses this syntax/typed decoder, returns a full-source-bound
 `PDKDecodedDocument<Value>` and preserves typed resource errors. It is an audited
 specialization boundary, not an arbitrary generic whole-allocation guarantee.
 `PDKBoundedDocumentDecoding` retains its three non-generic PDK document operations.
@@ -318,6 +318,9 @@ The generic type's custom Decodable code, custom CodingKey initialization, deriv
 storage and collection families other than the reviewed Array/Dictionary paths
 are outside the decoder guarantee unless their concrete owner audits/accounts
 them. Merely satisfying Decodable or fitting the source byte budget is insufficient.
+The validation hook receives the same Decoder synchronously and cannot escape.
+It runs before the standard type's decode; its custom allocations and work remain
+the specializing owner's responsibility rather than an inferred codec guarantee.
 
 The opt-in strict mode rejects a raw object member that cannot be represented by
 the requested CodingKey before decoding that object's typed fields, including

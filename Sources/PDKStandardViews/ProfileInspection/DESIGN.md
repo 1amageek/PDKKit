@@ -6,8 +6,8 @@ Own native non-SPICE `PDKProfileSourceInspecting` registrations. Parent:
 [PDKStandardViews](../DESIGN.md). No children. This component supplies one audited
 `IRTechLibrary` JSON capability and explicit refusal for existing opaque codecs.
 It does not add a physical schema, binary codec, extraction interpreter or process
-qualification. This document fixes the implementation contract before source work;
-it does not report a completed adapter or runtime proof.
+qualification. The adapter is implemented and verified through its actual native
+host decode, inspection and admission paths under the fixed Swift 6.4.0 toolchain.
 
 ## Responsibilities and Boundaries
 
@@ -44,7 +44,7 @@ flowchart LR
   Facts --> Admission[Demand / mapping / PVT checks]
 ```
 
-The proposed public specialization protocol is `PDKStandardTechnologyDecoding`:
+The public specialization protocol is `PDKStandardTechnologyDecoding`:
 `decodeTechnology(_:resources:)` accepts `CapturedPDKSource` and
 `any PDKAdmissionResourceAccounting`, throws `PDKBoundedDecodeError`, and returns
 `PDKDecodedDocument<IRTechLibrary>`. Its native implementation delegates to the
@@ -85,6 +85,9 @@ their current mode. The reviewed TechIR family contains direct field assignments
 Array/Dictionary values and scalar/enum values, with no decode-time Set, sorting,
 derived cache or independent buffer allocation. This audit is specific to that
 family and the fixed codec/toolchain, not a guarantee for arbitrary Codable types.
+The audited entry uses a synchronous, non-escaping `validate` hook on the same
+Decoder. Root membership uses accounted byte scans against static field literals,
+without a Set or materialized allCases; metadata is checked before standard decode.
 
 | Fact kind | Exact origin | Limits |
 |---|---|---|
@@ -140,7 +143,10 @@ their copied observations; they do not require an additional retained technology
 document. Input strings used in errors are replaced with static classifications.
 Each new loop, comparison, byte scan and field check charges/checks parserWork;
 arrays, string growth and sorting, if introduced, require reviewed pre-admission.
-There is no unaccounted error formatting or reservation-record growth.
+Errors use static classifications. Fixed accountant and checked-factory
+reservation-handle bookkeeping retain the existing lower-owner overhead exclusions
+in [admission](../../PDKProfileAdmission/Admission/DESIGN.md). The native projection
+has no growing receipt list. This is logical managed capacity, not allocator/RSS.
 
 ## Failure, Concurrency, and Constraints
 
@@ -153,11 +159,20 @@ All budgets remain host-selected; this component chooses no operational limits.
 
 ## Verification and Change Impact
 
-Proposed focused owner: `Tests/PDKStandardProfileInspectionTests`, registered by
-the package owner after sources are stable. Tests run the actual admission API
-with real exact captures and the native inspector, plus injected decoder
-counterexamples. Builds and execution use the fixed toolchain and outer timeout;
-this host scope makes no WASM/Embedded execution claim.
+Focused owner: `Tests/PDKStandardProfileInspectionTests`. Its 15 behavioral methods
+run the actual admission API with real exact captures and the native inspector,
+plus injected decoder counterexamples. The stable production snapshot passed 14
+methods in the whole runtime, then the corrected cumulative-work assertion passed
+its focused runtime. The affected bounded decoder regression product passed all
+11 methods. Builds and execution used Swift 6.4.0 and outer timeouts on the native
+host; this evidence makes no WASM/Embedded execution claim.
+
+| Test owner | Proven responsibility |
+|---|---|
+| [StandardTechnologyDecodeTests](../../../Tests/PDKStandardProfileInspectionTests/StandardTechnologyDecodeTests.swift) | Exact native typed decode, strict schema, malformed/depth refusal, quotas, cumulative work, cancellation, deadline and document retention |
+| [StandardProfileResourceTests](../../../Tests/PDKStandardProfileInspectionTests/StandardProfileResourceTests.swift) | Native projection/fact quotas, cancellation/deadline, copied-fact/source ownership and empty-observation demand refusal |
+| [StandardProfileAdmissionTests](../../../Tests/PDKStandardProfileInspectionTests/StandardProfileAdmissionTests.swift) | Actual delete-after-capture admission, mapping/closure/provenance, absent purpose/PVT, opaque capability and injected full-reference refusal |
+| [PDKBoundedDecodingTests](../../../Tests/PDKBoundedDecodingTests) | Existing bounded document operations and audited strict-key entry regression |
 
 | Fixed gap | Required behavioral evidence |
 |---|---|
