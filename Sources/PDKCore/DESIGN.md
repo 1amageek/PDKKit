@@ -3,8 +3,9 @@
 ## Purpose and Scope
 
 Own PDK manifest, asset, process/layer/device/corner values, identity projections
-and resolver protocols. Parent: [PDKKit](../../DESIGN.md). Planned child:
-[Identity](Identity/DESIGN.md), owning the next single-source value representation.
+and resolver protocols. Parent: [PDKKit](../../DESIGN.md). Children:
+[Identity](Identity/DESIGN.md), owning implemented checked identity values, and
+[Profile](Profile/DESIGN.md), specifying proposed exact profile values.
 
 ## Responsibilities and Boundaries
 
@@ -18,6 +19,7 @@ semantic view parsing, source-capture lifecycle, validation aggregation or quali
 |---|---|---|---|---|
 | [PDKKit](../../DESIGN.md) | Parent | Manifest and asset values | Package composition | Inspection does not establish qualification |
 | [Identity](Identity/DESIGN.md) | Child | Manifest and resolved-asset identity values | Single stored reference authority | Checked immutable schema-2 values; callers must migrate |
+| [Profile](Profile/DESIGN.md) | Child | Requirements, source graph and consumption claims | Proposed immutable selection values | Claims cannot construct admitted runtime values |
 | [CircuiteFoundation](../../../CircuiteFoundation/DESIGN.md) | Depends on | ArtifactReference and locator/digest contracts | Canonical content identity and availability | Availability never replaces identity |
 | [PDKStandardViews](../PDKStandardViews/DESIGN.md) | Used by | Asset declaration checks | Admission before semantics | Selected references must be retained |
 | [PDKValidation](../PDKValidation/DESIGN.md) | Used by | Asset declaration checks and resolver | Initial asset inventory | Downstream results must join this inventory |

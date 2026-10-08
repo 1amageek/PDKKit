@@ -55,6 +55,26 @@ Existing enumeration limits and full discovery resource bounds are outside the
 identity-construction sprint. Per-candidate source admission uses the child's
 explicit capture budget. Discovery warnings are not qualification findings.
 
+### Whole-invocation discovery specification
+
+Status: proposed profile migration. Use bounded root enumeration and candidate
+source discovery from [LocalCapture](../PDKSourceCapture/LocalCapture/DESIGN.md)
+and the shared [admission accounting](../PDKProfileAdmission/DESIGN.md).
+Count roots, every visited entry, candidates, source reads, decode elements and
+retained candidate bytes before continued work. Do not reset the deadline or
+total work for each manifest. Cancellation stops enumeration immediately at the
+next cooperative boundary; an incomplete search is not a complete inventory.
+Candidates are neither admitted profiles nor process qualification.
+
+Manifest loading adds invocation-accounted decoding: enforce nesting, element,
+scalar-byte and work limits before constructing values. Unbounded JSONDecoder
+does not prove this contract. Reuse the existing manifest schema and codec
+meaning; the bounded decoder is not a second technology schema. Exact loading
+continues to verify supplied identity and discovered loading uses the new
+same-read capture instead of the old unbudgeted reference-then-capture path.
+Existing ManifestLoading behavior remains implemented until this migration;
+no resource claim is inferred from its per-capture default.
+
 ## Verification and Change Impact
 
 Child behavioral tests precede discovery/API/CLI composition. The dedicated

@@ -82,3 +82,14 @@ Lower contracts are tested before consumers. Result status/provenance shapes are
 preserved; source errors are translated to structured blockers/failures, and
 cancellation remains cancelled or is propagated as cancellation. No simulation,
 DRC execution, WASM/Embedded or process qualification claim follows from these tests.
+
+## Planned Invocation Accounting Integration
+
+Status: proposed. SourceCapture adds a dependency on PDKCore for the
+[resource accounting boundary](../PDKCore/Profile/DESIGN.md), not on the higher
+PDKProfileAdmission module. Core does not depend on SourceCapture. Reads,
+materialization, digest work and close checks reserve/check against the supplied
+invocation owner while retaining their existing per-source ArtifactAccessBudget.
+Capture defaults alone do not meet the invocation contract. The FileSystem
+implementation remains in its owner; bounded unknown-identity discovery requires
+the future public Foundation contract, not changes to its fixed 26.812.0 binary.

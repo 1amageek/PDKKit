@@ -86,3 +86,23 @@ the inspection result. The production projection's internal test boundary also
 admits real `IRVia` values and verifies typed refusal, preventing an incomplete
 route-layer inventory from appearing successful. Mask schema changes require
 this shared projection and its public execution callers to be rechecked.
+
+### Proposed profile inspection boundary
+
+Structural inspection and profile admission are different scopes. Until the
+[grammar-owned SPICE adapter](../../PDKSpiceProfileInspection/DESIGN.md) is adopted,
+a handwritten SPICE inspector must explicitly block active include/inc and
+external-library dependencies it cannot resolve; its default branch cannot
+silently ignore them and emit completed semantic evidence. Any retained limited
+parser remains marked incomplete with its production path/removal condition.
+Migration removes it as an alternate grammar authority when the CoreSpice adapter
+provides the supported facts; metadata names alone do not satisfy graph closure.
+
+LEF/GDSII/OASIS continue to use standard-owned documents. Profile fact adapters
+retain full references and explicit mapping/unsupported loss, never a second
+physical schema. Each required format must provide cooperative resource accounting
+and bounded decode before being selected for the whole-invocation profile scope.
+An opaque/unbounded codec cannot advertise that capability merely because its
+input bytes fit a limit. Rule-deck or script dependencies require an owning
+backend's explicit closure evidence; unknown dynamic includes cannot be asserted
+leaf-only by a manifest flag. Numerical rule execution remains Engine-owned.
