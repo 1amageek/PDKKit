@@ -112,11 +112,11 @@ Inspection remains distinct from engine capability and process qualification.
 |---|---|---|---|---|
 | [LSI](../DESIGN.md) | Parent | Exact process evidence | Platform composition | Inventory does not establish production closure |
 | [PDKCore](Sources/PDKCore/DESIGN.md) | Child | Manifest and asset identity | Declaration checks and resolution | Resolution does not authenticate declarations |
-| [PDKDiscovery](Sources/PDKDiscovery/DESIGN.md) | Child | Implemented discovered/exact manifest loading; planned invocation bounds | Reference-construction owner | Capture bounds do not cover current discovery/decode |
+| [PDKDiscovery](Sources/PDKDiscovery/DESIGN.md) | Child | Discovered/exact manifest loading and invocation-bounded candidate/decode entrypoints | Reference-construction owner | Legacy loading does not prove invocation bounds |
 | [PDKStandardViews](Sources/PDKStandardViews/DESIGN.md) | Child | Retained standard semantics | Inspection boundary | Unsupported grammar fails explicitly |
 | [PDKValidation](Sources/PDKValidation/DESIGN.md) | Child | Manifest and composed validation | Validation results | Admission does not imply qualification |
 | [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) | Child | Bounded exact owned parser input | Manifest/view/rule-deck admission | Successful cleanup is part of source admission; captures do not imply a closed PDK graph |
-| [PDKProfileAdmission](Sources/PDKProfileAdmission/DESIGN.md) | Planned child | Exact profile admission and consumption matching | Independent module without Engine codecs | Requires lower budgeted source/decode contracts |
+| [PDKProfileAdmission](Sources/PDKProfileAdmission/DESIGN.md) | Child | Checked exact profile admission and stage consumption comparison | Independent host module without Engine codecs | Native format adapters and host adoption remain separate |
 | [PDKSpiceProfileInspection](Sources/PDKSpiceProfileInspection/DESIGN.md) | Planned child | CoreSpice grammar adapter | Optional standalone host product | No CoreSpice-to-PDK reverse dependency |
 | [PDKDesignDatabaseIntegration](../PDKDesignDatabaseIntegration/DESIGN.md) | Used by | Canonical exact profile/source retention | Host-only schema/runtime | Existing database locks/plans remain authoritative |
 | [LEF](../swift-mask-data/Sources/LEF/DESIGN.md) | Depends on | LEFDocument and typed errors | Standard physical schema ownership | Consumers must resolve process names and capability |
@@ -146,8 +146,10 @@ evidence covers the four API paths, not that complete test product.
 ## Profile Foundation Specification and Implementation Order
 
 Status: implementation in progress, not process qualification. S1 requiredness/
-structural dependency refusal and S3b value contracts are implemented; the remaining
-sprint boundaries below are not yet complete.
+structural dependency refusal, S3 lower contracts, S4 bounded source/discovery and
+S5 checked admission/consumption comparison are implemented with focused Native
+evidence. S6 adapters/CLI, S7 host adoption and S8 cumulative integration remain
+in progress; implementation of lower contracts does not establish those upper paths.
 Scope: close requested-requiredness, exact corner/view/source closure, cooperative
 invocation budgets, domain-consumption comparison and standard verification
 ownership. Existing numerical algorithms, foundry grammar coverage, process

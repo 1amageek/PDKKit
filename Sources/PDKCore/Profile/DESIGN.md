@@ -48,7 +48,9 @@ and typed construction errors. Admission-only values have a different owner.
 | `PDKSourceDependency` | Parent source key and full reference; physical statement position; directive kind; selected child key/reference; section and preprocessing-context identity; lexical occurrence order |
 | `PDKProfileClaim` | Current schema; exact definition and manifest references; copied selected PVT; requirement-to-asset/section mapping; full expected source closure and edges; semantic selection digest |
 | `PDKConsumerRequirement` | A stage's explicit subset of admitted requirement IDs, corner IDs and operation-specific selection/configuration identity |
-| `PDKConsumptionClaim` | Stage requirement identity; parent profile identity; expected projection; actual sources, sections and preprocessing context; domain evidence reference |
+| `PDKConsumedSource` | Stage-local occurrence ID; exact source/context/corner; optional preceding parent occurrence and its paired full incoming dependency |
+| `PDKConsumedMapping` | Occurrence-bound observed kind/name, ordered terminals and independently optional layer number/purpose |
+| `PDKConsumptionClaim` | Stage requirement identity; parent profile identity; expected projection; ordered actual source occurrences, corners, selections and observed mappings; domain evidence reference |
 | `PDKAdmissionBudget` | Positive finite caller-owned limits and their accounting version; defined by [admission](../../PDKProfileAdmission/DESIGN.md#failure-concurrency-and-constraints), outside semantic identity |
 
 PDKCore also owns the proposed PDKAdmissionCost, PDKAdmissionReservation and
@@ -132,8 +134,10 @@ and canonical retention together.
 ## Encoding v1 and Public Boundary
 
 `PDKProfileCoding` / `PDKProfileCodec` own strict current-schema wire encoding.
-Each profile wire value requires `schemaVersion: 1`, every declared field (optional
-values use explicit null), and rejects unknown fields. Decode invokes checked
+Profile declarations retain `schemaVersion: 1`; consumption source and claim use
+schema 2 as specified below, and consumed mapping uses schema 1. Every wire value
+requires its exact current schema, every declared field (optional values use explicit
+null), and rejects unknown fields. Decode invokes checked
 construction. The wire codec performs no bounded parser admission: runtime callers
 must supply the admission-owned bounded decode path rather than treating ordinary
 JSONDecoder use as resource evidence.
@@ -228,3 +232,70 @@ by the fixed Foundation policy: it returns typed `unsupportedBudgetCapability` r
 than calling an unbounded Unicode transform. Standalone construction preserves the
 existing Foundation normalization. SHA-256 declarations with non-ASCII syntax fail
 identity comparison and do not become a Unicode normalization capability request.
+
+## Consumption Wire Structure
+
+This component owns structural validation of untrusted consumed-value claims.
+[Profile admission](../../PDKProfileAdmission/DESIGN.md) owns deriving an expected
+stage projection and comparing actual domain consumption against it. Pure wire
+construction can represent an incomplete observed graph and never proves admission,
+expected closure completeness or native retained-owner lifetime.
+
+| Value / schema | Required fields and structural meaning |
+|---|---|
+| `PDKConsumedSource` / 2 | `occurrenceID: UInt64`, `sourceKey`, full `reference`, nullable `cornerID`, nullable `selectedSection`, `preprocessingIdentity`, nullable `parentOccurrenceID`, nullable `incomingDependency` |
+| `PDKConsumedMapping` / 1 | `occurrenceID: UInt64`, nonempty `factKind` and `name`, ordered terminals (each ID nonempty; list may be empty), nullable `layerNumber: Int`, nullable `layerPurpose: PDKLayerPurpose` |
+| `PDKConsumptionClaim` / 2 | Existing stage/profile/projection/corner/selection/evidence fields plus required `actualSources` occurrence list and required `actualMappings` |
+
+```text
+actualSources: occurrence 0 ... N-1
+    child occurrence -> preceding parent occurrence + full incoming edge
+actualMappings: observed record -> valid occurrence
+checked wire claim -> native expected-projection matcher
+```
+
+A consumed root has both parent and incoming dependency null; a child has both
+present. Source construction checks its incoming edge's full child key/reference,
+selected section and preprocessing identity. Claim construction requires occurrence
+IDs exactly equal to their zero-based array positions. Each nonroot parent must
+precede the child, and the incoming edge's full parent key/reference must match that
+parent occurrence. Child corner equals parent corner; every nonnull corner ID must
+be present in `actualCorners`. Exact ordered occurrences replace the former unique
+source-context rule, preserving repeated nonrecursive includes and independently
+corner-scoped roots even when their source/section/preprocessing context matches.
+Incoming edge lexical order retains admitted global occurrence identity and may
+have gaps after stage projection; it is neither renumbered nor sorted separately.
+
+Mapping occurrence IDs must bind an actual source occurrence. Exact duplicate
+mapping records are rejected after comparing occurrence, kind, name, ordered
+terminals and observed layer fields. Terminals retain their declared order. Layer
+number and purpose are independently optional, and signed layer numbers retain the
+exact lower provider observation without inventing physical meaning. This preserves
+the [admission provider contract](../../PDKProfileAdmission/Admission/DESIGN.md).
+Physical range or field-pair requirements belong to required mapping/domain
+semantics. These structural checks do not decide whether a mapping satisfies a
+required source condition. The native matcher requires at least one exact observed
+candidate per required condition and may accept additional known facts, including
+unrelated observations with only one layer field.
+
+Source and claim schema 1 are rejected without legacy defaults; all new nullable
+fields are required keys with explicit null encoding. The shared strict-key helper
+accepts an explicit expected `schemaVersion` (default 1 for unchanged values), and
+changed types pass their own current version. This does not alter profile selection
+canonical encoding v1 or any existing profile declaration schema.
+
+Optional construction accounting cooperates before validation loops, lookup and
+full reference/context/mapping comparisons using the existing checked work helper.
+Array/String inputs remain caller-owned immutable value backing. Codable establishes
+strict structure, not bounded parsing; native runtime intake retains its own checked
+owners and uses its own bounded admission contract.
+
+Verification owner: `PDKProfileValueTests/ConsumptionValueTests`. Behavioral proofs
+reject old schemas and missing required fields, accept repeated contexts/per-corner
+sources, reject out-of-order/duplicate occurrences, absent or mismatched parents,
+edge reference/context mismatch, missing paired fields, unknown/mismatched corners,
+duplicate mappings and mappings bound to unknown occurrences. Checked encode/decode
+round trips preserve all new fields, terminal order and independently optional/signed
+layer observations, including an unrelated half-layer record. Changes affect native
+consumption projection/matching and serialized consumer claims; selection v1 golden
+evidence remains unchanged.

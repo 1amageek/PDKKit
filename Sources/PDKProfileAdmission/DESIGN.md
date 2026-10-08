@@ -3,8 +3,10 @@
 ## Purpose and Scope
 
 Status: native checked admission implementation; dedicated behavioral verification
-owns acceptance. Consumer projection follows in its separate work item. Parent:
-[PDKKit](../../DESIGN.md). Child: [Admission](Admission/DESIGN.md).
+owns acceptance. Consumer implementation and proof follow the
+[Consumption](Consumption/DESIGN.md) contract. Parent:
+[PDKKit](../../DESIGN.md). Children: [Admission](Admission/DESIGN.md) and
+[Consumption](Consumption/DESIGN.md).
 Own admission of one explicitly selected, exact process input profile, closing
 the gaps identified by RA1..RA3 in [PROGRESS](../../PROGRESS.md).
 
@@ -31,6 +33,7 @@ codecs. It is not a new framework, technology IR, storage layer or flow facade.
 | [Manifest loading](../PDKDiscovery/ManifestLoading/DESIGN.md) | depends on | Bounded exact loaded manifest | Source-consistent metadata | Admission supplies the same invocation accountant |
 | [Capture](../PDKSourceCapture/DESIGN.md) | depends on | Checked immutable bytes and cleanup | Exact source input | Same invocation accounting spans all sources |
 | [Admission](Admission/DESIGN.md) | child | Bounded orchestration and provider requests | Concrete algorithm | Providers cannot acquire undeclared sources |
+| [Consumption](Consumption/DESIGN.md) | child | Non-overridable stage projection and actual comparison | PA-06 implementation | Retain the admitted parent; wire consumption remains untrusted |
 | [Validation](../PDKValidation/DESIGN.md) | used by | Admission plus current inventory validation | Status/evidence composition | Inspection flags cannot weaken profile requirements |
 | [SPICE profile inspection](../PDKSpiceProfileInspection/DESIGN.md) | used by | Source context and exact resolver | Grammar-owned includes | No second SPICE parser |
 | [Xcircuite](../../../Xcircuite/DESIGN.md) | used by | Profile/consumer claims | Run composition | Host status cannot replace domain checks |
@@ -166,7 +169,11 @@ compare exact stage-projected roots, transitive closure, full references, PVT,
 sections, preprocessing/configuration and required mapping. Every required
 stage source is consumed; no undeclared source contributes. Allow a stage's
 declared subset of a larger profile, and preserve explicitly admitted mandatory
-support sources. Equal digests with different descriptors do not match. Domain
+support sources in the retained parent. Only explicitly selected or transitively
+reached support occurrences belong to stage consumption; unrelated support
+formats are not implicitly executed by every domain. The
+[Consumption](Consumption/DESIGN.md) child owns exact contextual occurrence and
+required mapping projection. Equal digests with different descriptors do not match. Domain
 capability remains an independent check and may block an admitted profile.
 
 PA-07: Failure produces no admitted value. Admission cancellation remains typed

@@ -13,7 +13,7 @@ struct PDKProfileWire: CodingKey {
         }
         return resources
     }
-    static func check(_ decoder: Decoder, fields: [String]) throws {
+    static func check(_ decoder: Decoder, fields: [String], schemaVersion: Int = 1) throws {
         let work = PDKProfileConstructionWork(try resources(decoder))
         let c = try decoder.container(keyedBy: Self.self)
         try work.temporary(String.self, capacity: fields.count + 1)
@@ -29,7 +29,7 @@ struct PDKProfileWire: CodingKey {
             guard c.contains(Self(stringValue: field)) else { throw PDKProfileValueError.noncanonicalEncoding("Missing " + field) }
         }
         let version = try c.decode(Int.self, forKey: Self(stringValue: "schemaVersion"))
-        guard version == 1 else { throw PDKProfileValueError.unsupportedSchema(version) }
+        guard version == schemaVersion else { throw PDKProfileValueError.unsupportedSchema(version) }
     }
     static func id(_ value: String, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
         let work = PDKProfileConstructionWork(resources)
