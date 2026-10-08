@@ -55,6 +55,11 @@ manifest declarations + upstream expected reference
   -> exact retained identity check -> binding -> result
 ```
 
+Native manifest-view, rule and oracle result provenance retains the supplied
+complete manifest reference (including producer descriptor). The rule source,
+view source and oracle expectation identities are retained when available.
+This list describes selected inputs and does not grant successful admission.
+
 Manifest, rule-deck text and oracle JSON are decoded only from captured bytes.
 Capture failure, cancellation and cleanup failure cannot produce completed evidence.
 Cancellation thrown by a provider remains cancelled. Oracle aggregation preserves

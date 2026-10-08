@@ -394,6 +394,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 engineID: "PDKOracleComparison",
                 implementationID: "LocalPDKOracleComparator",
                 implementationVersion: "1",
+                inputs: [request.pdk.manifest, request.oracle] + comparisons.compactMap { $0.observed?.sourceArtifact },
                 startedAt: startedAt,
                 completedAt: clock.now()
             ),

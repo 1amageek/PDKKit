@@ -78,6 +78,22 @@ struct PDKManifestEntryTests {
         }
     }
 
+    @Test("native composed results retain their exact manifest and source provenance")
+    func nativeProvenancePreservesReferences() async throws {
+        let fixture = try await BoundCaptureFixture()
+        defer { fixture.cleanup() }
+        let view = try await LocalPDKManifestViewInspector().execute(fixture.viewRequest())
+        let rule = try await LocalPDKRuleDeckInspector().execute(fixture.ruleRequest())
+        let oracleRequest = try fixture.oracleRequest()
+        let oracle = try await LocalPDKOracleComparator().execute(oracleRequest)
+        for inputs in [view.provenance.inputs, rule.provenance.inputs, oracle.provenance.inputs] {
+            #expect(inputs.contains(fixture.pdk.manifest))
+        }
+        #expect(oracle.provenance.inputs.contains(oracleRequest.oracle))
+        if let source = rule.payload.sourceArtifact { #expect(rule.provenance.inputs.contains(source)) }
+        if let source = view.payload.inspection?.inspection?.sourceArtifact { #expect(view.provenance.inputs.contains(source)) }
+    }
+
     @Test("CLI inspect publishes matching manifest metadata and identity")
     func inspectPublishesOneGeneration() async throws {
         let fixture = try await BoundCaptureFixture()

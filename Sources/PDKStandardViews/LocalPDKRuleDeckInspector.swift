@@ -454,6 +454,7 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 engineID: "PDKRuleDeckInspection",
                 implementationID: "LocalPDKRuleDeckInspector",
                 implementationVersion: "1",
+                inputs: [request.pdk.manifest] + (sourceArtifact.map { [$0] } ?? []),
                 startedAt: startedAt,
                 completedAt: clock.now()
             ),

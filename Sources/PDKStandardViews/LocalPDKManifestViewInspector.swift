@@ -314,6 +314,7 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
                 engineID: "PDKManifestViewInspection",
                 implementationID: "LocalPDKManifestViewInspector",
                 implementationVersion: "1",
+                inputs: [request.pdk.manifest] + ((inspection?.inspection?.sourceArtifact).map { [$0] } ?? []),
                 startedAt: startedAt,
                 completedAt: clock.now()
             ),

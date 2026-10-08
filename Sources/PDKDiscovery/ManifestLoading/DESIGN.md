@@ -209,10 +209,16 @@ Xcircuite callers. CLI already depends on Discovery. Core gains no upward edge;
 StandardViews needs no Discovery edge for its existing exact read path.
 
 Wire migration owns explicit envelopes: Discovery 1 -> 2, Validation 3 -> 4,
-ManifestView 3 -> 4, RuleDeck 2 -> 3, Oracle 1 -> 2 and PhysicalDesignRequest 6 -> 7.
+ManifestView 3 -> 4, RuleDeck 2 -> 3, Oracle 1 -> 2 and PhysicalDesignRequest / PhysicalDesignRunManifest 6 -> 7.
 StandardViewInspectionRequest remains 4 because it carries no PDKReference.
 Only new versions of changed envelopes and identity values are accepted;
 fixtures, external providers, CLI output and Xcircuite persisted request readers
 must migrate together. Corpus schema and manifest document schema do not change.
 The implementation updates INTERFACES and owner design links rather than
 leave the old projection or builder as an alternate authority.
+
+The approved adoption scope updates every revision-based consumer in the
+Xcircuite dependency closure in dependency order. Package manifests retain
+exact immutable revisions; temporary source overrides are verification aids
+and are removed before ordinary graph resolution. Consumer domain behavior
+and qualification ownership remain unchanged.
