@@ -213,6 +213,28 @@ without equating lexical syntax to a normalized child route.
 
 ## Invocation Construction Accounting
 
+### Full Claim Comparison
+
+`PDKProfileClaim.matchesExactly(_:resources:)` is a non-overridable Core operation
+for cooperative full-value comparison. It compares exactly the fields of ordinary
+`PDKProfileClaim.==`, including the entire definition, full references, ordered
+corners/selections/source closure/dependencies/support keys, and the recomputed
+semantic selection digest. It does not authenticate a decoded claim or create an
+admitted handle. Native replay must compare against a freshly admitted claim.
+
+The operation checks the supplied invocation owner at entry and before publishing
+either Boolean outcome. Each array boundary/element and fixed-field comparison
+admits work before execution; nested strings reuse the construction owner's
+cooperative UTF-8 admission and Swift canonical-equivalence equality. Comparison
+borrows existing immutable values without materializing arrays, strings or
+canonical bytes; it creates no payload capacity or hashing reservations. Input
+backing remains retained by the caller's enclosing values/decoded documents.
+Ordinary equality, wire schemas and canonical encoding remain unchanged.
+
+| Verification owner | Behavioral proof |
+|---|---|
+| `PDKProfileValueTests/ProfileClaimComparisonTests` | Differential equality for checked field variants, including definition-only changes and Unicode equivalence; cumulative work refusal, cancellation/deadline and final publication checks; no payload-capacity/hash charges |
+
 Runtime constructors accept an optional `PDKAdmissionResourceAccounting` owner;
 standalone calls with no owner establish value semantics only. The bounded decoder
 passes its owner through `PDKAdmissionDecodingContext.accountingKey`. An invalid
