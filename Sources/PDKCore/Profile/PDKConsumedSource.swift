@@ -7,11 +7,13 @@ public struct PDKConsumedSource: Sendable, Hashable, Codable {
     public let reference: ArtifactReference
     public let selectedSection: String?
     public let preprocessingIdentity: String
-    public init(sourceKey: String, reference: ArtifactReference, selectedSection: String?, preprocessingIdentity: String) throws(PDKProfileValueError) {
-        try PDKProfileWire.id(sourceKey)
-        try PDKProfileWire.id(preprocessingIdentity)
-        try PDKProfileWire.reference(reference, id: sourceKey)
-        if let selectedSection { try PDKProfileWire.id(selectedSection) }
+    public init(sourceKey: String, reference: ArtifactReference, selectedSection: String?, preprocessingIdentity: String, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
+        let work = PDKProfileConstructionWork(resources)
+        try work.check()
+        try PDKProfileWire.id(sourceKey, resources: resources)
+        try PDKProfileWire.id(preprocessingIdentity, resources: resources)
+        try PDKProfileWire.reference(reference, id: sourceKey, resources: resources)
+        if let selectedSection { try PDKProfileWire.id(selectedSection, resources: resources) }
         self.sourceKey = sourceKey
         self.reference = reference
         self.selectedSection = selectedSection
@@ -25,7 +27,8 @@ public struct PDKConsumedSource: Sendable, Hashable, Codable {
             sourceKey: c.decode(String.self, forKey: .sourceKey),
             reference: c.decode(ArtifactReference.self, forKey: .reference),
             selectedSection: c.decodeIfPresent(String.self, forKey: .selectedSection),
-            preprocessingIdentity: c.decode(String.self, forKey: .preprocessingIdentity)
+            preprocessingIdentity: c.decode(String.self, forKey: .preprocessingIdentity),
+            resources: PDKProfileWire.resources(decoder)
         )
     }
     public func encode(to encoder: Encoder) throws {

@@ -14,12 +14,17 @@ public struct PDKSourceDependency: Sendable, Hashable, Codable {
     public let selectedSection: String?
     public let preprocessingIdentity: String
     public let lexicalOrder: UInt64
-    public init(parentSourceKey: String, parentReference: ArtifactReference, statementByteOffset: UInt64, statementOrdinal: UInt64, directiveKind: String, literalRoute: String, childSourceKey: String, childReference: ArtifactReference, selectedSection: String?, preprocessingIdentity: String, lexicalOrder: UInt64) throws(PDKProfileValueError) {
-        for id in [parentSourceKey, childSourceKey, directiveKind, preprocessingIdentity] { try PDKProfileWire.id(id) }
-        try PDKProfileWire.literalRoute(literalRoute)
-        try PDKProfileWire.reference(parentReference, id: parentSourceKey)
-        try PDKProfileWire.reference(childReference, id: childSourceKey)
-        if let selectedSection { try PDKProfileWire.id(selectedSection) }
+    public init(parentSourceKey: String, parentReference: ArtifactReference, statementByteOffset: UInt64, statementOrdinal: UInt64, directiveKind: String, literalRoute: String, childSourceKey: String, childReference: ArtifactReference, selectedSection: String?, preprocessingIdentity: String, lexicalOrder: UInt64, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
+        let work = PDKProfileConstructionWork(resources)
+        try work.check()
+        try PDKProfileWire.id(parentSourceKey, resources: resources)
+        try PDKProfileWire.id(childSourceKey, resources: resources)
+        try PDKProfileWire.id(directiveKind, resources: resources)
+        try PDKProfileWire.id(preprocessingIdentity, resources: resources)
+        try PDKProfileWire.literalRoute(literalRoute, resources: resources)
+        try PDKProfileWire.reference(parentReference, id: parentSourceKey, resources: resources)
+        try PDKProfileWire.reference(childReference, id: childSourceKey, resources: resources)
+        if let selectedSection { try PDKProfileWire.id(selectedSection, resources: resources) }
         self.parentSourceKey = parentSourceKey
         self.parentReference = parentReference
         self.statementByteOffset = statementByteOffset
@@ -47,7 +52,8 @@ public struct PDKSourceDependency: Sendable, Hashable, Codable {
             childReference: c.decode(ArtifactReference.self, forKey: .childReference),
             selectedSection: c.decodeIfPresent(String.self, forKey: .selectedSection),
             preprocessingIdentity: c.decode(String.self, forKey: .preprocessingIdentity),
-            lexicalOrder: c.decode(UInt64.self, forKey: .lexicalOrder)
+            lexicalOrder: c.decode(UInt64.self, forKey: .lexicalOrder),
+            resources: PDKProfileWire.resources(decoder)
         )
     }
     public func encode(to encoder: Encoder) throws {

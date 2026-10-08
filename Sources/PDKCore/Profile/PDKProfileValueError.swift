@@ -1,4 +1,5 @@
 public enum PDKProfileValueError: Error, Sendable, Equatable {
+    case resource(PDKAdmissionResourceError)
     case invalidID(String)
     case duplicateKey(String)
     case unsupportedSchema(Int)

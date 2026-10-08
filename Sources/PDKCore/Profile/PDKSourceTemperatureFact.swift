@@ -9,11 +9,15 @@ public struct PDKSourceTemperatureFact: Sendable, Hashable, Codable {
     public let sourceReference: ArtifactReference
     public let evidenceIdentity: String
     public init(kind: String, temperatureCelsius: Double, sourceReference: ArtifactReference,
-                evidenceIdentity: String) throws(PDKProfileValueError) {
-        guard ["operatingTemperature", "modelNominalTemperature"].contains(kind) else { throw .invalidID(kind) }
-        guard temperatureCelsius.isFinite, temperatureCelsius > -273.15 else { throw .invalidPVT(evidenceIdentity) }
-        try PDKProfileWire.id(evidenceIdentity)
-        try PDKProfileWire.reference(sourceReference, id: evidenceIdentity)
+                evidenceIdentity: String, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
+        let work = PDKProfileConstructionWork(resources)
+        try work.check()
+        if try !work.equal(kind, "operatingTemperature") {
+            guard try work.equal(kind, "modelNominalTemperature") else { throw .invalidID(work.context(kind)) }
+        }
+        guard temperatureCelsius.isFinite, temperatureCelsius > -273.15 else { throw .invalidPVT(work.context(evidenceIdentity)) }
+        try PDKProfileWire.id(evidenceIdentity, resources: resources)
+        try PDKProfileWire.reference(sourceReference, id: evidenceIdentity, resources: resources)
         self.kind = kind; self.temperatureCelsius = temperatureCelsius
         self.sourceReference = sourceReference; self.evidenceIdentity = evidenceIdentity
     }
@@ -22,7 +26,7 @@ public struct PDKSourceTemperatureFact: Sendable, Hashable, Codable {
         try PDKProfileWire.check(decoder, fields: ["kind", "temperatureCelsius", "sourceReference", "evidenceIdentity"])
         let c = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(kind: c.decode(String.self, forKey: .kind), temperatureCelsius: c.decode(Double.self, forKey: .temperatureCelsius),
-            sourceReference: c.decode(ArtifactReference.self, forKey: .sourceReference), evidenceIdentity: c.decode(String.self, forKey: .evidenceIdentity))
+            sourceReference: c.decode(ArtifactReference.self, forKey: .sourceReference), evidenceIdentity: c.decode(String.self, forKey: .evidenceIdentity), resources: PDKProfileWire.resources(decoder))
     }
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)

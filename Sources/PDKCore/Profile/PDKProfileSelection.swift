@@ -8,13 +8,15 @@ public struct PDKProfileSelection: Sendable, Hashable, Codable {
     public let assetIDs: [String]
     public let sourceKeys: [String]
     public let selectedSection: String?
-    public init(requirementID: String, cornerID: String?, assetIDs: [String], sourceKeys: [String], selectedSection: String?) throws(PDKProfileValueError) {
-        try PDKProfileWire.id(requirementID)
-        try PDKProfileWire.unique(assetIDs)
-        try PDKProfileWire.unique(sourceKeys)
-        guard !assetIDs.isEmpty, assetIDs.count == sourceKeys.count else { throw .missingSelection(requirementID) }
-        if let cornerID { try PDKProfileWire.id(cornerID) }
-        if let selectedSection { try PDKProfileWire.id(selectedSection) }
+    public init(requirementID: String, cornerID: String?, assetIDs: [String], sourceKeys: [String], selectedSection: String?, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
+        let work = PDKProfileConstructionWork(resources)
+        try work.check()
+        try PDKProfileWire.id(requirementID, resources: resources)
+        try PDKProfileWire.unique(assetIDs, resources: resources)
+        try PDKProfileWire.unique(sourceKeys, resources: resources)
+        guard !assetIDs.isEmpty, assetIDs.count == sourceKeys.count else { throw .missingSelection(work.context(requirementID)) }
+        if let cornerID { try PDKProfileWire.id(cornerID, resources: resources) }
+        if let selectedSection { try PDKProfileWire.id(selectedSection, resources: resources) }
         self.requirementID = requirementID
         self.cornerID = cornerID
         self.assetIDs = assetIDs
@@ -30,7 +32,8 @@ public struct PDKProfileSelection: Sendable, Hashable, Codable {
             cornerID: c.decodeIfPresent(String.self, forKey: .cornerID),
             assetIDs: c.decode([String].self, forKey: .assetIDs),
             sourceKeys: c.decode([String].self, forKey: .sourceKeys),
-            selectedSection: c.decodeIfPresent(String.self, forKey: .selectedSection)
+            selectedSection: c.decodeIfPresent(String.self, forKey: .selectedSection),
+            resources: PDKProfileWire.resources(decoder)
         )
     }
     public func encode(to encoder: Encoder) throws {

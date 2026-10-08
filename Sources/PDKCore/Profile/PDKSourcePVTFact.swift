@@ -7,11 +7,15 @@ public struct PDKSourcePVTFact: Sendable, Hashable, Codable {
     public let pvt: PDKPVTCondition
     public let sourceReference: ArtifactReference
     public let evidenceIdentity: String
-    public init(kind: String, pvt: PDKPVTCondition, sourceReference: ArtifactReference, evidenceIdentity: String) throws(PDKProfileValueError) {
-        guard ["operating", "characterization"].contains(kind) else { throw .invalidID(kind) }
-        try PDKProfileWire.pvt(pvt, id: evidenceIdentity)
-        try PDKProfileWire.id(evidenceIdentity)
-        try PDKProfileWire.reference(sourceReference, id: evidenceIdentity)
+    public init(kind: String, pvt: PDKPVTCondition, sourceReference: ArtifactReference, evidenceIdentity: String, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
+        let work = PDKProfileConstructionWork(resources)
+        try work.check()
+        if try !work.equal(kind, "operating") {
+            guard try work.equal(kind, "characterization") else { throw .invalidID(work.context(kind)) }
+        }
+        try PDKProfileWire.pvt(pvt, id: evidenceIdentity, resources: resources)
+        try PDKProfileWire.id(evidenceIdentity, resources: resources)
+        try PDKProfileWire.reference(sourceReference, id: evidenceIdentity, resources: resources)
         self.kind = kind
         self.pvt = pvt
         self.sourceReference = sourceReference
@@ -25,7 +29,8 @@ public struct PDKSourcePVTFact: Sendable, Hashable, Codable {
             kind: c.decode(String.self, forKey: .kind),
             pvt: c.decode(PDKPVTCondition.self, forKey: .pvt),
             sourceReference: c.decode(ArtifactReference.self, forKey: .sourceReference),
-            evidenceIdentity: c.decode(String.self, forKey: .evidenceIdentity)
+            evidenceIdentity: c.decode(String.self, forKey: .evidenceIdentity),
+            resources: PDKProfileWire.resources(decoder)
         )
     }
     public func encode(to encoder: Encoder) throws {

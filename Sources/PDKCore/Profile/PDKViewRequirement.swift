@@ -13,14 +13,16 @@ public struct PDKViewRequirement: Sendable, Hashable, Codable {
     public let isShared: Bool
     public let allowsMultipleSources: Bool
     public let demandedFactKinds: [String]
-    public init(requirementID: String, purposeID: String, view: PDKViewKind, role: PDKAssetRole, assetIDs: [String], cornerIDs: [String], selectedSection: String?, isShared: Bool, allowsMultipleSources: Bool, demandedFactKinds: [String]) throws(PDKProfileValueError) {
-        try PDKProfileWire.id(requirementID)
-        try PDKProfileWire.id(purposeID)
-        try PDKProfileWire.unique(assetIDs)
-        try PDKProfileWire.unique(cornerIDs)
-        try PDKProfileWire.unique(demandedFactKinds)
-        if let selectedSection { try PDKProfileWire.id(selectedSection) }
-        guard !assetIDs.isEmpty, !demandedFactKinds.isEmpty, isShared == cornerIDs.isEmpty else { throw .missingSelection(requirementID) }
+    public init(requirementID: String, purposeID: String, view: PDKViewKind, role: PDKAssetRole, assetIDs: [String], cornerIDs: [String], selectedSection: String?, isShared: Bool, allowsMultipleSources: Bool, demandedFactKinds: [String], resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
+        let work = PDKProfileConstructionWork(resources)
+        try work.check()
+        try PDKProfileWire.id(requirementID, resources: resources)
+        try PDKProfileWire.id(purposeID, resources: resources)
+        try PDKProfileWire.unique(assetIDs, resources: resources)
+        try PDKProfileWire.unique(cornerIDs, resources: resources)
+        try PDKProfileWire.unique(demandedFactKinds, resources: resources)
+        if let selectedSection { try PDKProfileWire.id(selectedSection, resources: resources) }
+        guard !assetIDs.isEmpty, !demandedFactKinds.isEmpty, isShared == cornerIDs.isEmpty else { throw .missingSelection(work.context(requirementID)) }
         self.requirementID = requirementID
         self.purposeID = purposeID
         self.view = view
@@ -46,7 +48,8 @@ public struct PDKViewRequirement: Sendable, Hashable, Codable {
             selectedSection: c.decodeIfPresent(String.self, forKey: .selectedSection),
             isShared: c.decode(Bool.self, forKey: .isShared),
             allowsMultipleSources: c.decode(Bool.self, forKey: .allowsMultipleSources),
-            demandedFactKinds: c.decode([String].self, forKey: .demandedFactKinds)
+            demandedFactKinds: c.decode([String].self, forKey: .demandedFactKinds),
+            resources: PDKProfileWire.resources(decoder)
         )
     }
     public func encode(to encoder: Encoder) throws {

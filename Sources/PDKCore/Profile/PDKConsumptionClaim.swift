@@ -10,12 +10,22 @@ public struct PDKConsumptionClaim: Sendable, Hashable, Codable {
     public let actualCorners: [PDKProfileCorner]
     public let actualSelections: [PDKProfileSelection]
     public let domainEvidenceReference: ArtifactReference
-    public init(stageRequirement: PDKConsumerRequirement, profileIdentity: ContentDigest, expectedProjectionIdentity: ContentDigest, actualSources: [PDKConsumedSource], actualCorners: [PDKProfileCorner], actualSelections: [PDKProfileSelection], domainEvidenceReference: ArtifactReference) throws(PDKProfileValueError) {
+    public init(stageRequirement: PDKConsumerRequirement, profileIdentity: ContentDigest, expectedProjectionIdentity: ContentDigest, actualSources: [PDKConsumedSource], actualCorners: [PDKProfileCorner], actualSelections: [PDKProfileSelection], domainEvidenceReference: ArtifactReference, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
         guard profileIdentity.algorithm == .sha256, expectedProjectionIdentity.algorithm == .sha256 else { throw .noncanonicalEncoding("Digest algorithm") }
-        let contexts = actualSources.map { [$0.sourceKey, $0.selectedSection ?? "", $0.preprocessingIdentity] }
-        guard Set(contexts).count == contexts.count else { throw .duplicateKey("consumed source context") }
-        try PDKProfileWire.unique(actualCorners.map(\.cornerID))
-        try PDKProfileWire.reference(domainEvidenceReference, id: stageRequirement.stageID)
+        let work = PDKProfileConstructionWork(resources)
+        try work.check()
+        for (index, source) in actualSources.enumerated() {
+            try work.step()
+            for prior in actualSources[..<index] {
+                if try work.equal(prior.sourceKey, source.sourceKey),
+                   try work.equal(prior.selectedSection, source.selectedSection),
+                   try work.equal(prior.preprocessingIdentity, source.preprocessingIdentity) {
+                    throw .duplicateKey("consumed source context")
+                }
+            }
+        }
+        try work.unique(work.map(actualCorners, { $0.cornerID }))
+        try PDKProfileWire.reference(domainEvidenceReference, id: stageRequirement.stageID, resources: resources)
         self.stageRequirement = stageRequirement
         self.profileIdentity = profileIdentity
         self.expectedProjectionIdentity = expectedProjectionIdentity
@@ -35,7 +45,8 @@ public struct PDKConsumptionClaim: Sendable, Hashable, Codable {
             actualSources: c.decode([PDKConsumedSource].self, forKey: .actualSources),
             actualCorners: c.decode([PDKProfileCorner].self, forKey: .actualCorners),
             actualSelections: c.decode([PDKProfileSelection].self, forKey: .actualSelections),
-            domainEvidenceReference: c.decode(ArtifactReference.self, forKey: .domainEvidenceReference)
+            domainEvidenceReference: c.decode(ArtifactReference.self, forKey: .domainEvidenceReference),
+            resources: PDKProfileWire.resources(decoder)
         )
     }
     public func encode(to encoder: Encoder) throws {

@@ -198,7 +198,7 @@ import CircuiteFoundationFoundation
     @Test func goldenCanonicalEncodingV1() throws {
         let c = try claim(fixture(temperature: 0))
         // The complete independent vector is retained in CanonicalGoldenVector.swift.
-        #expect(c.canonicalBytes() == CanonicalGoldenVector.bytes)
+        #expect(try c.canonicalBytes() == CanonicalGoldenVector.bytes)
         #expect(c.semanticSelectionDigest.hexadecimalValue == CanonicalGoldenVector.sha256)
     }
 }

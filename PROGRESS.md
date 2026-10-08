@@ -28,8 +28,13 @@
   - [x] PN1.1 Effective requiredness and active unsupported dependency refusal; reviewed source, 99 affected native tests and 4 real CLI cases passed; evidence ../.verification/runs/pdk-source-foundation/profile-s1-cli.evidence.json `depends:PN1.4` `parallel:none`
   - [ ] PN1.2 Standard workspace ownership for PDK products and identity handoff; nonzero actual method execution `depends:DS4` `parallel:foundation`
   - [x] PN1.3 Foundation bounded public discovery/enumeration; Native 91 tests, ASan/TSan 17 focused methods each, reviewed commit `5e1b24f`; normally pushed, no tag `depends:DS4` `parallel:foundation`
-  - [ ] PN1.5 CoreSpice grammar dependency events, exact intake and cooperative work; real grammar/refusal evidence and reviewed commit `depends:DS4` `parallel:foundation`
-- [ ] PN2 Implement and review bounded capture/discovery/manifest decode, adopting verified lower contracts `depends:PN1` `parallel:none`
+  - [x] PN1.5 CoreSpice grammar dependency events, exact intake and cooperative work; reviewed three concrete public-path fixes, 297 native methods passed; commit `8429ee5` `depends:DS4` `parallel:foundation`
+- [ ] PN2 Implement and review bounded capture/discovery/manifest decode, adopting verified lower contracts `depends:PN1.3,PN1.4` `parallel:none`
+  - [ ] PN2.0 Provide generic Foundation pre-action work/retention control for shared invocation discovery; two-small-source quota and owner-release proof `depends:PN1.3` `parallel:bounded-lower`
+  - [x] PN2.1 Account checked value construction and canonical digest work under the invocation owner; reviewed resource/cancellation/copy-lifetime paths, 16 native methods passed; evidence ../.verification/runs/pdk-source-foundation/profile-accounting-tests.json `depends:PN1.4` `parallel:bounded-lower`
+  - [ ] PN2.2 Wire bounded PDK capture through cooperative discovery control; cumulative I/O and retained owner proof `depends:PN2.0,PN2.1` `parallel:bounded-input`
+  - [ ] PN2.3 Implement cooperative bounded native document decode with checked semantic constructors and retained owner; actual syntax/resource/lifetime proof `depends:PN2.1` `parallel:bounded-input`
+  - [ ] PN2.4 Compose bounded local candidate discovery and exact manifest loading; no unbounded referencer/codec fallback `depends:PN2.2,PN2.3` `parallel:none`
 - [ ] PN3 Implement and review isolated checked profile admission, graph closure, resource lifetime and consumption comparison `depends:PN2` `parallel:none`
 - [ ] PN4 Implement and review native format adapters and standalone profile CLI, including exact replay/refusal `depends:PN3` `parallel:none`
 - [ ] PN5 Implement and review Engine consumption, retained database claims and host schema handoff; preserve existing strict STA `depends:PN4` `parallel:none`

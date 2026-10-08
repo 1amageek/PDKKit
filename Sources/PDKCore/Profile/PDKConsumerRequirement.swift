@@ -7,12 +7,14 @@ public struct PDKConsumerRequirement: Sendable, Hashable, Codable {
     public let requirementIDs: [String]
     public let cornerIDs: [String]
     public let configurationIdentity: String
-    public init(stageID: String, requirementIDs: [String], cornerIDs: [String], configurationIdentity: String) throws(PDKProfileValueError) {
-        try PDKProfileWire.id(stageID)
-        try PDKProfileWire.id(configurationIdentity)
-        try PDKProfileWire.unique(requirementIDs)
-        try PDKProfileWire.unique(cornerIDs)
-        guard !requirementIDs.isEmpty else { throw .missingSelection(stageID) }
+    public init(stageID: String, requirementIDs: [String], cornerIDs: [String], configurationIdentity: String, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
+        let work = PDKProfileConstructionWork(resources)
+        try work.check()
+        try PDKProfileWire.id(stageID, resources: resources)
+        try PDKProfileWire.id(configurationIdentity, resources: resources)
+        try PDKProfileWire.unique(requirementIDs, resources: resources)
+        try PDKProfileWire.unique(cornerIDs, resources: resources)
+        guard !requirementIDs.isEmpty else { throw .missingSelection(work.context(stageID)) }
         self.stageID = stageID
         self.requirementIDs = requirementIDs
         self.cornerIDs = cornerIDs
@@ -26,7 +28,8 @@ public struct PDKConsumerRequirement: Sendable, Hashable, Codable {
             stageID: c.decode(String.self, forKey: .stageID),
             requirementIDs: c.decode([String].self, forKey: .requirementIDs),
             cornerIDs: c.decode([String].self, forKey: .cornerIDs),
-            configurationIdentity: c.decode(String.self, forKey: .configurationIdentity)
+            configurationIdentity: c.decode(String.self, forKey: .configurationIdentity),
+            resources: PDKProfileWire.resources(decoder)
         )
     }
     public func encode(to encoder: Encoder) throws {

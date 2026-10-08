@@ -181,3 +181,50 @@ Admission resolves a literal against the selected parent route and ordered searc
 authority, then checks the resulting declared exact child; actual root escape is
 admission-owned. Definition construction checks full parent/child table identity
 without equating lexical syntax to a normalized child route.
+
+## Invocation Construction Accounting
+
+Runtime constructors accept an optional `PDKAdmissionResourceAccounting` owner;
+standalone calls with no owner establish value semantics only. The bounded decoder
+passes its owner through `PDKAdmissionDecodingContext.accountingKey`. An invalid
+present context is a typed resource-capability failure, never an unbudgeted fallback.
+`PDKProfileValueError.resource` preserves cancellation and resource exhaustion.
+
+Construction checks account actual iteration/comparison work before execution,
+including pure selection and contextual-closure loops. Concrete temporary element
+capacities use checked `count * MemoryLayout<Element>.stride`; they are capacity
+reservations, not exact process RSS claims. Container/runtime overhead retains its
+existing measurement owner. Derived Plan/Claim array reservations remain retained
+by those immutable values and are excluded from semantic equality, hashing and wire
+identity. Existing COW input backing remains charged to its original decoded owner.
+
+Canonical encoding performs an accounting-only sizing traversal before allocating
+its framed-byte buffer; every byte of that capacity is reserved before growth.
+The canonical buffer retains its reservations through digest completion. Digest
+work charges `hashedBytes` and checks before/after bounded chunks. The Foundation
+digest API accepts an owned byte array, so a single reserved reusable chunk is
+used for cooperative hashing instead of an unaccounted whole-buffer copy.
+
+The decoder's invocation wrapper retains decoded owned backing until the returned
+`PDKDecodedDocument`'s final-copy release and temporary constructor handles through
+decode completion. Copying a handle does not create another charge. Runtime callers
+that construct Plan/Claim directly retain their derived-storage handles through
+the value itself; the caller remains owner of input decoded backing.
+
+Checked lookup and duplicate detection use linear arrays or borrowed array ranges,
+not hash containers whose bucket capacity cannot be pre-admitted. String comparison
+charges a cooperative UTF-8 traversal and comparison work before calling Swift's
+canonical-equivalence comparison, preserving existing Unicode value semantics.
+Array reservations cover requested element storage (`capacity * stride`), not Swift
+allocator granularity or process RSS; reservation-handle bookkeeping and allocator
+metadata remain with the invocation's host memory measurement owner. Runtime callers
+must retain the enclosing Plan/Claim or decoded document while borrowing its backing.
+A plan-derived claim retains the plan's existing receipts for shared nested selection
+storage and separately admits its new dependency array. Receipt copies do not recharge.
+
+Bounded descriptor normalization streams ASCII case folding and the existing `pdk.`
+prefix rules. Unicode kind normalization requires a cooperative backend not supplied
+by the fixed Foundation policy: it returns typed `unsupportedBudgetCapability` rather
+than calling an unbounded Unicode transform. Standalone construction preserves the
+existing Foundation normalization. SHA-256 declarations with non-ASCII syntax fail
+identity comparison and do not become a Unicode normalization capability request.
