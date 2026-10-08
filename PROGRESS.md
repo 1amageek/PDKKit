@@ -1,4 +1,4 @@
 # Progress
 
-- [x] PF1 Established standalone bounded source capture, migrated manifest/view/rule/oracle admission, reviewed the slice and passed 98 package tests plus independent target build; local implementation commit follows `depends:none` `parallel:none`
-- [ ] PF2 Verify the committed capture product and its composed PDK readers through the exact dependency graph; report evidence and remaining foundation boundaries `depends:PF1` `parallel:none`
+- [x] PF1 Established standalone source capture and exact manifest/view/rule/oracle admission; reviewed, independently built and passed 98 package tests; commit `e8ddb8b` `depends:none` `parallel:none`
+- [x] PF2 Verified committed CLI composition for validate/view/rule/oracle and digest-mismatch refusal against the fixed dependency graph; evidence: ../.verification/runs/pdk-source-foundation/committed-cli-integration-green.json `depends:PF1` `parallel:none`
