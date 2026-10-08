@@ -54,9 +54,10 @@ a cancellation is never relabeled as an execution failure.
 
 ### Required asset and profile composition specification
 
-Status: proposed correction/migration. Current CLI counterexamples are recorded
-in [PROGRESS](../../PROGRESS.md) RA3. Completed identity/capture behavior above
-does not yet establish this contract.
+VV-01 is implemented for inventory identity/resolution. Source resolution
+cancellation stops further inspectors. Profile scope/wire migration below remains
+proposed. The reproduced inventory gaps are recorded in
+[PROGRESS](../../PROGRESS.md) RA3; required-input regressions execute the correction.
 
 VV-01: For inventory validation, effective requiredness is
 `asset.required || request.requiredAssetRoles.contains(asset.role)`. Use this same
@@ -128,3 +129,7 @@ and source consumer tests exercise actual capture, post-capture path mutation,
 identity refusal, cancellation and cleanup failures. Existing validation, view,
 rule, corpus and oracle suites verify result composition. Changes to capture
 admission require these callers to be rechecked; qualification remains separate.
+
+[PDKRequiredInputTests](../../Tests/PDKKitTests/PDKRequiredInputTests.swift) verifies
+request-promoted optional assets, cancellation, unsupported dependency/context
+refusal and supported leaf semantics through real local files and public APIs.

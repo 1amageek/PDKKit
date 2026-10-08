@@ -230,19 +230,27 @@ public struct LocalPDKValidator: PDKValidating {
 
         var resolvedAssets: [PDKResolvedAsset] = []
         for asset in manifest.assets {
-            if request.requireAssetIdentity,
-               asset.required || request.requiredAssetRoles.contains(asset.role) {
+            let required = isRequired(asset, by: request)
+            if Task.isCancelled {
+                return cancelledResolution(request: request, findings: findings, resolvedAssets: resolvedAssets)
+            }
+            if request.requireAssetIdentity, required {
                 validateDeclaredIdentity(asset, findings: &findings)
             }
             do {
                 let resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
+                if Task.isCancelled {
+                    return cancelledResolution(request: request, findings: findings, resolvedAssets: resolvedAssets)
+                }
                 resolvedAssets.append(resolved)
                 findings.append(contentsOf: asset.identityFindings(for: resolved.reference))
+            } catch is CancellationError {
+                return cancelledResolution(request: request, findings: findings, resolvedAssets: resolvedAssets)
             } catch {
-                let severity: PDKFindingSeverity = asset.required ? .blocker : .warning
+                let severity: PDKFindingSeverity = required ? .blocker : .warning
                 findings.append(PDKValidationFinding(
                     severity: severity,
-                    code: asset.required ? "pdk.validation.required-asset-unavailable" : "pdk.validation.optional-asset-unavailable",
+                    code: required ? "pdk.validation.required-asset-unavailable" : "pdk.validation.optional-asset-unavailable",
                     message: "PDK asset could not be resolved: \(error)",
                     entity: asset.assetID,
                     suggestedActions: ["restore_pdk_asset", "check_manifest_relative_path"]
@@ -273,6 +281,23 @@ public struct LocalPDKValidator: PDKValidating {
             capabilityReport: capabilityReport,
             manifest: manifest
         )
+    }
+
+    private func isRequired(_ asset: PDKAssetReference, by request: PDKValidationRequest) -> Bool {
+        asset.required || request.requiredAssetRoles.contains(asset.role)
+    }
+
+    private func cancelledResolution(
+        request: PDKValidationRequest,
+        findings: [PDKValidationFinding],
+        resolvedAssets: [PDKResolvedAsset]
+    ) -> ValidationResult {
+        let status: PDKExecutionStatus = findings.contains { $0.severity == .error } ? .failed : .cancelled
+        return result(status: status, findings: findings + [PDKValidationFinding(
+            severity: .warning, code: "pdk.validation.asset-resolution-cancelled",
+            message: "Asset resolution was cancelled; remaining validation was not executed.",
+            suggestedActions: ["rerun_pdk_validation"]
+        )], resolvedAssets: resolvedAssets, request: request)
     }
 
     private func validateRequiredCorners(

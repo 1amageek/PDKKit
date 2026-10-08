@@ -25,7 +25,7 @@
 
 - [ ] PN1 Implement and review independent foundation contracts; preserve existing user changes and commit each coherent sprint `depends:DS4` `parallel:none`
   - [x] PN1.4 Immutable profile values, canonical identity and shared accounting boundary; 10 dedicated native tests, reviewed commit `b2208f5` `depends:DS4` `parallel:foundation`
-  - [ ] PN1.1 Effective requiredness and active unsupported dependency refusal; API/CLI red-green evidence and reviewed commit `depends:PN1.4` `parallel:none`
+  - [x] PN1.1 Effective requiredness and active unsupported dependency refusal; reviewed source, 99 affected native tests and 4 real CLI cases passed; evidence ../.verification/runs/pdk-source-foundation/profile-s1-cli.evidence.json `depends:PN1.4` `parallel:none`
   - [ ] PN1.2 Standard workspace ownership for PDK products and identity handoff; nonzero actual method execution `depends:DS4` `parallel:foundation`
   - [x] PN1.3 Foundation bounded public discovery/enumeration; Native 91 tests, ASan/TSan 17 focused methods each, reviewed commit `5e1b24f`; normally pushed, no tag `depends:DS4` `parallel:foundation`
   - [ ] PN1.5 CoreSpice grammar dependency events, exact intake and cooperative work; real grammar/refusal evidence and reviewed commit `depends:DS4` `parallel:foundation`

@@ -204,6 +204,14 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 artifacts: [sourceArtifact],
                 inspection: inspection
             )
+        } catch PDKStandardViewTextParseError.unsupportedDependency(let line, let directive) {
+            let finding = PDKValidationFinding(
+                severity: .blocker, code: "pdk.standard-view.spice-dependency-unsupported",
+                message: "SPICE directive \(directive) at line \(line) cannot be admitted by structural inspection.",
+                entity: request.assetID, suggestedActions: ["use_grammar_owned_profile_admission"]
+            )
+            return try makeResult(request: request, startedAt: startedAt, status: .blocked,
+                                  findings: [finding], artifacts: [sourceArtifact])
         } catch let error as PDKMaskProjectionError {
             let finding = PDKValidationFinding(
                 severity: .blocker,
@@ -275,6 +283,9 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
         }
     }
 
+    // FIXME(INCOMPLETE_IMPLEMENTATION): Structural SPICE inspection lacks dependency/context admission.
+    // Local standard-view and manifest validation call this limited parser in production.
+    // Replace it with CoreSpice-owned profile facts and verified active closure before claiming profile success.
     private func parseSPICE(
         data: Data,
         reference: ArtifactLocator
@@ -299,6 +310,8 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             let tokens = spiceDirectiveTokens(in: line)
             guard let first = tokens.first else { continue }
             switch first.lowercased() {
+            case ".include", ".inc", ".if", ".elseif", ".else", ".endif":
+                throw PDKStandardViewTextParseError.unsupportedDependency(line: lineNumber, directive: first)
             case ".model":
                 guard tokens.count >= 3 else {
                     throw PDKStandardViewTextParseError.malformed(
@@ -370,8 +383,11 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                     statementCount: openSubcircuit.statementCount
                 ))
             case ".lib":
+                guard tokens.count <= 2 else {
+                    throw PDKStandardViewTextParseError.unsupportedDependency(line: lineNumber, directive: first)
+                }
                 if tokens.count > 1 {
-                    let sectionName = (tokens.count > 2 ? tokens[tokens.count - 1] : tokens[1])
+                    let sectionName = tokens[1]
                         .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
                     cornerNames.append(sectionName)
                     openLibrarySections.append(sectionName)
