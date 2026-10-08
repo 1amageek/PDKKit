@@ -27,8 +27,9 @@ portable, WASM or Embedded capability claim.
 ## Architecture
 
 ```text
-PDKManifest + exact PDKReference + explicit requirements
-    -> PDKProfileDefinition -> PDKProfilePlan
+PDKManifest + exact manifest reference + checked sources + explicit requirements
+    -> PDKProfileCatalogSelection -> grammar entry contexts -> observed graph
+        -> PDKProfileDefinition -> PDKProfilePlan (same catalog selection)
          -> admission -> PDKProfileClaim
              -> stage-specific PDKConsumerRequirement -> PDKConsumptionClaim
 Availability maps remain outside all content/selection identities.
@@ -44,6 +45,7 @@ and typed construction errors. Admission-only values have a different owner.
 |---|---|
 | `PDKProfileDefinition` | Stable profile ID; exact manifest reference; explicit process/version; required corner IDs; required view bindings; exact expected source table; ordered source-search authority; dependency records; inspection policy identity and separate initial preprocessing identity |
 | `PDKViewRequirement` | Stable requirement ID; purpose ID; existing PDKViewKind/PDKAssetRole; explicit asset IDs; corner IDs; explicit selected section where applicable; demanded source-fact coverage |
+| `PDKProfileCatalogSelection` | Graph-independent checked catalog selection from actual manifest/reference, required corners, requirements and sources; selected roots, ordered asset precedence and mandatory support; no acquisition, dependency graph or admission |
 | `PDKProfilePlan` | Pure selection outcome, manifest identity and requirements; selected roots and their full expected references; no admission or qualification flag |
 | `PDKSourceDependency` | Parent source key and full reference; physical statement position; directive kind; selected child key/reference; section and preprocessing-context identity; lexical occurrence order |
 | `PDKProfileClaim` | Current schema; exact definition and manifest references; copied selected PVT; requirement-to-asset/section mapping; full expected source closure and edges; semantic selection digest |
@@ -106,6 +108,35 @@ identity. It cannot produce an `AdmittedPDKProfile`. A producer, run result,
 resource budget, toolchain, host path or current availability is not included in
 the semantic selection digest. Full execution/profile qualification identities
 remain with their existing system owners.
+
+### Graph-independent Catalog Selection
+
+`PDKProfileCatalogSelection.init(manifest:manifestReference:requiredCornerIDs:requirements:sources:resources:)`
+checks the supplied catalog without constructing a definition. It validates the
+current manifest schema, SHA-256 JSON technology reference, unique required corner,
+requirement, source and nonnull source-asset IDs, nonempty requirement/source tables,
+and each requirement's corner/source-asset references. Individual requirements and
+sources must already be checked values. This replaces only the graph-independent
+assumptions formerly supplied by a checked definition.
+
+One selection implementation owns PV-01..03, exact source/asset descriptor matching,
+explicit ordered multi-source precedence and mandatory support. Plan first checks
+its definition's exact manifest reference and process/version against the actual
+manifest, then delegates to this constructor. Catalog selection does not authenticate
+manifest bytes, infer source routes or sections, acquire content, create dependency
+edges, or confer admission. Draft authoring uses its selections to choose grammar
+entry contexts before constructing the complete checked definition.
+
+Output arrays and nested selected ID/key arrays are admitted before allocation and
+retain their live-capacity receipts until the last catalog/plan/derived-claim copy
+releases them. Temporary validation/sort storage releases at constructor exit.
+Existing immutable input backing remains under the caller's decoded/captured owner;
+callers retain that owner while using shared strings/references. Catalog equality
+and hashing exclude receipts. Wire schemas and canonical encoding remain unchanged.
+
+| Verification owner | Behavioral proof |
+|---|---|
+| `PDKProfileValueTests/ProfileCatalogSelectionTests` | Differential Plan/catalog selections for corner/shared/ordered multi-source fixtures; missing/ambiguous/role/mapping/reference/support refusal; graph-independent input validation; quota/cancellation and final-copy output lifetime |
 
 ## State, Ownership, and Lifecycle
 
