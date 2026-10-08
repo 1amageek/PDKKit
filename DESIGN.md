@@ -130,8 +130,10 @@ Identity construction is specified by
 [PDKDiscovery](Sources/PDKDiscovery/DESIGN.md) and its
 [ManifestLoading](Sources/PDKDiscovery/ManifestLoading/DESIGN.md) child, using the
 [Core Identity](Sources/PDKCore/Identity/DESIGN.md) contract. Core values, the manifest loader and Xcircuite exact handoff are implemented.
-The standard test-inventory registration remains open in PROGRESS IM3/IM4. Existing discovery-before-capture and parser budget
-limitations continue to apply. Exact database locks and canonical PDK persistence
+Standard ownership for the completed identity handoff and four PDK products has
+verified evidence in PROGRESS IM3/IM4; new profile execution products still need
+their own standard shard adoption. Legacy discovery/parser paths do not inherit
+the new bounded entry's proof. Exact database locks and canonical PDK persistence
 remain owned by the existing system/database integration designs.
 
 PDKStandardViewTests verifies actual inspection, source identity, retained
@@ -231,3 +233,41 @@ and invocation accounting. The miniature retained fixture proves refusal and
 composition, not foundry/process readiness. Required native numerical and Metal
 paths use their owning verification backend; this specification creates no
 WASM/Embedded or qualification execution evidence.
+
+### S7 Prepared Execution Design and Sprint Boundaries
+
+Status: design only. The following refines S7 after the concrete-path analysis;
+its existing lower Liberty/IC/database proof does not establish host execution.
+This section owns cross-package sequencing, not child contract definitions.
+
+| Confirmed current fact | Existing proof / proposed owner closing the remaining gap |
+|---|---|
+| Strict projection/matcher compares declared selected corners and contextual sources | [Consumption](Sources/PDKProfileAdmission/Consumption/DESIGN.md); new external-entry child remains proposed |
+| Owned Liberty codec returns actual libraries and raw numeric process metadata | [TimingCore codec](../TimingEngine/Sources/TimingCore/LibertyCodec/DESIGN.md), commit 1a5b95a; optional adapter/prepared STA remains proposed |
+| Shared IC/nodeset resolver and CLI actual IC waveform are verified | [CoreSpice IO](../CoreSpice/Sources/CoreSpiceIO/DESIGN.md), commit fd37138; native host preparation/application remains proposed |
+| Canonical profile facet and fresh SQLite replay are verified | [PDK DB runtime](../PDKDesignDatabaseIntegration/Sources/PDKDesignDatabaseRuntimeAdapter/DESIGN.md), commit 65a8f39; host registration/exact scope authentication remains proposed |
+| Host source/configuration/full-lineage connection is absent | [Xcircuite module](../Xcircuite/Sources/Xcircuite/DESIGN.md); prepared execution child owns the proposed connection |
+
+| Sprint | One owned responsibility / non-goal | Dependencies | Falsifiable completion evidence |
+|---|---|---|---|
+| S7a | PDK execution-source binding; no domain parser/numerics | S5 and profile meaning contract | Actual external parent/edge/context and full scoped closure; wrong binding/refusal, canonical vectors and last-copy quota |
+| S7b | CoreSpice prepared native execution; no PDK/host/database | Existing owned grammar, IC resolver and specified domain contracts | Real op/DC/tran, IC/UIC waveform and nodeset semantics, actual source/config identity, supply/stimulus distinction, budget/cancellation |
+| S7c | Timing prepared STA and owned Liberty/profile connection; no host/database | Owned codec, existing strict ProcessCorners and S5 | Same parsed library through inspection/analysis, real distinct corner delays, computed settings identity, raw characterization/coverage refusal |
+| S7d | Host standalone profile execution and full lineage; no canonical write/resume policy | S7a,S7b,S7c | Native API/CLI exact owned execution, mismatch before dispatch, persisted preparation/result joins and independent standard shard |
+| S7e | Host canonical profile adoption and exact replay/resume composition; no new DB storage/schema | S7d and existing profile facet/replayer | Public SQLite close/reopen, authenticated exact revision/root/lock, fresh admission, include/config drift and missing evidence refusal |
+
+S7a/S7b/S7c have disjoint package source ownership and can run in parallel after
+this shared meaning/design is fixed. Timing codec/adapter/STA edits have one Timing
+owner and are serial within S7c. S7d/S7e share host state and remain serial. Each
+sprint owns one coherent reviewed commit and focused actual product verification;
+unchanged lower proofs are reused. S8 then runs cumulative normal-graph/API/CLI/
+resume integration once, without edited packages. No automatic push includes
+unrelated unpublished commits, and no tag/release is part of these sprints.
+
+The initial implementation is a supported profile lane, not universal domain
+coverage. Other analyses/codecs/physical signoff requests require their actual
+domain input/fact/configuration contract and accounting or remain explicitly
+blocked. No generic JSON technology substitution establishes DRC/LVS/PEX/EMIR
+semantics. Existing independent ordinary APIs retain their documented scope;
+they cannot be reported as the new profile lane. Proposed APIs, products, schemas
+and runtime proofs become current only in the corresponding implementation sprint.

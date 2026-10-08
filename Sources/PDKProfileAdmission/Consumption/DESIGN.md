@@ -2,7 +2,8 @@
 
 ## Purpose and Scope
 
-Parent: [Profile admission](../DESIGN.md). No children. Own the non-overridable
+Parent: [Profile admission](../DESIGN.md). Child: [ExecutionBinding](ExecutionBinding/DESIGN.md).
+Own the non-overridable
 stage projection and actual-consumption comparison implementing PA-06. This
 component composes the checked admission graph; it does not acquire, parse or
 execute domain sources. Native implementation is present; focused behavioral
@@ -30,6 +31,7 @@ with their existing owners.
 | [Module](../DESIGN.md) | parent | PA-06, PA-05/07 and resource policy | Consumer guarantee | No success from wire claims |
 | [Admission](../Admission/DESIGN.md) | depends on | Checked roots, nodes, events and source facts | Immutable graph and byte owners | Use observed occurrence links, not guessed Core parent context |
 | [Profile values](../../PDKCore/Profile/DESIGN.md) | depends on | Consumer requirement, contextual consumption records and bounded digest | Untrusted wire values | Observations preserve independent optional and signed layer fields losslessly; physical validity remains domain-owned |
+| [ExecutionBinding](ExecutionBinding/DESIGN.md) | child | Proposed external-entry and full-execution source binding | Connect domain occurrences to the strict projection | Existing matching is not proof of this unimplemented connection |
 | [Xcircuite](../../../../Xcircuite/Sources/Xcircuite/DESIGN.md#proposed-exact-pdk-profile-handoff) | used by | Explicit stage subset and retained result | Host stage composition | Domain capability and resume remain host-owned |
 
 ## Architecture
@@ -85,7 +87,7 @@ are checked by the occurrence graph, selected sections and exact actual corners.
 
 CP-05: Actual source records must match the entire expected ordered occurrence
 list, including parent/edge, full descriptor, corner, section and preprocessing.
-Actual corner/PVT and selection sets must exactly match the stage projection;
+Actual selected corner/declared nominal PVT and selection sets must exactly match the stage projection;
 ordered assets/source keys inside a selection retain precedence. Stage/config,
 parent profile identity and expected projection identity must match. Missing,
 extra or altered inputs fail. Every actual mapping must be an exact known
@@ -93,6 +95,13 @@ admitted observation from a projected occurrence, with no duplicate row. Each
 required mapping condition must have an actual candidate. Additional known
 observations from projected occurrences are allowed. No claim grants domain
 capability or independently authenticates its domain evidence artifact.
+
+The [profile value authority](../../PDKCore/Profile/DESIGN.md#selection-characterization-and-runtime-authority)
+defines the selected-corner meaning. CP-02/05 describe the profile-scoped graph,
+not a circuit's complete execution graph. External circuit entries require the
+child execution-binding operation before a host may claim exact execution-source
+consumption. Existing projection framing version 1 and schema-2 comparison remain
+unchanged; an unbound standalone match cannot stand in for the proposed connection.
 
 CP-06: Projection identity uses component-owned versioned canonical framing,
 not JSONEncoder or unbounded hashing. Framed UTF-8 domain

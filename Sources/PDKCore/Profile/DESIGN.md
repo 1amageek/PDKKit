@@ -387,3 +387,40 @@ operating temperature or complete PVT. No default or expected corner supplies a
 source fact. Existing physical temperature/reference checks apply equally to all
 three kinds; the wire schema remains unchanged. Native adapter tests and the
 profile value codec test own this distinction.
+
+### Selection, Characterization and Runtime Authority
+
+The following meaning contract applies to existing values. New execution-binding
+values below are proposed and have no current wire/runtime implementation.
+
+| Meaning | Authority | Evidence and limit |
+|---|---|---|
+| Selected corner | Exact manifest declaration joined to the actually selected source/section | `PDKProfileCorner`; nominal PVT is a declared selection, not an observed circuit operating point |
+| Source characterization | Actual parser observation at an exact source occurrence | `PDKSourcePVTFact` requires independently observed complete named-process PVT; partial facts stay partial |
+| Runtime operating conditions | Domain preparation and actual numerical execution | Domain-owned temperature, explicit supply binding, stimulus and sweep records; not `PDKProfileCorner` |
+
+`PDKConsumptionClaim.actualCorners` means actual **selected** manifest corners.
+Its name does not turn nominal PVT into measured supply or temperature. Keep exact
+selected-corner equality. Copying a declared corner after independently validating
+the actual source/selection join is declaration evidence; copying it into a source
+observation or runtime operating record is invalid.
+
+A Liberty numeric `process` attribute has no implicit mapping to a PDK named
+process. TEMP, model TNOM and circuit TNOM retain their existing distinct meanings.
+Source defaults cannot manufacture source observations. Domain-resolved defaults
+may be recorded as effective runtime settings, with their default origin and
+algorithm identity. A DC sweep is a supply change only if its actual target joins
+an explicitly resolved supply binding; voltage and current stimuli remain stimuli.
+
+Runtime-condition acceptance belongs to the domain request, independently of
+selected-corner matching. The domain contracts specify their supported policies
+and completion evidence. PDK admission continues to enforce demanded *source*
+PVT/temperature facts as defined by the admission component; it does not silently
+reinterpret those demands as runtime coverage or permit contradictory source facts.
+
+Proposed values `PDKExecutionEntry`, `PDKExecutionSourceBinding` and
+`PDKExecutionConsumptionClaim` carry checked structural data for the
+[execution-binding contract](../../PDKProfileAdmission/Consumption/ExecutionBinding/DESIGN.md).
+They introduce a separate schema-1 execution claim, not a permissive decoder for
+existing consumption schemas. Their constructors validate structure; they cannot
+authenticate domain execution or mint admitted/matched owners.
