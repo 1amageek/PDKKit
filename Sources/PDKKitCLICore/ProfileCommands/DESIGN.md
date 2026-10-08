@@ -162,9 +162,9 @@ to `request.budget`, as required by the lower
 [Admission contract](../../PDKProfileAdmission/Admission/DESIGN.md). CLI passes the
 same checked budget to both owner construction and request construction. The shared
 entrypoint cannot silently ignore a conflicting request budget or reset counters.
-Native accounting exposes a read-only fixed-size observation snapshot with each
-cumulative total, live current/peak, limits, accounting version and elapsed sample;
-observations do not authorize new work or change admission decisions.
+Native operational observations use the read-only
+[admission-owned snapshot contract](../../PDKProfileAdmission/Admission/DESIGN.md#native-invocation-observations).
+CLI consumes that evidence without changing admission authority.
 
 ### Bounded output and evidence
 

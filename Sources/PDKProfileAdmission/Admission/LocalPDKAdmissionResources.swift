@@ -2,7 +2,7 @@ import PDKCore
 import Synchronization
 
 /// One invocation's cumulative work and retained live capacity.
-public final class LocalPDKAdmissionResources: PDKAdmissionResourceAccounting {
+public final class LocalPDKAdmissionResources: PDKAdmissionResourceAccounting, PDKAdmissionResourceObserving {
     public let budget: PDKAdmissionBudget
     private let clock: any PDKAdmissionExecutionClock
     private let started: ContinuousClock.Instant
@@ -12,6 +12,7 @@ public final class LocalPDKAdmissionResources: PDKAdmissionResourceAccounting {
     private struct State {
         var closed = false
         var used = [UInt64](repeating: 0, count: PDKAdmissionResourceDimension.allCases.count)
+        var peaks = [UInt64](repeating: 0, count: PDKAdmissionResourceDimension.allCases.count)
     }
 
     public init(budget: PDKAdmissionBudget,
@@ -51,6 +52,9 @@ public final class LocalPDKAdmissionResources: PDKAdmissionResourceAccounting {
                 throw .exhausted(dimension: cost.dimension, limit: limit, attempted: attempted)
             }
             state.used[index] = attempted
+            if cost.dimension.isLiveCapacity {
+                state.peaks[index] = max(state.peaks[index], attempted)
+            }
         }
         return PDKAdmissionReservation(cost: cost) { [self] in
             guard cost.dimension.isLiveCapacity else { return }
@@ -64,6 +68,28 @@ public final class LocalPDKAdmissionResources: PDKAdmissionResourceAccounting {
 
     /// Rejects new work while allowing already retained owners to release.
     public func close() { state.withLock { $0.closed = true } }
+
+    public func snapshot() throws(PDKAdmissionResourceError) -> PDKAdmissionResourceSnapshot {
+        let now = clock.now()
+        guard now >= started else {
+            throw .unsupportedBudgetCapability("Admission clock moved backwards")
+        }
+        let elapsed = now - started
+        return state.withLock { state in
+            let dimensions = PDKAdmissionResourceDimension.allCases.map { dimension in
+                let index = Self.index(dimension)
+                let usage: PDKAdmissionResourceObservation.Usage = dimension.isLiveCapacity
+                    ? .live(current: state.used[index], peak: state.peaks[index])
+                    : .cumulative(total: state.used[index])
+                return PDKAdmissionResourceObservation(dimension: dimension,
+                    limit: budget.limits[dimension]!, usage: usage)
+            }
+            return PDKAdmissionResourceSnapshot(accountingVersion: budget.accountingVersion,
+                maximumElapsedNanoseconds: budget.maximumElapsedNanoseconds, elapsed: elapsed,
+                isDeadlineExceeded: elapsed >= maximumElapsed, isClosed: state.closed,
+                dimensions: dimensions)
+        }
+    }
 
     internal func used(_ dimension: PDKAdmissionResourceDimension) -> UInt64 {
         state.withLock { $0.used[Self.index(dimension)] }

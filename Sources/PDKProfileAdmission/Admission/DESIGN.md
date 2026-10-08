@@ -270,3 +270,60 @@ owns the external-accountant composition proof: protocol witness invocation,
 preceding cumulative charges, post-admission work, original deadline, unchanged
 failure counters, no implicit close, and final-copy capacity release. The native
 convenience ownership regression remains with the existing lifecycle tests.
+
+## Native Invocation Observations
+
+`PDKAdmissionResourceObserving.snapshot()` is the read-only observation requirement
+implemented by the native `LocalPDKAdmissionResources`. It returns exactly one
+entry for each current Core dimension, in Core declaration order: configured
+limit and either cumulative total or live current/peak. The snapshot also retains
+the configured accounting version and elapsed limit, the elapsed `Duration` sampled
+from the original monotonic start, deadline status and closed status. It is
+operational evidence; it cannot authorize work or establish command completion.
+The [CLI owner](../../PDKKitCLICore/ProfileCommands/DESIGN.md) chooses its reporting
+boundary and performs its own final work/delivery check.
+
+The existing `Mutex<State>` owns current counters, live peaks and closure. An
+accepted live reservation raises its peak to the maximum accepted simultaneous
+charge; release reduces only current. A refused reservation changes neither
+current nor peak. Cumulative totals never reset or refill. Snapshot copies all
+counter/peak/closed values in one short critical section. Its injected clock is
+sampled outside the lock, as with reserve/check; elapsed is that sample rather
+than a promise about the subsequent copy time. A sample before the original
+start returns the existing typed clock capability failure. Trusted clocks remain
+monotonic; concurrent calls may enter the lock in a different order from their
+outside-lock samples, so observation does not reinterpret call order as clock
+progression.
+
+Observation remains available after quota refusal, deadline, cancellation and
+close. Deadline expiry is reported explicitly, including at the exact boundary;
+observation does not perform or replace an admission check. Cancellation of the
+observing task is not an invocation status and does not fabricate successful work.
+Retained receipts continue to release current capacity after close, and subsequent
+snapshots expose that release while retaining peaks and cumulative totals. No
+external callback, clock invocation, I/O or await executes under the Mutex.
+
+Counter/peak tables and snapshot entries have a fixed current dimension count;
+their bookkeeping follows existing native implementation-overhead ownership. They
+do not recursively reserve payload capacity, introduce arbitrary keys, or claim
+an RSS limit. All public observation values are immutable and Sendable. There is
+no platform branch or weakened synchronization/conformance. Evidence is scoped to
+the actual native host Admission target; no WASM/Embedded capability is claimed.
+
+| Logical state | Native storage / isolation | Read entry | Mutation entry | Release |
+|---|---|---|---|---|
+| Cumulative charges | Fixed `UInt64` slots / existing Mutex | snapshot / accounting check | accepted reserve | Never refunded |
+| Live current and peak | Fixed `UInt64` slots / same Mutex | snapshot / accounting check | accepted reserve; receipt release changes current only | Last copied receipt, also after close |
+| Closure | Bool / same Mutex | snapshot / accounting check | close | Owner lifetime |
+| Configured limits and start | Immutable owner fields | snapshot; outside-lock clock sample | Initialization only | Owner lifetime |
+
+[`ResourceObservationTests`](../../../Tests/PDKProfileAdmissionTests/ResourceObservationTests.swift)
+owns fixed-vocabulary/configuration and protocol-witness snapshots, simultaneous
+reserve/release/snapshot coherence, retained-copy final release, quota/overflow
+refusal with unchanged counters/peaks, elapsed progression/exact expiry and typed
+backward-clock refusal. It also checks terminal cancellation/closure observation
+and reentrant injected-clock access outside the lock. Existing accounting proof
+remains reusable because reservation decisions and receipt ownership are unchanged.
+
+Native Swift 6.4.0 dedicated-product proof passed 8 methods / 28 argument
+executions, including concurrent reserve/release/snapshot and clock reentry.
