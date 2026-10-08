@@ -12,7 +12,7 @@ struct PDKEngineTests {
     @Test("local validation resolves assets and exports an unqualified scope")
     func validatesFixture() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         let request = PDKValidationRequest(
             runID: "validation-fixture",
             inputs: [reference.manifestLocator],
@@ -42,7 +42,7 @@ struct PDKEngineTests {
     @Test("production validation requires exact asset identities and locked corners")
     func productionValidationRejectsIncompleteIdentity() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-production-incomplete",
@@ -90,7 +90,7 @@ struct PDKEngineTests {
             to: manifestURL,
             options: [.atomic]
         )
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         let result = try await LocalPDKValidator().execute(
             PDKValidationRequest(
                 runID: "validation-production-complete",
@@ -116,7 +116,7 @@ struct PDKEngineTests {
     @Test("rule-deck inspection exposes manifest-bound layer evidence")
     func ruleDeckInspectorExposesLayerEvidence() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         let result = try await LocalPDKRuleDeckInspector().execute(
             PDKRuleDeckInspectionRequest(
                 runID: "rule-deck-inspection",
@@ -137,7 +137,7 @@ struct PDKEngineTests {
     @Test("relative manifest and input references use the explicit project root")
     func validatesRelativeReferences() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let absoluteReference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let absoluteReference = try await loadPDKReference(for: manifestURL)
         let relativeManifest = try makeArtifactBinding(
             artifactID: absoluteReference.manifest.artifactID,
             path: "pdk.json",
@@ -181,7 +181,7 @@ struct PDKEngineTests {
     func missingAssetBlocks() async throws {
         let isolatedFixture = try makeIsolatedFixture()
         let manifestURL = isolatedFixture.appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         let request = PDKValidationRequest(
             runID: "validation-missing-asset",
             inputs: [reference.manifestLocator],
@@ -215,7 +215,7 @@ struct PDKEngineTests {
             }
         }
         let manifestURL = isolatedFixture.appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         try Data(".lib tt\n.model nmos_180n nmos level={vto + delta}\n.endl tt\n.end\n".utf8)
             .write(to: isolatedFixture.appending(path: "models.spice"), options: [.atomic])
 
@@ -247,7 +247,7 @@ struct PDKEngineTests {
             }
         }
         let manifestURL = isolatedFixture.appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         try Data("RULESET fixture-180nm\n".utf8)
             .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
 
@@ -279,7 +279,7 @@ struct PDKEngineTests {
             }
         }
         let manifestURL = isolatedFixture.appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         try Data("/* ACTIVE M1 */\nRULESET fixture-180nm\n".utf8)
             .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
 
@@ -309,7 +309,7 @@ struct PDKEngineTests {
             }
         }
         let manifestURL = isolatedFixture.appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         try Data("RULESET fixture-180nm\nLAYER ACTIVE 1\nLAYER M1 10\n/* unterminated\n".utf8)
             .write(to: isolatedFixture.appending(path: "rules.deck"), options: [.atomic])
 
@@ -457,9 +457,9 @@ struct PDKEngineTests {
     }
 
     @Test("requests and payloads round-trip with the shared JSON contract")
-    func requestPayloadRoundTrip() throws {
+    func requestPayloadRoundTrip() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let reference = try await loadPDKReference(for: manifestURL)
         let request = PDKValidationRequest(
             runID: "round-trip",
             inputs: [reference.manifestLocator],
@@ -479,10 +479,9 @@ struct PDKEngineTests {
         retainedObject.removeValue(forKey: "requiredCornerIDs")
         retainedObject.removeValue(forKey: "requireAssetIdentity")
         let retainedData = try JSONSerialization.data(withJSONObject: retainedObject)
-        let retainedRequest = try JSONDecoder().decode(PDKValidationRequest.self, from: retainedData)
-        #expect(retainedRequest.schemaVersion == 2)
-        #expect(retainedRequest.requiredCornerIDs.isEmpty)
-        #expect(retainedRequest.requireAssetIdentity == false)
+        #expect(throws: (any Error).self) {
+            try JSONDecoder().decode(PDKValidationRequest.self, from: retainedData)
+        }
 
         var obsoleteObject = try #require(JSONSerialization.jsonObject(with: requestData) as? [String: Any])
         obsoleteObject["schemaVersion"] = 1

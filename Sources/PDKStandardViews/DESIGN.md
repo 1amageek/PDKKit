@@ -47,7 +47,7 @@ semantic admission, using PDKCore's asset-owned identity checks. An upstream
 reference must also agree with manifest-bound resolution. Local parsing captures
 against that reference; local and external results retain the same full reference.
 Manifest composition checks the returned reference before binding, including
-injected backends. Request schemas advance to view 4, manifest-view 3 and rule 2.
+injected backends. Obsolete request schemas are rejected before acquisition. Request schemas advance to view 4, manifest-view 4 and rule 3.
 
 ```text
 manifest declarations + upstream expected reference

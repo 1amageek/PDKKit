@@ -1,7 +1,9 @@
-import Foundation
+import PDKDiscovery
+import PDKSourceCapture
 import CircuiteFoundation
-import CircuiteFoundationFileSystem
 import CircuiteFoundationFoundation
+import Foundation
+import CircuiteFoundationFileSystem
 import PDKCore
 import PDKStandardViews
 
@@ -45,7 +47,9 @@ struct PDKKitOracleCommand: Sendable {
         let oracleURL = URL(filePath: options.oraclePath).standardizedFileURL
         let pdk: PDKReference
         do {
-            pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+            pdk = try await LocalPDKManifestLoader().discover(at: ArtifactLocator(location: ArtifactLocation(fileURL: manifestURL), role: .input, kind: .technology, format: .json), relativeTo: nil, captureBudget: PDKSourceCapturePolicy.defaultBudget).reference
+        } catch let error as PDKManifestLoadingError {
+            throw PDKKitCLIError.manifestLoading(error)
         } catch {
             throw PDKKitCLIError.invalidJSON(path: manifestURL.path, reason: String(describing: error))
         }

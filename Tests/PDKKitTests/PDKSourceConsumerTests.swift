@@ -14,7 +14,7 @@ struct PDKSourceConsumerTests {
         let root = try copiedFixture()
         defer { removeFixture(root) }
         let file = root.appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: file)
+        let pdk = try await loadPDKReference(for: file)
         let result = try await LocalPDKValidator(
             sourceCapturer: PDKCapturedSourceMutation(file: file, mutation: mutation)
         ).execute(PDKValidationRequest(
@@ -50,7 +50,7 @@ struct PDKSourceConsumerTests {
         let root = try copiedFixture()
         defer { removeFixture(root) }
         let file = root.appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: file)
+        let pdk = try await loadPDKReference(for: file)
         let original = try Data(contentsOf: file)
         var changed = original
         changed[changed.startIndex] = 33
@@ -68,7 +68,7 @@ struct PDKSourceConsumerTests {
     @Test(arguments: [false, true])
     func cancelledCaptureAndCleanupFailureStayDistinct(_ cleanupFails: Bool) async throws {
         let file = PDKTestFixtures.validPDKURL.appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: file)
+        let pdk = try await loadPDKReference(for: file)
         let failure: PDKSourceCaptureError = cleanupFails
             ? .cleanup(primary: .cancelled, cleanup: .invalidTermination) : .cancelled
         let result = try await LocalPDKValidator(

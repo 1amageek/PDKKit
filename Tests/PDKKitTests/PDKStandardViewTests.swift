@@ -82,7 +82,7 @@ struct PDKStandardViewTests {
     }
 
     @Test("inspection requests reject non-current schemas")
-    func inspectionRequestsRejectNonCurrentSchemas() throws {
+    func inspectionRequestsRejectNonCurrentSchemas() async throws {
         let standardRequest = PDKStandardViewInspectionRequest(
             runID: "standard-contract",
             inputs: [],
@@ -97,7 +97,7 @@ struct PDKStandardViewTests {
         }
 
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let pdk = try await loadPDKReference(for: manifestURL)
         let ruleDeckRequest = PDKRuleDeckInspectionRequest(
             runID: "rule-deck-contract",
             inputs: [pdk.manifestLocator],
@@ -135,7 +135,7 @@ struct PDKStandardViewTests {
     func oracleCorrelationIsReproducible() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let oracleURL = fixtureRootURL().appending(path: "standard-view-oracle.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let pdk = try await loadPDKReference(for: manifestURL)
         let oracleData = try Data(contentsOf: oracleURL)
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "pdkkit-relative-oracle-\(UUID().uuidString)")
@@ -177,7 +177,7 @@ struct PDKStandardViewTests {
     func oracleMismatchIsBlocked() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
         let oracleURL = fixtureRootURL().appending(path: "standard-view-oracle.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let pdk = try await loadPDKReference(for: manifestURL)
         var expectation = try JSONDecoder().decode(
             PDKOracleExpectation.self,
             from: Data(contentsOf: oracleURL)
@@ -221,7 +221,7 @@ struct PDKStandardViewTests {
     @Test("manifest-bound LEF inspection returns canonical semantics")
     func lefInspectionBindsManifest() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let pdk = try await loadPDKReference(for: manifestURL)
         let relativeManifest = try makeArtifactBinding(
                 artifactID: pdk.manifest.artifactID,
                 path: "pdk.json",
@@ -264,7 +264,7 @@ struct PDKStandardViewTests {
     @Test("manifest-bound SPICE and Liberty inspection expose device and timing facts")
     func spiceAndLibertyInspectionBindsManifest() async throws {
         let manifestURL = fixtureURL().appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let pdk = try await loadPDKReference(for: manifestURL)
         let cases: [(String, PDKStandardViewFormat)] = [
             ("spice-view", .spice),
             ("liberty-view", .liberty),

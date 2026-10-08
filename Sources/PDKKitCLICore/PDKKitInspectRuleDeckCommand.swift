@@ -1,3 +1,7 @@
+import PDKDiscovery
+import PDKSourceCapture
+import CircuiteFoundation
+import CircuiteFoundationFoundation
 import Foundation
 import PDKCore
 import PDKStandardViews
@@ -41,7 +45,9 @@ struct PDKKitInspectRuleDeckCommand: Sendable {
         let manifestURL = URL(filePath: options.manifestPath).standardizedFileURL
         let pdk: PDKReference
         do {
-            pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+            pdk = try await LocalPDKManifestLoader().discover(at: ArtifactLocator(location: ArtifactLocation(fileURL: manifestURL), role: .input, kind: .technology, format: .json), relativeTo: nil, captureBudget: PDKSourceCapturePolicy.defaultBudget).reference
+        } catch let error as PDKManifestLoadingError {
+            throw PDKKitCLIError.manifestLoading(error)
         } catch {
             throw PDKKitCLIError.invalidJSON(path: manifestURL.path, reason: String(describing: error))
         }

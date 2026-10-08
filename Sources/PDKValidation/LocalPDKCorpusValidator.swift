@@ -1,5 +1,8 @@
 import Foundation
 import PDKCore
+import PDKDiscovery
+import PDKSourceCapture
+import CircuiteFoundationFoundation
 import PDKStandardViews
 import CircuiteFoundation
 
@@ -7,7 +10,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
     private let clock: any PDKValidationExecutionClock
     private let suiteCodec: PDKCorpusSuiteCodec
     private let suiteValidator: PDKCorpusSuiteValidator
-    private let referenceBuilder: PDKManifestReferenceBuilder
+    private let manifestLoader: any PDKManifestLoading
     private let validator: any PDKValidating
     private let standardViewInspector: any PDKManifestViewInspecting
     private let ruleDeckInspector: any PDKRuleDeckInspecting
@@ -16,7 +19,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         clock: any PDKValidationExecutionClock = SystemPDKValidationExecutionClock(),
         suiteCodec: PDKCorpusSuiteCodec = PDKCorpusSuiteCodec(),
         suiteValidator: PDKCorpusSuiteValidator = PDKCorpusSuiteValidator(),
-        referenceBuilder: PDKManifestReferenceBuilder = PDKManifestReferenceBuilder(),
+        manifestLoader: any PDKManifestLoading = LocalPDKManifestLoader(),
         validator: any PDKValidating = LocalPDKValidator(),
         standardViewInspector: any PDKManifestViewInspecting = LocalPDKManifestViewInspector(),
         ruleDeckInspector: any PDKRuleDeckInspecting = LocalPDKRuleDeckInspector()
@@ -24,7 +27,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         self.clock = clock
         self.suiteCodec = suiteCodec
         self.suiteValidator = suiteValidator
-        self.referenceBuilder = referenceBuilder
+        self.manifestLoader = manifestLoader
         self.validator = validator
         self.standardViewInspector = standardViewInspector
         self.ruleDeckInspector = ruleDeckInspector
@@ -111,12 +114,21 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
 
         var caseResults: [PDKCorpusCaseResult] = []
         var diagnostics = suiteReport.findings.map(PDKValidationDiagnosticMapper.map)
+        var cancelled = false
         for corpusCase in suite.cases.sorted(by: { $0.caseID < $1.caseID }) {
-            let result = await evaluate(
-                corpusCase,
-                rootURL: rootURL,
-                runID: request.runID
-            )
+            let result: PDKCorpusCaseResult
+            do {
+                try Task.checkCancellation()
+                result = try await evaluate(
+                    corpusCase,
+                    rootURL: rootURL,
+                    runID: request.runID
+                )
+            } catch is CancellationError {
+                cancelled = true
+                diagnostics.append(DesignDiagnostic(severity: .warning, code: "pdk.corpus.cancelled", message: "Corpus execution was cancelled."))
+                break
+            }
             caseResults.append(result)
             if !result.passed {
                 diagnostics.append(DesignDiagnostic(
@@ -129,8 +141,9 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
             }
         }
 
-        let isValid = caseResults.allSatisfy(\.passed)
-        let status: PDKExecutionStatus = isValid ? .completed : .failed
+        let casesPassed = caseResults.allSatisfy(\.passed)
+        let isValid = !cancelled && casesPassed
+        let status: PDKExecutionStatus = !casesPassed ? .failed : (cancelled ? .cancelled : .completed)
         return try makeResult(
             request: request,
             startedAt: startedAt,
@@ -156,7 +169,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         _ corpusCase: PDKCorpusCase,
         rootURL: URL,
         runID: String
-    ) async -> PDKCorpusCaseResult {
+    ) async throws -> PDKCorpusCaseResult {
         let manifestURL = rootURL.appending(path: corpusCase.manifestPath).standardizedFileURL
         guard isWithinRoot(manifestURL, rootURL: rootURL) else {
             return caseResult(
@@ -175,7 +188,10 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
 
         let reference: PDKReference
         do {
-            reference = try referenceBuilder.makeReference(for: manifestURL)
+            let locator = ArtifactLocator(location: try ArtifactLocation(fileURL: manifestURL), role: .input, kind: .technology, format: .json)
+            reference = try await manifestLoader.discover(at: locator, relativeTo: rootURL, captureBudget: PDKSourceCapturePolicy.defaultBudget).reference
+        } catch let error as PDKManifestLoadingError where error.isCancellation {
+            throw CancellationError()
         } catch {
             return caseResult(
                 corpusCase,
@@ -193,6 +209,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
         )
         do {
             let result = try await validator.execute(validationRequest)
+            if result.status == .cancelled { throw CancellationError() }
             let observedOutcome = outcome(for: result.status)
             let resultDiagnosticCodes: [String] = result.diagnostics.map { $0.code.rawValue }
             let resultFindingCodes: [String] = result.payload.findings.map { $0.code }
@@ -221,6 +238,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                     )
                     do {
                         let inspectionResult = try await standardViewInspector.execute(inspectionRequest)
+                        if inspectionResult.status == .cancelled { throw CancellationError() }
                         let diagnosticCodes: [String] = inspectionResult.diagnostics.map { $0.code.rawValue }
                         let findingCodes: [String] = inspectionResult.payload.findings.map { $0.code }
                         let codes: Set<String> = Set(diagnosticCodes + findingCodes)
@@ -229,7 +247,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                             observedOutcome: outcome(for: inspectionResult.status),
                             observedFindingCodes: codes.sorted()
                         )
-                    } catch {
+                    } catch is CancellationError { throw CancellationError() } catch {
                         standardResult = standardViewResult(
                             check,
                             observedOutcome: .failed,
@@ -250,6 +268,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                 )
                 do {
                     let inspectionResult = try await ruleDeckInspector.execute(inspectionRequest)
+                    if inspectionResult.status == .cancelled { throw CancellationError() }
                     let diagnosticCodes: [String] = inspectionResult.diagnostics.map { $0.code.rawValue }
                     let findingCodes: [String] = inspectionResult.payload.findings.map { $0.code }
                     let codes: Set<String> = Set(diagnosticCodes + findingCodes)
@@ -258,7 +277,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                         observedOutcome: outcome(for: inspectionResult.status),
                         observedFindingCodes: codes.sorted()
                     )
-                } catch {
+                } catch is CancellationError { throw CancellationError() } catch {
                     deckResult = ruleDeckResult(
                         check,
                         observedOutcome: .failed,
@@ -276,7 +295,7 @@ public struct LocalPDKCorpusValidator: PDKCorpusValidating {
                 ruleDeckResults: ruleDeckResults,
                 manifestReference: reference.manifest
             )
-        } catch {
+        } catch is CancellationError { throw CancellationError() } catch {
             return caseResult(
                 corpusCase,
                 observedOutcome: .failed,

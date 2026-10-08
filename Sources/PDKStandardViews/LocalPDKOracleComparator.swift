@@ -26,6 +26,11 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
         _ request: PDKOracleRequest
     ) async throws -> PDKOracleComparisonResult {
         let startedAt = clock.now()
+        guard request.schemaVersion == PDKOracleRequest.currentSchemaVersion else {
+            return try makeResult(request: request, startedAt: startedAt, status: .blocked, oracleID: "unavailable",
+                findings: [PDKValidationFinding(severity: .blocker, code: "pdk.oracle.request-schema-unsupported",
+                    message: "Unsupported request schema version.", entity: "schemaVersion", suggestedActions: ["migrate_request_schema"])])
+        }
         let oracleURL: URL
         do {
             oracleURL = try PDKArtifactURLResolver().resolve(

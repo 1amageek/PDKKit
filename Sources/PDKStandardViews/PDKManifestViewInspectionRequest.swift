@@ -4,7 +4,7 @@ import CircuiteFoundation
 import CircuiteFoundationFoundation
 
 public struct PDKManifestViewInspectionRequest: Sendable {
-    public static let currentSchemaVersion = 3
+    public static let currentSchemaVersion = 4
 
     public var schemaVersion: Int
     public var runID: String

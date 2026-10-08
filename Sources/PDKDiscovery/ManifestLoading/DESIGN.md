@@ -2,7 +2,8 @@
 
 ## Purpose and Scope
 
-Next implementation sprint design, not implemented capability. Parent:
+Implemented local manifest loading; dependent Xcircuite migration is tracked in
+PROGRESS.md. Parent:
 [PDKDiscovery](../DESIGN.md). No children. Own consistent construction of a
 manifest plus its reference at the existing public API/CLI/flow entrypoints.
 
@@ -54,7 +55,7 @@ normalize new kind/format; retain role         |
 
 ## Contracts and Invariants
 
-Proposed public API, with one primary type per file in this component:
+Public API, with one primary type per file in this component:
 
 ```swift
 public protocol PDKManifestLoading: Sendable {
@@ -140,7 +141,7 @@ claim and does not recreate a loaded/captured evidence object.
 
 ## Failure, Concurrency, and Constraints
 
-Proposed `PDKManifestLoadingError` distinguishes invalid input, discovery failure,
+`PDKManifestLoadingError` distinguishes invalid input, discovery failure,
 source capture failure (retaining the existing typed error), manifest decode
 failure and reference-construction failure. Source capture retains primary and
 cleanup errors together. Preserve cancellation classification, including a thrown
@@ -161,13 +162,13 @@ timeout or an assumed unknown-reference capability in Foundation.
 
 ## Verification and Change Impact
 
-Current implementation facts, not proposed behavior:
+Pre-migration observations retained as regression requirements:
 
 | Current path | Evidence |
 |---|---|
-| Builder decodes one read, then independently references the path | [PDKManifestReferenceBuilder](../../PDKCore/PDKManifestReferenceBuilder.swift) |
+| Builder decodes one read, then independently references the path | `8e1faf2:Sources/PDKCore/PDKManifestReferenceBuilder.swift` (removed) |
 | CLI inspect repeats decode/hash split | [PDKKitInspectCommand](../../PDKKitCLICore/PDKKitInspectCommand.swift) |
-| Resolved asset can hold divergent digest representations | [PDKResolvedAsset](../../PDKCore/PDKResolvedAsset.swift) |
+| Resolved asset can hold divergent digest representations | [PDKResolvedAsset](../../PDKCore/Identity/PDKResolvedAsset.swift) |
 | Xcircuite resolves an identity, then rebuilds through a path | [PDK validation stage](../../../../Xcircuite/Sources/Xcircuite/PDKValidationFlowStageExecutor.swift) |
 | Database already stores exact source identities | [PDKDatabaseProcessState](../../../../PDKDesignDatabaseIntegration/Sources/PDKDesignDatabaseSchema/PDKDatabaseProcessState.swift) |
 
@@ -180,7 +181,7 @@ metadata-preserving counterexample deterministic. See
 [successful execution](../../../../.verification/runs/pdk-source-foundation/reference-design-counterexamples-stable-time.json).
 This proves current counterexamples; it does not verify the proposed implementation.
 
-Planned behavioral proof ownership:
+Behavioral proof ownership:
 
 | Owner | Falsifiable evidence |
 |---|---|
@@ -213,5 +214,5 @@ StandardViewInspectionRequest remains 4 because it carries no PDKReference.
 Only new versions of changed envelopes and identity values are accepted;
 fixtures, external providers, CLI output and Xcircuite persisted request readers
 must migrate together. Corpus schema and manifest document schema do not change.
-The implementation must update INTERFACES and owner design links rather than
+The implementation updates INTERFACES and owner design links rather than
 leave the old projection or builder as an alternate authority.

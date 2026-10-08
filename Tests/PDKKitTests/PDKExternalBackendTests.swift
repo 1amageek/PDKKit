@@ -12,7 +12,7 @@ struct PDKExternalBackendTests {
     func externalStandardViewResultsBindThroughManifest() async throws {
         let fixture = fixtureURL()
         let manifestURL = fixture.appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let pdk = try await loadPDKReference(for: manifestURL)
         let manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
         let asset = try #require(manifest.assets.first { $0.assetID == "cells" })
         let resolved = try LocalPDKAssetResolver().resolve(asset, relativeTo: manifestURL)
@@ -136,7 +136,7 @@ struct PDKExternalBackendTests {
     func externalRuleDeckResultsPreservePDKDigestBinding() async throws {
         let fixture = fixtureURL()
         let manifestURL = fixture.appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let pdk = try await loadPDKReference(for: manifestURL)
         let request = PDKRuleDeckInspectionRequest(
             runID: "external-rule-deck",
             inputs: [pdk.manifestLocator],
@@ -189,7 +189,7 @@ struct PDKExternalBackendTests {
     func externalRuleDeckCanonicalArtifactMismatchIsBlocked() async throws {
         let fixture = fixtureURL()
         let manifestURL = fixture.appending(path: "pdk.json")
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let pdk = try await loadPDKReference(for: manifestURL)
         let request = PDKRuleDeckInspectionRequest(
             runID: "external-rule-deck-artifact",
             inputs: [pdk.manifestLocator],

@@ -1,9 +1,7 @@
 # PDKKit Interface Contract
 
-The current API below remains implemented. The next breaking identity-construction
-design is owned by [Identity](Sources/PDKCore/Identity/DESIGN.md) and
-[ManifestLoading](Sources/PDKDiscovery/ManifestLoading/DESIGN.md); its declarations
-are proposals until the implementation and caller migration are verified.
+The breaking identity-construction contract is owned by [Identity](Sources/PDKCore/Identity/DESIGN.md) and
+[ManifestLoading](Sources/PDKDiscovery/ManifestLoading/DESIGN.md).
 
 ## Common shape
 
@@ -65,7 +63,10 @@ capture and codec/parser allocations are outside this budget.
 
 ### PDKDiscovery
 
-Local PDK discovery without validation claims.
+Local PDK discovery without validation claims. `PDKManifestLoading.discover` and
+`loadExact` return `PDKLoadedManifest` from captured bytes. Exact loading preserves
+the supplied reference and never rediscovers identity. The loaded value has no
+public arbitrary initializer or Codable conformance.
 
 ### PDKValidation
 
@@ -85,7 +86,7 @@ Umbrella API.
 | Type | Contract |
 |---|---|
 | `PDKManifestCodec` | Decode and encode the current manifest schema; obsolete schemas and field names fail closed |
-| `PDKManifestReferenceBuilder` | Build an immutable manifest reference with SHA-256 and byte count |
+| `LocalPDKManifestLoader` | Capture the selected manifest identity and decode metadata from the same bytes |
 | `LocalPDKAssetResolver` | Resolve manifest-relative assets within the manifest root and hash bytes |
 | `PDKManifestValidator` | Validate typed identity, layer, device, corner and mapping semantics |
 | `LocalPDKDiscoverer` | Discover candidate manifests without qualification claims |

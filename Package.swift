@@ -53,9 +53,12 @@ let package = Package(
             name: "PDKDiscovery",
             dependencies: [
                 "PDKCore",
+                "PDKSourceCapture",
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
-            ]
+            ],
+            exclude: ["DESIGN.md", "ManifestLoading/DESIGN.md"]
         ),
         .target(
             name: "PDKValidation",
@@ -66,6 +69,7 @@ let package = Package(
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
                 "PDKCore",
+                "PDKDiscovery",
                 "PDKStandardViews",
             ],
             exclude: ["DESIGN.md"]
@@ -98,6 +102,7 @@ let package = Package(
                 "PDKValidation",
                 "PDKStandardViews",
                 "PDKKit",
+                "PDKSourceCapture",
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
@@ -106,6 +111,16 @@ let package = Package(
         .executableTarget(
             name: "PDKKitCLI",
             dependencies: ["PDKKitCLICore"]
+        ),
+        .testTarget(
+            name: "PDKDiscoveryTests",
+            dependencies: [
+                "PDKCore", "PDKDiscovery", "PDKSourceCapture",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+            ]
         ),
         .testTarget(
             name: "PDKSourceCaptureTests",

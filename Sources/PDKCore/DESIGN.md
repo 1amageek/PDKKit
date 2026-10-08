@@ -17,7 +17,7 @@ semantic view parsing, source-capture lifecycle, validation aggregation or quali
 | Design | Relationship | Contract Used | Summary | Cautions |
 |---|---|---|---|---|
 | [PDKKit](../../DESIGN.md) | Parent | Manifest and asset values | Package composition | Inspection does not establish qualification |
-| [Identity](Identity/DESIGN.md) | Child, planned | Manifest and resolved-asset identity values | Single stored reference authority | Proposed breaking representation; current source is unchanged |
+| [Identity](Identity/DESIGN.md) | Child | Manifest and resolved-asset identity values | Single stored reference authority | Checked immutable schema-2 values; callers must migrate |
 | [CircuiteFoundation](../../../CircuiteFoundation/DESIGN.md) | Depends on | ArtifactReference and locator/digest contracts | Canonical content identity and availability | Availability never replaces identity |
 | [PDKStandardViews](../PDKStandardViews/DESIGN.md) | Used by | Asset declaration checks | Admission before semantics | Selected references must be retained |
 | [PDKValidation](../PDKValidation/DESIGN.md) | Used by | Asset declaration checks and resolver | Initial asset inventory | Downstream results must join this inventory |

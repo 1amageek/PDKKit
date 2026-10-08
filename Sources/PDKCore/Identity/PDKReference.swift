@@ -26,6 +26,10 @@ public struct PDKReference: Sendable, Hashable, Codable {
     public func validate() throws(PDKReferenceError) {
         guard !processID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw .emptyProcessID }
         guard !version.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw .emptyVersion }
+        try Self.validateManifest(reference: manifest, at: manifestLocator)
+    }
+
+    public static func validateManifest(reference manifest: ArtifactReference, at manifestLocator: ArtifactLocator) throws(PDKReferenceError) {
         guard manifest.digest.algorithm == .sha256 else { throw .malformedManifestDigest }
         guard manifest.format == .json,
               PDKIdentityDescriptorPolicy.normalizedKind(manifest.kind) == "pdk.technology" else {

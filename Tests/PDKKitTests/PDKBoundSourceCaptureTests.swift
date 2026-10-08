@@ -8,7 +8,7 @@ import Testing
 struct PDKBoundSourceCaptureTests {
     @Test("Manifest-bound views parse the captured manifest after path mutation", arguments: [false, true])
     func manifestViewUsesCapturedBytes(remove: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let result = try await LocalPDKManifestViewInspector(
             sourceCapturer: BoundMutatingSourceCapturer(fileName: "pdk.json", mutation: remove ? .remove : .replace)
@@ -20,7 +20,7 @@ struct PDKBoundSourceCaptureTests {
 
     @Test("Rules parse captured manifest and text after mutation", arguments: ["pdk.json", "rules.deck"], [false, true])
     func ruleUsesCapturedBytes(fileName: String, remove: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let result = try await LocalPDKRuleDeckInspector(
             sourceCapturer: BoundMutatingSourceCapturer(fileName: fileName, mutation: remove ? .remove : .replace)
@@ -33,7 +33,7 @@ struct PDKBoundSourceCaptureTests {
 
     @Test("External rule identity derives from captured manifest", arguments: [false, true])
     func externalRuleUsesCapturedManifest(remove: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let request = fixture.ruleRequest()
         let local = try await LocalPDKRuleDeckInspector().execute(request)
@@ -47,7 +47,7 @@ struct PDKBoundSourceCaptureTests {
 
     @Test("Oracle compares captured expectations after path mutation", arguments: [false, true])
     func oracleUsesCapturedBytes(remove: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let request = try fixture.oracleRequest()
         let result = try await LocalPDKOracleComparator(
@@ -61,7 +61,7 @@ struct PDKBoundSourceCaptureTests {
 
     @Test("Manifest binding refuses missing or substituted full source identity", arguments: [false, true])
     func substitutedIdentityIsRefused(removeIdentity: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let result = try await LocalPDKManifestViewInspector(
             standardInspector: BoundSubstitutingStandardInspector(removeIdentity: removeIdentity)
@@ -74,7 +74,7 @@ struct PDKBoundSourceCaptureTests {
 
     @Test("Capture cancellation and cleanup cannot yield view, rule, external or oracle success", arguments: [false, true])
     func captureFailureIsRefused(cleanup: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let error: PDKSourceCaptureError = cleanup
             ? .cleanup(primary: .cancelled, cleanup: .invalidTermination) : .cancelled
@@ -113,7 +113,7 @@ struct PDKBoundSourceCaptureTests {
 
     @Test("Oracle preserves nested manifest cancellation and cleanup blockers", arguments: [false, true])
     func nestedManifestCancellationIsPreserved(cleanup: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let request = try fixture.oracleRequest()
         let error: PDKSourceCaptureError = cleanup
@@ -135,7 +135,7 @@ struct PDKBoundSourceCaptureTests {
 
     @Test("Oracle preserves a thrown nested cancellation")
     func thrownNestedCancellationIsPreserved() async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let request = try fixture.oracleRequest()
         let result = try await LocalPDKOracleComparator(
@@ -149,7 +149,7 @@ struct PDKBoundSourceCaptureTests {
 
     @Test("Rule text cleanup after cancellation is preserved as a capture blocker")
     func ruleTextCleanupIsRefused() async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let result = try await LocalPDKRuleDeckInspector(
             sourceCapturer: BoundMutatingSourceCapturer(

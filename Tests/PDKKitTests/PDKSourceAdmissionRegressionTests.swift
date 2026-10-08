@@ -13,7 +13,7 @@ struct PDKSourceAdmissionRegressionTests {
             do { try FileManager.default.removeItem(at: root) }
             catch { Issue.record("Fixture cleanup failed: \(error)") }
         }
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: root.appending(path: "pdk.json"))
+        let pdk = try await loadPDKReference(for: root.appending(path: "pdk.json"))
         let result = try await LocalPDKManifestViewInspector(
             assetResolver: MutatingViewAssetResolver()
         ).execute(PDKManifestViewInspectionRequest(
@@ -35,7 +35,7 @@ struct PDKSourceAdmissionRegressionTests {
             catch { Issue.record("Fixture cleanup failed: \(error)") }
         }
         let manifest = root.appending(path: "pdk.json")
-        let reference = try PDKManifestReferenceBuilder().makeReference(for: manifest)
+        let reference = try await loadPDKReference(for: manifest)
         let result = try await LocalPDKRuleDeckInspector(
             assetResolver: MutatingRuleAssetResolver()
         ).execute(PDKRuleDeckInspectionRequest(

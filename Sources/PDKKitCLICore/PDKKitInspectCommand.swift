@@ -1,3 +1,5 @@
+import PDKDiscovery
+import PDKSourceCapture
 import Foundation
 import CircuiteFoundation
 import CircuiteFoundationFileSystem
@@ -28,29 +30,14 @@ struct PDKKitInspectCommand: Sendable {
         }
     }
 
-    func execute(options: Options) throws -> PDKKitCLIInvocationResult {
-        let data: Data
-        do {
-            data = try Data(contentsOf: URL(filePath: options.manifestPath))
-        } catch {
-            throw PDKKitCLIError.unreadableFile(path: options.manifestPath, reason: error.localizedDescription)
-        }
-        let manifest: PDKManifest
-        do {
-            manifest = try PDKManifestCodec.decode(data: data)
-        } catch {
-            throw PDKKitCLIError.invalidJSON(path: options.manifestPath, reason: String(describing: error))
-        }
-        let digest: String
-        do {
-            let location = try ArtifactLocation(fileURL: URL(filePath: options.manifestPath).standardizedFileURL)
-            let artifact = try LocalArtifactReferencer().reference(
-                ArtifactLocator(location: location, role: .input, kind: .technology, format: .json)
-            )
-            digest = artifact.digest.hexadecimalValue
-        } catch {
-            throw PDKKitCLIError.internalError("Failed to hash manifest: \(error)")
-        }
+    func execute(options: Options) async throws -> PDKKitCLIInvocationResult {
+        let url = URL(filePath: options.manifestPath).standardizedFileURL
+        let loaded = try await LocalPDKManifestLoader().discover(
+            at: ArtifactLocator(location: ArtifactLocation(fileURL: url), role: .input, kind: .technology, format: .json),
+            relativeTo: nil, captureBudget: PDKSourceCapturePolicy.defaultBudget
+        )
+        let manifest = loaded.manifest
+        let digest = loaded.reference.digest
         let output = PDKKitInspectOutput(
             command: "inspect",
             manifestPath: URL(filePath: options.manifestPath).standardizedFileURL.path,

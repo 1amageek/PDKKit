@@ -4,7 +4,7 @@ import CircuiteFoundationFoundation
 import PDKCore
 
 public struct PDKDiscoveryRequest: Sendable, Hashable, Codable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var runID: String

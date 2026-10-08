@@ -10,7 +10,7 @@ import Testing
 struct PDKIdentityCompositionTests {
     @Test(arguments: ["digest", "size"])
     func manifestDeclarationRejectsChangedView(check: String) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let url = fixture.root.appending(path: "pdk.json")
         var manifest = try PDKManifestCodec.decode(contentsOf: url)
@@ -23,7 +23,7 @@ struct PDKIdentityCompositionTests {
             manifest.assets[index].byteCount = Int64(bytes.count + 1)
         }
         try PDKManifestCodec.encode(manifest).write(to: url)
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: url)
+        let pdk = try await loadPDKReference(for: url)
         var request = fixture.viewRequest()
         request.pdk = pdk
         let result = try await LocalPDKManifestViewInspector().execute(request)
@@ -35,7 +35,7 @@ struct PDKIdentityCompositionTests {
 
     @Test(arguments: [false, true], ["cells", "rules"])
     func validationRejectsReplacementAfterInitialResolution(locked: Bool, assetID: String) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let manifestURL = fixture.root.appending(path: "pdk.json")
         if locked {
@@ -47,7 +47,7 @@ struct PDKIdentityCompositionTests {
             }
             try PDKManifestCodec.encode(manifest).write(to: manifestURL)
         }
-        let pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+        let pdk = try await loadPDKReference(for: manifestURL)
         let result = try await LocalPDKValidator(assetResolver: ReplacingResolver(assetID: assetID)).execute(
             PDKValidationRequest(runID: "identity-composition", inputs: [], pdk: pdk, requireAssetIdentity: locked)
         )
@@ -62,7 +62,7 @@ struct PDKIdentityCompositionTests {
 
     @Test
     func oracleFailureSurvivesLaterBlockedView() async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         try "MACRO nmos\n SIZE wrong BY 1 ;\nEND nmos\n".write(to: fixture.root.appending(path: "cells.lef"), atomically: true, encoding: .utf8)
         try FileManager.default.removeItem(at: fixture.root.appending(path: "timing.lib"))
@@ -88,7 +88,7 @@ struct PDKIdentityCompositionTests {
 
     @Test(arguments: [false, true])
     func validationCancellationStopsFurtherChecks(ruleStage: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let views = CancellingViews()
         let rules = CancellingRules()
@@ -105,7 +105,7 @@ struct PDKIdentityCompositionTests {
 
     @Test(arguments: [false, true], [false, true])
     func injectedCompletedEvidenceMustRetainInitialIdentity(ruleStage: Bool, removeIdentity: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let result = try await LocalPDKValidator(
             standardViewInspector: SubstitutingViews(removeIdentity: removeIdentity),
@@ -120,7 +120,7 @@ struct PDKIdentityCompositionTests {
 
     @Test
     func expectedReferenceSurvivesSerializationAndRejectsCurrentReplacement() async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let manifest = try PDKManifestCodec.decode(contentsOf: fixture.root.appending(path: "pdk.json"))
         let asset = try #require(manifest.assets.first { $0.assetID == "cells" })
@@ -153,7 +153,7 @@ struct PDKIdentityCompositionTests {
 
     @Test(arguments: [false, true])
     func externalRuleRejectsUpstreamAndDeclaredIdentityMismatch(declared: Bool) async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let manifestURL = fixture.root.appending(path: "pdk.json")
         var manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
@@ -165,7 +165,7 @@ struct PDKIdentityCompositionTests {
         if declared {
             manifest.assets[index].sha256 = String(repeating: "0", count: 64)
             try PDKManifestCodec.encode(manifest).write(to: manifestURL)
-            request.pdk = try PDKManifestReferenceBuilder().makeReference(for: manifestURL)
+            request.pdk = try await loadPDKReference(for: manifestURL)
             request.expectedSourceArtifact = nil
             var response = local
             response.payload.pdkDigest = request.pdk.digest
@@ -188,7 +188,7 @@ struct PDKIdentityCompositionTests {
 
     @Test
     func externalProvidersPreserveCancellation() async throws {
-        let fixture = try BoundCaptureFixture()
+        let fixture = try await BoundCaptureFixture()
         defer { fixture.cleanup() }
         let request = PDKStandardViewInspectionRequest(
             runID: "cancel-provider", inputs: [], format: .lef, assetID: "cells"

@@ -59,9 +59,8 @@ existing owners.
 - Rule-deck inspection is now an independent `PDKRuleDeckInspecting` implementation
   with immutable source references, per-layer evidence and
   `pdkkit-cli inspect-rule-deck`; `LocalPDKValidator` injects the same protocol.
-- Validation request schema version 3 carries production asset-identity and
-  corner-locking controls. Retained schema-v2 requests decode with those
-  controls disabled; schema version 1 and unknown versions are rejected.
+- Validation request schema 4 carries asset-identity and corner-locking controls
+  and strict schema-2 identity values; obsolete request versions are rejected.
 - Corpus schema version 2 carries `ruleDeckChecks` and per-case
   `ruleDeckResults`; older corpus schemas are rejected.
 - M5 immutable manifest-digest-bound oracle expectations, canonical field comparison, structured mismatch blockers and `pdkkit-cli oracle`.

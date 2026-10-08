@@ -1,17 +1,19 @@
 import Foundation
 import PDKCore
 import CircuiteFoundation
+import CircuiteFoundationFoundation
+import PDKSourceCapture
 
 public struct LocalPDKDiscoverer: PDKDiscovering {
     private let clock: any PDKDiscoveryExecutionClock
-    private let referenceBuilder: PDKManifestReferenceBuilder
+    private let manifestLoader: any PDKManifestLoading
 
     public init(
         clock: any PDKDiscoveryExecutionClock = SystemPDKDiscoveryExecutionClock(),
-        referenceBuilder: PDKManifestReferenceBuilder = PDKManifestReferenceBuilder()
+        manifestLoader: any PDKManifestLoading = LocalPDKManifestLoader()
     ) {
         self.clock = clock
-        self.referenceBuilder = referenceBuilder
+        self.manifestLoader = manifestLoader
     }
 
     public func execute(
@@ -21,17 +23,23 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
         var diagnostics: [DesignDiagnostic] = []
         var candidates: [PDKReference] = []
         var inspectedPaths: [String] = []
-        let paths = discoverManifestPaths(request: request, diagnostics: &diagnostics)
+        let schemaIsCurrent = request.schemaVersion == PDKDiscoveryRequest.currentSchemaVersion
+        let paths = schemaIsCurrent ? discoverManifestPaths(request: request, diagnostics: &diagnostics) : []
         inspectedPaths = paths.map(\.path).sorted()
 
+        var cancelled = false
         for url in paths {
             do {
-                let reference = try referenceBuilder.makeReference(for: url)
+                let locator = ArtifactLocator(location: try ArtifactLocation(fileURL: url), role: .input, kind: .technology, format: .json)
+                let reference = try await manifestLoader.discover(at: locator, relativeTo: nil, captureBudget: PDKSourceCapturePolicy.defaultBudget).reference
                 if let requiredProcessID = request.requiredProcessID,
                    reference.processID != requiredProcessID {
                     continue
                 }
                 candidates.append(reference)
+            } catch let error as PDKManifestLoadingError where error.isCancellation {
+                cancelled = true
+                break
             } catch {
                 diagnostics.append(DesignDiagnostic(
                     severity: .warning,
@@ -50,7 +58,14 @@ public struct LocalPDKDiscoverer: PDKDiscovering {
         }
 
         let status: PDKExecutionStatus
-        if request.searchRoots.isEmpty {
+        if !schemaIsCurrent {
+            diagnostics.append(DesignDiagnostic(severity: .error, code: "pdk.discovery.request-schema-unsupported",
+                message: "Unsupported request schema version.", entity: "schemaVersion", suggestedActions: ["migrate_request_schema"]))
+            status = .blocked
+        } else if cancelled {
+            diagnostics.append(DesignDiagnostic(severity: .warning, code: "pdk.discovery.cancelled", message: "Manifest discovery was cancelled."))
+            status = .cancelled
+        } else if request.searchRoots.isEmpty {
             diagnostics.append(DesignDiagnostic(
                 severity: .error,
                 code: "pdk.discovery.search-roots-missing",

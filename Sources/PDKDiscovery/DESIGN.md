@@ -4,8 +4,8 @@
 
 Own local candidate discovery and manifest loading. Parent:
 [PDKKit](../../DESIGN.md). Child: [ManifestLoading](ManifestLoading/DESIGN.md).
-The child specifies the next implementation sprint; current loading still uses
-the concrete `PDKManifestReferenceBuilder` in PDKCore.
+ManifestLoading implements discovered/exact reads. The obsolete Core builder is
+removed; metadata is decoded only from successful source capture.
 
 ## Responsibilities and Boundaries
 
@@ -20,10 +20,10 @@ existing owners.
 | Design | Relationship | Contract Used | Summary | Cautions |
 |---|---|---|---|---|
 | [PDKKit](../../DESIGN.md) | Parent | Discovery product | Independent library composition | No Xcircuite import |
-| [ManifestLoading](ManifestLoading/DESIGN.md) | Child | PDKManifestLoading | Discovered/exact manifest loading | Proposed API, not current implementation |
+| [ManifestLoading](ManifestLoading/DESIGN.md) | Child | PDKManifestLoading | Discovered/exact manifest loading | Exact capture precedes decoding |
 | [PDKCore](../PDKCore/DESIGN.md) | Depends on | Manifest and identity values | Candidate metadata | No reverse dependency |
-| [PDKSourceCapture](../PDKSourceCapture/DESIGN.md) | Depends on, planned | Exact immutable bytes | Admission before decoding | Its budget does not bound prior discovery |
-| [PDKValidation](../PDKValidation/DESIGN.md) | Used by, planned | Manifest loading | Corpus reference construction | Cancellation stops further cases |
+| [PDKSourceCapture](../PDKSourceCapture/DESIGN.md) | Depends on | Exact immutable bytes | Admission before decoding | Its budget does not bound prior discovery |
+| [PDKValidation](../PDKValidation/DESIGN.md) | Used by | Manifest loading | Corpus reference construction | Cancellation stops further cases |
 
 ## Architecture
 
@@ -47,7 +47,7 @@ cancelled load stops enumeration rather than becoming an invalid-manifest warnin
 
 Candidate enumeration and result collection are invocation-local. Loading owns
 its temporary bytes and asynchronous cleanup through the child contract. No
-global cache or new shared state is planned.
+global cache or new shared state is introduced.
 
 ## Failure, Concurrency, and Constraints
 
@@ -57,7 +57,7 @@ explicit capture budget. Discovery warnings are not qualification findings.
 
 ## Verification and Change Impact
 
-Child behavioral tests precede discovery/API/CLI composition. A dedicated proposed
+Child behavioral tests precede discovery/API/CLI composition. The dedicated
 `PDKDiscoveryTests` target depends on Discovery, Core and SourceCapture plus their
 Foundation dependencies, without mask codecs, Validation or Xcircuite. Build the
 Discovery target independently; avoid interpreting a Swift Testing filter as

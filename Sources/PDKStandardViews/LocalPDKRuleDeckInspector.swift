@@ -28,6 +28,11 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         _ request: PDKRuleDeckInspectionRequest
     ) async throws -> PDKRuleDeckInspectionResult {
         let startedAt = clock.now()
+        guard request.schemaVersion == PDKRuleDeckInspectionRequest.currentSchemaVersion else {
+            return try makeResult(request: request, startedAt: startedAt, status: .blocked,
+                findings: [PDKValidationFinding(severity: .blocker, code: "pdk.rule-deck.request-schema-unsupported",
+                    message: "Unsupported request schema version.", entity: "schemaVersion", suggestedActions: ["migrate_request_schema"])])
+        }
         let manifestURL: URL
         do {
             manifestURL = try PDKArtifactURLResolver().resolve(

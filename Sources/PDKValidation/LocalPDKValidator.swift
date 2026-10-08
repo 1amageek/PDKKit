@@ -42,21 +42,28 @@ public struct LocalPDKValidator: PDKValidating {
     ) async throws -> PDKValidationResult {
         let startedAt = clock.now()
         var validationResult: ValidationResult
-        do {
-            let manifestURL = try PDKArtifactURLResolver().resolve(
-                request.pdk.manifestLocator,
-                baseDirectoryPath: request.projectRootPath
-            )
-            validationResult = await validate(request: request, manifestURL: manifestURL)
-        } catch {
-            let finding = PDKValidationFinding(
-                severity: .blocker,
-                code: "pdk.validation.manifest-path-invalid",
-                message: "PDK manifest reference could not be resolved: \(error.localizedDescription)",
-                entity: request.pdk.manifestLocator.path,
-                suggestedActions: ["provide_project_root", "repair_manifest_reference"]
-            )
-            validationResult = result(status: .blocked, findings: [finding], request: request)
+        if request.schemaVersion != PDKValidationRequest.currentSchemaVersion {
+            validationResult = result(status: .blocked, findings: [PDKValidationFinding(
+                severity: .blocker, code: "pdk.validation.request-schema-unsupported",
+                message: "Unsupported request schema version.", entity: "schemaVersion", suggestedActions: ["migrate_request_schema"]
+            )], request: request)
+        } else {
+            do {
+                let manifestURL = try PDKArtifactURLResolver().resolve(
+                    request.pdk.manifestLocator,
+                    baseDirectoryPath: request.projectRootPath
+                )
+                validationResult = await validate(request: request, manifestURL: manifestURL)
+            } catch {
+                let finding = PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.validation.manifest-path-invalid",
+                    message: "PDK manifest reference could not be resolved: \(error.localizedDescription)",
+                    entity: request.pdk.manifestLocator.path,
+                    suggestedActions: ["provide_project_root", "repair_manifest_reference"]
+                )
+                validationResult = result(status: .blocked, findings: [finding], request: request)
+            }
         }
         if request.validateStandardViews,
            let manifest = validationResult.manifest,

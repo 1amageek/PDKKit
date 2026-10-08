@@ -117,12 +117,11 @@ Inspection remains distinct from engine capability and process qualification.
 
 ## Verification and Change Impact
 
-The next identity-construction sprint is specified by
+Identity construction is specified by
 [PDKDiscovery](Sources/PDKDiscovery/DESIGN.md) and its
 [ManifestLoading](Sources/PDKDiscovery/ManifestLoading/DESIGN.md) child, using the
-planned [Core Identity](Sources/PDKCore/Identity/DESIGN.md) contract. These are
-proposed contracts; the builder and duplicate value fields remain in current
-source until implementation. Existing discovery-before-capture and parser budget
+[Core Identity](Sources/PDKCore/Identity/DESIGN.md) contract. Core values and the manifest loader are implemented;
+Xcircuite exact handoff is the dependent migration sprint. Existing discovery-before-capture and parser budget
 limitations continue to apply. Exact database locks and canonical PDK persistence
 remain owned by the existing system/database integration designs.
 

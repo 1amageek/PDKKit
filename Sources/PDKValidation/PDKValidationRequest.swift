@@ -4,8 +4,7 @@ import CircuiteFoundationFoundation
 import PDKCore
 
 public struct PDKValidationRequest: Sendable, Hashable, Codable {
-    public static let currentSchemaVersion = 3
-    public static let supportedSchemaVersions = 2...currentSchemaVersion
+    public static let currentSchemaVersion = 4
 
     public var schemaVersion: Int
     public var runID: String
@@ -48,7 +47,7 @@ public struct PDKValidationRequest: Sendable, Hashable, Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
-        guard Self.supportedSchemaVersions.contains(schemaVersion) else {
+        guard schemaVersion == Self.currentSchemaVersion else {
             throw DecodingError.dataCorruptedError(
                 forKey: .schemaVersion,
                 in: container,
@@ -59,14 +58,8 @@ public struct PDKValidationRequest: Sendable, Hashable, Codable {
         inputs = try container.decode([ArtifactLocator].self, forKey: .inputs)
         pdk = try container.decode(PDKReference.self, forKey: .pdk)
         requiredAssetRoles = try container.decode([PDKAssetRole].self, forKey: .requiredAssetRoles)
-        requiredCornerIDs = try container.decodeIfPresent(
-            [String].self,
-            forKey: .requiredCornerIDs
-        ) ?? []
-        requireAssetIdentity = try container.decodeIfPresent(
-            Bool.self,
-            forKey: .requireAssetIdentity
-        ) ?? false
+        requiredCornerIDs = try container.decode([String].self, forKey: .requiredCornerIDs)
+        requireAssetIdentity = try container.decode(Bool.self, forKey: .requireAssetIdentity)
         validateCrossViews = try container.decode(Bool.self, forKey: .validateCrossViews)
         validateStandardViews = try container.decode(Bool.self, forKey: .validateStandardViews)
         validateRuleDecks = try container.decode(Bool.self, forKey: .validateRuleDecks)

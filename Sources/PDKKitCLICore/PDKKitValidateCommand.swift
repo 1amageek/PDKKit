@@ -1,7 +1,10 @@
+import PDKDiscovery
+import PDKSourceCapture
+import CircuiteFoundation
+import CircuiteFoundationFoundation
 import Foundation
 import PDKCore
 import PDKValidation
-import CircuiteFoundation
 
 struct PDKKitValidateCommand: Sendable {
     struct Options: Sendable, Equatable {
@@ -65,7 +68,9 @@ struct PDKKitValidateCommand: Sendable {
         let url = URL(filePath: options.manifestPath).standardizedFileURL
         let reference: PDKReference
         do {
-            reference = try PDKManifestReferenceBuilder().makeReference(for: url)
+            reference = try await LocalPDKManifestLoader().discover(at: ArtifactLocator(location: ArtifactLocation(fileURL: url), role: .input, kind: .technology, format: .json), relativeTo: nil, captureBudget: PDKSourceCapturePolicy.defaultBudget).reference
+        } catch let error as PDKManifestLoadingError {
+            throw PDKKitCLIError.manifestLoading(error)
         } catch {
             throw PDKKitCLIError.invalidJSON(path: options.manifestPath, reason: String(describing: error))
         }

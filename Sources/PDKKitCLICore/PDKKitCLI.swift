@@ -1,4 +1,5 @@
 import Foundation
+import PDKDiscovery
 
 public enum PDKKitCLI {
     public static func run(arguments: [String]) async -> Int32 {
@@ -15,6 +16,8 @@ public enum PDKKitCLI {
     public static func invoke(arguments: [String]) async -> PDKKitCLIInvocationResult {
         do {
             return try await dispatch(arguments: arguments)
+        } catch let error as PDKManifestLoadingError {
+            return failureResult(.manifestLoading(error))
         } catch let error as PDKKitCLIError {
             return failureResult(error)
         } catch {
@@ -31,7 +34,7 @@ public enum PDKKitCLI {
         case "--help", "-h", "help": return helpResult(generalHelp)
         case "inspect":
             if commandArguments.contains("--help") { return helpResult(inspectHelp) }
-            return try PDKKitInspectCommand().execute(options: PDKKitInspectCommand.Options(arguments: commandArguments))
+            return try await PDKKitInspectCommand().execute(options: PDKKitInspectCommand.Options(arguments: commandArguments))
         case "validate":
             if commandArguments.contains("--help") { return helpResult(validateHelp) }
             return try await PDKKitValidateCommand().execute(options: PDKKitValidateCommand.Options(arguments: commandArguments))

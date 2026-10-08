@@ -95,6 +95,10 @@ the stored fields above plus the version. Reject obsolete duplicate identity/pat
 keys even when their values agree. The manifest document schema remains version 1.
 Breaking envelope migration is owned by [ManifestLoading](../../PDKDiscovery/ManifestLoading/DESIGN.md#verification-and-change-impact).
 
+`PDKReference.validateManifest(reference:at:)` exposes the pure descriptor/digest
+subset of value validation for admission before metadata exists. Construction and
+loading share this owner; it performs no I/O.
+
 ## State, Ownership, and Lifecycle
 
 Values are immutable and Sendable. They own no handle, session, retained source

@@ -32,6 +32,11 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         _ request: PDKRuleDeckInspectionRequest
     ) async throws -> PDKRuleDeckInspectionResult {
         let startedAt = clock.now()
+        guard request.schemaVersion == PDKRuleDeckInspectionRequest.currentSchemaVersion else {
+            return try failureResult(request: request, startedAt: startedAt, status: .blocked,
+                finding: finding(code: "pdk.external.request-schema-unsupported", message: "Unsupported request schema version.",
+                                 severity: .blocker, actions: ["migrate_request_schema"]))
+        }
         var receivedArtifacts: [ArtifactReference] = []
         let data: Data
         do {

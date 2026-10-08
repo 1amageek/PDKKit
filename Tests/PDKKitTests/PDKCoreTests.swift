@@ -107,9 +107,8 @@ struct PDKCoreTests {
     }
 
     @Test("manifest references project to a typed Foundation artifact")
-    func manifestReferenceProjectsToFoundation() throws {
-        let reference = try PDKManifestReferenceBuilder().makeReference(
-            for: fixtureURL().appending(path: "pdk.json")
+    func manifestReferenceProjectsToFoundation() async throws {
+        let reference = try await loadPDKReference(for: fixtureURL().appending(path: "pdk.json")
         )
         let foundationReference = try reference.validatedManifest()
 

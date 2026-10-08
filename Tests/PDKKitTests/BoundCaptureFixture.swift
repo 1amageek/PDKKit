@@ -9,10 +9,10 @@ struct BoundCaptureFixture {
     let root: URL
     let pdk: PDKReference
 
-    init() throws {
+    init() async throws {
         root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         try FileManager.default.copyItem(at: PDKTestFixtures.validPDKURL, to: root)
-        pdk = try PDKManifestReferenceBuilder().makeReference(for: root.appending(path: "pdk.json"))
+        pdk = try await loadPDKReference(for: root.appending(path: "pdk.json"))
     }
 
     func cleanup() {
