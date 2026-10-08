@@ -37,16 +37,37 @@ cannot be inferred from names or successful JSON decoding.
 The LEF inventory/declaration distinction and external-master inference boundary
 are owned by [StandardInspection](StandardInspection/DESIGN.md).
 
-Manifest-bound composition must compare the inspector's retained source reference
-with the exact resolved asset reference before running binding validation. This
-gate is owned by `LocalPDKManifestViewInspector` and applies to injected backends
-as well as local parsing. Standalone locator inspection identifies current bytes;
-it cannot replace the identity selected by manifest-bound resolution. Manifest,
-rule-deck text and oracle JSON are decoded only from captured bytes. Capture
-failure, cancellation and cleanup failure cannot produce completed evidence.
+Manifest-view, standalone view and rule-deck requests carry an optional
+`expectedSourceArtifact`. When supplied, it is authoritative: a backend must not
+replace it with a new identity from current availability. Standalone inspection
+without an expected reference discovers current bytes. Manifest-bound inspection
+checks every declared digest and byte count against the selected reference before
+semantic admission, using PDKCore's asset-owned identity checks. An upstream
+reference must also agree with manifest-bound resolution. Local parsing captures
+against that reference; local and external results retain the same full reference.
+Manifest composition checks the returned reference before binding, including
+injected backends. Request schemas advance to view 4, manifest-view 3 and rule 2.
+
+```text
+manifest declarations + upstream expected reference
+  -> select and check asset identity -> capture expected bytes -> parse
+  -> exact retained identity check -> binding -> result
+```
+
+Manifest, rule-deck text and oracle JSON are decoded only from captured bytes.
+Capture failure, cancellation and cleanup failure cannot produce completed evidence.
+Cancellation thrown by a provider remains cancelled. Oracle aggregation preserves
+an already observed failed view when a later view is blocked; cancellation stops
+further view execution and preserves an earlier failure if one already occurred.
 
 ## Verification and Change Impact
 
 [PDKStandardViewTests](../../Tests/PDKKitTests/PDKStandardViewTests.swift) owns
 local parse and round-trip behavior. External inspection and manifest validation
 tests own their boundary checks; physical engine evidence is independent.
+
+[PDKIdentityCompositionTests](../../Tests/PDKKitTests/PDKIdentityCompositionTests.swift)
+refutes declaration mismatches, upstream/path substitution, injected identity
+substitution, status downgrade and cancellation conversion. Request serialization
+retains supplied expected identities. External adapters enforce the same identity
+and cancellation contracts as local implementations.

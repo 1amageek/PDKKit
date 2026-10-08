@@ -105,7 +105,8 @@ does not claim complete vendor-specific language coverage, reference-oracle
 correlation or foundry qualification.
 
 `PDKValidationPayload.standardViewResults` is deterministic by asset and format.
-Every declared LEF, GDSII/OASIS, SPICE and Liberty mapping is executed through
+Until cancellation terminates execution, every declared LEF, GDSII/OASIS, SPICE
+and Liberty mapping is executed through
 the manifest-bound inspector when `validateStandardViews` is enabled (the
 default). A parser failure or semantic blocker changes the validation result to
 `failed` or `blocked`; it cannot be omitted by a hash-only manifest pass.

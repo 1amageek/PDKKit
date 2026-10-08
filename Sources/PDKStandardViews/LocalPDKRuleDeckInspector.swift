@@ -168,6 +168,22 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             )
         }
 
+        var identityFindings = asset.identityFindings(for: resolved.reference).map { finding in
+            var finding = finding
+            finding.code = finding.code.replacingOccurrences(of: "asset-", with: "rule-deck-asset-")
+            return finding
+        }
+        if let expected = request.expectedSourceArtifact, expected != resolved.reference {
+            identityFindings.append(finding(
+                severity: .blocker, code: "pdk.validation.rule-deck-source-artifact-mismatch",
+                message: "The resolved rule deck differs from the upstream expected source identity.",
+                entity: request.assetID, actions: ["restore_immutable_artifact", "rerun_pdk_validation"]
+            ))
+        }
+        if !identityFindings.isEmpty {
+            return try makeResult(request: request, startedAt: startedAt, status: .blocked, findings: identityFindings)
+        }
+
         let sourceArtifact = resolved.reference
         let data: Data
         do {
@@ -242,26 +258,6 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             manifest.layers.first { $0.layerID == layerID }
         }
         var findings: [PDKValidationFinding] = []
-        if let expectedDigest = asset.sha256,
-           expectedDigest.lowercased() != resolved.computedSHA256.lowercased() {
-            findings.append(finding(
-                severity: .blocker,
-                code: "pdk.validation.rule-deck-asset-digest-mismatch",
-                message: "Rule-deck bytes do not match the manifest digest.",
-                entity: request.assetID,
-                actions: ["refresh_asset_digest", "restore_immutable_artifact"]
-            ))
-        }
-        if let expectedByteCount = asset.byteCount,
-           expectedByteCount != resolved.computedByteCount {
-            findings.append(finding(
-                severity: .blocker,
-                code: "pdk.validation.rule-deck-asset-size-mismatch",
-                message: "Rule-deck byte count does not match the manifest declaration.",
-                entity: request.assetID,
-                actions: ["refresh_asset_metadata", "restore_immutable_artifact"]
-            ))
-        }
         let unknownLayerIDs = mapping.layerIDs.filter { layerID in
             !expectedLayerDefinitions.contains { $0.layerID == layerID }
         }

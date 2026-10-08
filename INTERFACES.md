@@ -121,7 +121,9 @@ reproduces the declared blocked or failed outcome. Corpus schema version 2 is
 required and includes rule-deck checks in the case contract.
 
 `PDKStandardViewInspectionRequest` and
-`PDKManifestViewInspectionRequest` are agent-facing engine requests. Their
+`PDKManifestViewInspectionRequest` are agent-facing engine requests.
+The authoritative expected-source propagation and request versions are defined in
+[PDKStandardViews](Sources/PDKStandardViews/DESIGN.md). Their
 payloads retain parser identity, canonical layer/cell/model/pin/timing facts,
 numeric SPICE model parameters, subcircuits, Liberty cells, timing tables and
 the standard-owned typed `LEFDocument` for physical declarations,

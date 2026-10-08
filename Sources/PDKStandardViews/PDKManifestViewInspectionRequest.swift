@@ -4,7 +4,7 @@ import CircuiteFoundation
 import CircuiteFoundationFoundation
 
 public struct PDKManifestViewInspectionRequest: Sendable {
-    public static let currentSchemaVersion = 2
+    public static let currentSchemaVersion = 3
 
     public var schemaVersion: Int
     public var runID: String
@@ -13,6 +13,7 @@ public struct PDKManifestViewInspectionRequest: Sendable {
     public var assetID: String
     public var format: PDKStandardViewFormat
     public var requireNonEmpty: Bool
+    public var expectedSourceArtifact: ArtifactReference?
     public var projectRootPath: String?
 
     public init(
@@ -22,6 +23,7 @@ public struct PDKManifestViewInspectionRequest: Sendable {
         assetID: String,
         format: PDKStandardViewFormat,
         requireNonEmpty: Bool = true,
+        expectedSourceArtifact: ArtifactReference? = nil,
         projectRootPath: String? = nil
     ) {
         self.schemaVersion = Self.currentSchemaVersion
@@ -31,6 +33,7 @@ public struct PDKManifestViewInspectionRequest: Sendable {
         self.assetID = assetID
         self.format = format
         self.requireNonEmpty = requireNonEmpty
+        self.expectedSourceArtifact = expectedSourceArtifact
         self.projectRootPath = projectRootPath
     }
 }

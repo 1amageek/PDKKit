@@ -60,7 +60,8 @@ public struct LocalPDKValidator: PDKValidating {
         }
         if request.validateStandardViews,
            let manifest = validationResult.manifest,
-           validationResult.status != .failed {
+           validationResult.status != .failed,
+           validationResult.status != .cancelled {
             validationResult = await validateStandardViews(
                 manifest: manifest,
                 request: request,
@@ -69,7 +70,8 @@ public struct LocalPDKValidator: PDKValidating {
         }
         if request.validateRuleDecks,
            let manifest = validationResult.manifest,
-           validationResult.status != .failed {
+           validationResult.status != .failed,
+           validationResult.status != .cancelled {
             validationResult = await validateRuleDecks(
                 manifest: manifest,
                 request: request,
@@ -228,24 +230,7 @@ public struct LocalPDKValidator: PDKValidating {
             do {
                 let resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
                 resolvedAssets.append(resolved)
-                if let expected = asset.sha256, expected.lowercased() != resolved.computedSHA256 {
-                    findings.append(PDKValidationFinding(
-                        severity: .blocker,
-                        code: "pdk.validation.asset-digest-mismatch",
-                        message: "Asset digest does not match the manifest declaration.",
-                        entity: asset.assetID,
-                        suggestedActions: ["refresh_asset_digest", "check_immutable_artifact"]
-                    ))
-                }
-                if let expected = asset.byteCount, expected != resolved.computedByteCount {
-                    findings.append(PDKValidationFinding(
-                        severity: .blocker,
-                        code: "pdk.validation.asset-size-mismatch",
-                        message: "Asset byte count does not match the manifest declaration.",
-                        entity: asset.assetID,
-                        suggestedActions: ["refresh_asset_metadata"]
-                    ))
-                }
+                findings.append(contentsOf: asset.identityFindings(for: resolved.reference))
             } catch {
                 let severity: PDKFindingSeverity = asset.required ? .blocker : .warning
                 findings.append(PDKValidationFinding(
@@ -376,10 +361,20 @@ public struct LocalPDKValidator: PDKValidating {
                 pdk: request.pdk,
                 assetID: assetID,
                 format: format,
+                expectedSourceArtifact: initialResult.resolvedAssets.first { $0.assetID == assetID }?.reference,
                 projectRootPath: request.projectRootPath
             )
             do {
-                let inspectionResult = try await standardViewInspector.execute(inspectionRequest)
+                var inspectionResult = try await standardViewInspector.execute(inspectionRequest)
+                if inspectionResult.status == .completed {
+                    let expected = inspectionRequest.expectedSourceArtifact
+                    let observed = inspectionResult.payload.inspection?.inspection?.sourceArtifact
+                    if expected == nil || observed != expected {
+                        inspectionResult.status = .blocked
+                        inspectionResult.payload.isValid = false
+                        inspectionResult.payload.findings.append(sourceIdentityFinding(assetID: assetID))
+                    }
+                }
                 result.standardViewResults.append(PDKStandardViewValidationResult(
                     assetID: assetID,
                     format: format,
@@ -387,18 +382,20 @@ public struct LocalPDKValidator: PDKValidating {
                     payload: inspectionResult.payload
                 ))
                 result.findings.append(contentsOf: inspectionResult.payload.findings)
-                switch inspectionResult.status {
-                case .failed:
-                    result.status = .failed
-                case .cancelled:
-                    if result.status != .failed { result.status = .cancelled }
-                case .blocked:
-                    if result.status == .completed { result.status = .blocked }
-                case .completed:
-                    if !inspectionResult.payload.isValid, result.status == .completed {
-                        result.status = .blocked
-                    }
-                }
+                updateStatus(&result.status, with: inspectionResult.status)
+                if !inspectionResult.payload.isValid, result.status == .completed { result.status = .blocked }
+                if inspectionResult.status == .cancelled { break }
+            } catch is CancellationError {
+                let finding = cancellationFinding(assetID: assetID)
+                result.findings.append(finding)
+                result.standardViewResults.append(PDKStandardViewValidationResult(
+                    assetID: assetID, format: format, status: .cancelled,
+                    payload: PDKManifestViewInspectionPayload(
+                        isValid: false, assetID: assetID, pdkDigest: request.pdk.digest, findings: [finding]
+                    )
+                ))
+                updateStatus(&result.status, with: .cancelled)
+                break
             } catch {
                 let finding = PDKValidationFinding(
                     severity: .error,
@@ -461,10 +458,19 @@ public struct LocalPDKValidator: PDKValidating {
                 inputs: [request.pdk.manifestLocator],
                 pdk: request.pdk,
                 assetID: asset.assetID,
+                expectedSourceArtifact: resolvedAssets.first { $0.assetID == asset.assetID }?.reference,
                 projectRootPath: request.projectRootPath
             )
             do {
-                let inspectionResult = try await ruleDeckInspector.execute(inspectionRequest)
+                var inspectionResult = try await ruleDeckInspector.execute(inspectionRequest)
+                if inspectionResult.status == .completed {
+                    let expected = inspectionRequest.expectedSourceArtifact
+                    if expected == nil || inspectionResult.payload.sourceArtifact != expected {
+                        inspectionResult.status = .blocked
+                        inspectionResult.payload.isValid = false
+                        inspectionResult.payload.findings.append(sourceIdentityFinding(assetID: asset.assetID))
+                    }
+                }
                 let payload = inspectionResult.payload
                 result.ruleDeckResults.append(PDKRuleDeckValidationResult(
                     assetID: asset.assetID,
@@ -479,6 +485,20 @@ public struct LocalPDKValidator: PDKValidating {
                 ))
                 result.findings.append(contentsOf: payload.findings)
                 updateStatus(&result.status, with: inspectionResult.status)
+                if !payload.isValid, result.status == .completed { result.status = .blocked }
+                if inspectionResult.status == .cancelled { break }
+            } catch is CancellationError {
+                let finding = cancellationFinding(assetID: asset.assetID)
+                let payload = PDKRuleDeckInspectionPayload(
+                    isValid: false, assetID: asset.assetID, pdkDigest: request.pdk.digest, findings: [finding]
+                )
+                result.ruleDeckResults.append(PDKRuleDeckValidationResult(
+                    assetID: asset.assetID, status: .cancelled, isValid: false,
+                    inspection: payload, findings: [finding]
+                ))
+                result.findings.append(finding)
+                updateStatus(&result.status, with: .cancelled)
+                break
             } catch {
                 let finding = PDKValidationFinding(
                     severity: .error,
@@ -512,6 +532,22 @@ public struct LocalPDKValidator: PDKValidating {
             .compactMap(\.entity)
             .sorted()
         return result
+    }
+
+    private func sourceIdentityFinding(assetID: String) -> PDKValidationFinding {
+        PDKValidationFinding(
+            severity: .blocker, code: "pdk.validation.source-artifact-mismatch",
+            message: "The inspected source identity differs from the initially resolved asset.",
+            entity: assetID, suggestedActions: ["restore_immutable_artifact", "rerun_pdk_validation"]
+        )
+    }
+
+    private func cancellationFinding(assetID: String) -> PDKValidationFinding {
+        PDKValidationFinding(
+            severity: .warning, code: "pdk.validation.inspection-cancelled",
+            message: "Inspection was cancelled; remaining checks were not executed.",
+            entity: assetID, suggestedActions: ["rerun_pdk_validation"]
+        )
     }
 
     private func updateStatus(

@@ -24,7 +24,8 @@ publishing a successful inspection.
 
 ```mermaid
 flowchart LR
-  Locator --> Reference[Stable source reference]
+  Expected[Optional authoritative source reference] --> Reference[Selected source reference]
+  Locator -->|Only without expected reference| Reference
   Locator --> Capture[Bounded capture and cleanup]
   Reference --> Capture --> Bytes[Immutable verified buffer]
   Bytes --> Parser --> IR[Retained standard document and PDK facts]
@@ -32,7 +33,10 @@ flowchart LR
 
 ## Contracts and Invariants
 
-The parsed buffer's digest and size match the retained reference. A LEF view
+An explicitly expected reference is checked against the input descriptor and used
+for capture without rediscovering content identity. Without that expectation the
+standalone inspector discovers current content. The parsed buffer's digest and
+size match the retained reference. A LEF view
 retains both axes, physical cell/pin/via/site declarations and supported rules;
 inventory fields derive from the same document. Non-LEF formats have no LEF
 document. No extra PDK physical schema redefines standard field semantics.

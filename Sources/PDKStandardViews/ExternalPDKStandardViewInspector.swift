@@ -27,6 +27,15 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
         let data: Data
         do {
             data = try await provider.resultData(for: request)
+        } catch is CancellationError {
+            return try failureResult(
+                request: request, startedAt: startedAt, status: .cancelled,
+                finding: finding(
+                    code: "pdk.external.standard-view-provider-cancelled",
+                    message: "The external inspection provider was cancelled.", severity: .warning,
+                    actions: ["rerun_external_inspection"]
+                )
+            )
         } catch {
             return try failureResult(
                 request: request,
@@ -122,18 +131,17 @@ public struct ExternalPDKStandardViewInspector: PDKStandardViewInspecting {
                     inspection.source,
                     baseDirectoryPath: request.projectRootPath
                 )
-                expectedArtifact = try PDKArtifactReferenceBuilder.artifactReference(
+                expectedArtifact = try request.expectedSourceArtifact ?? PDKArtifactReferenceBuilder.artifactReference(
                     for: inspection.source,
                     resolvedURL: sourceURL
                 )
             } catch {
                 throw PDKExternalInspectionError.inputReferenceUnavailable(error.localizedDescription)
             }
-            guard sourceArtifact.id == expectedArtifact.id,
-                  sourceArtifact.digest == expectedArtifact.digest,
-                  sourceArtifact.byteCount == expectedArtifact.byteCount,
-                  sourceArtifact.kind == expectedArtifact.kind,
-                  sourceArtifact.format == expectedArtifact.format else {
+            guard sourceArtifact == expectedArtifact,
+                  expectedArtifact.descriptor == ArtifactDescriptor(
+                    role: inspection.source.role, kind: inspection.source.kind, format: inspection.source.format
+                  ) else {
                 throw PDKExternalInspectionError.canonicalArtifactMismatch(
                     expected: Self.artifactDescription(expectedArtifact),
                     actual: Self.artifactDescription(sourceArtifact)

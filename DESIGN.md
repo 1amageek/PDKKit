@@ -58,6 +58,11 @@ PDKKit validation emits a `PDKCapabilityReport` plus immutable artifacts and
 execution provenance. No local validation result is treated as foundry
 qualification; ToolQualification consumes the evidence and owns trust state.
 
+[PDKCore](Sources/PDKCore/DESIGN.md) owns manifest/asset values, identity projections
+and asset declaration checks. View composition and status contracts are owned by
+[PDKStandardViews](Sources/PDKStandardViews/DESIGN.md) and
+[PDKValidation](Sources/PDKValidation/DESIGN.md).
+
 `PDKAssetReference` is the PDK-owned artifact intent. Its
 `artifactLocator()` projection uses `CircuiteFoundation.ArtifactLocator`.
 `LocalPDKAssetResolver` materializes that intent through
@@ -103,6 +108,7 @@ Inspection remains distinct from engine capability and process qualification.
 | Design | Relationship | Contract Used | Summary | Cautions |
 |---|---|---|---|---|
 | [LSI](../DESIGN.md) | Parent | Exact process evidence | Platform composition | Inventory does not establish production closure |
+| [PDKCore](Sources/PDKCore/DESIGN.md) | Child | Manifest and asset identity | Declaration checks and resolution | Resolution does not authenticate declarations |
 | [PDKStandardViews](Sources/PDKStandardViews/DESIGN.md) | Child | Retained standard semantics | Inspection boundary | Unsupported grammar fails explicitly |
 | [PDKValidation](Sources/PDKValidation/DESIGN.md) | Child | Manifest and composed validation | Validation results | Admission does not imply qualification |
 | [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) | Child | Bounded exact owned parser input | Manifest/view/rule-deck admission | Successful cleanup is part of source admission; captures do not imply a closed PDK graph |

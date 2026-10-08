@@ -4,7 +4,7 @@ import CircuiteFoundation
 import CircuiteFoundationFoundation
 
 public struct PDKRuleDeckInspectionRequest: Sendable, Codable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var runID: String
@@ -12,6 +12,7 @@ public struct PDKRuleDeckInspectionRequest: Sendable, Codable {
     public var pdk: PDKReference
     public var assetID: String
     public var requireNonEmpty: Bool
+    public var expectedSourceArtifact: ArtifactReference?
     public var projectRootPath: String?
 
     public init(
@@ -20,6 +21,7 @@ public struct PDKRuleDeckInspectionRequest: Sendable, Codable {
         pdk: PDKReference,
         assetID: String,
         requireNonEmpty: Bool = true,
+        expectedSourceArtifact: ArtifactReference? = nil,
         projectRootPath: String? = nil
     ) {
         self.schemaVersion = Self.currentSchemaVersion
@@ -28,6 +30,7 @@ public struct PDKRuleDeckInspectionRequest: Sendable, Codable {
         self.pdk = pdk
         self.assetID = assetID
         self.requireNonEmpty = requireNonEmpty
+        self.expectedSourceArtifact = expectedSourceArtifact
         self.projectRootPath = projectRootPath
     }
 
@@ -46,6 +49,7 @@ public struct PDKRuleDeckInspectionRequest: Sendable, Codable {
         pdk = try container.decode(PDKReference.self, forKey: .pdk)
         assetID = try container.decode(String.self, forKey: .assetID)
         requireNonEmpty = try container.decode(Bool.self, forKey: .requireNonEmpty)
+        expectedSourceArtifact = try container.decodeIfPresent(ArtifactReference.self, forKey: .expectedSourceArtifact)
         projectRootPath = try container.decodeIfPresent(String.self, forKey: .projectRootPath)
     }
 
@@ -56,6 +60,7 @@ public struct PDKRuleDeckInspectionRequest: Sendable, Codable {
         case pdk
         case assetID
         case requireNonEmpty
+        case expectedSourceArtifact
         case projectRootPath
     }
 }

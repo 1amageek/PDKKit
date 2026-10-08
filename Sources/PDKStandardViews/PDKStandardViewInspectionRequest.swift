@@ -4,7 +4,7 @@ import CircuiteFoundation
 import CircuiteFoundationFoundation
 
 public struct PDKStandardViewInspectionRequest: Sendable, Codable {
-    public static let currentSchemaVersion = 3
+    public static let currentSchemaVersion = 4
 
     public var schemaVersion: Int
     public var runID: String
@@ -15,6 +15,7 @@ public struct PDKStandardViewInspectionRequest: Sendable, Codable {
     public var expectedLayerNames: [String]
     public var expectedPhysicalLayerNumbers: [Int]
     public var expectedCellNames: [String]
+    public var expectedSourceArtifact: ArtifactReference?
     public var projectRootPath: String?
 
     public init(
@@ -26,6 +27,7 @@ public struct PDKStandardViewInspectionRequest: Sendable, Codable {
         expectedLayerNames: [String] = [],
         expectedPhysicalLayerNumbers: [Int] = [],
         expectedCellNames: [String] = [],
+        expectedSourceArtifact: ArtifactReference? = nil,
         projectRootPath: String? = nil
     ) {
         self.schemaVersion = Self.currentSchemaVersion
@@ -37,6 +39,7 @@ public struct PDKStandardViewInspectionRequest: Sendable, Codable {
         self.expectedLayerNames = Array(Set(expectedLayerNames)).sorted()
         self.expectedPhysicalLayerNumbers = Array(Set(expectedPhysicalLayerNumbers)).sorted()
         self.expectedCellNames = Array(Set(expectedCellNames)).sorted()
+        self.expectedSourceArtifact = expectedSourceArtifact
         self.projectRootPath = projectRootPath
     }
 
@@ -58,6 +61,7 @@ public struct PDKStandardViewInspectionRequest: Sendable, Codable {
         expectedLayerNames = try container.decode([String].self, forKey: .expectedLayerNames)
         expectedPhysicalLayerNumbers = try container.decode([Int].self, forKey: .expectedPhysicalLayerNumbers)
         expectedCellNames = try container.decode([String].self, forKey: .expectedCellNames)
+        expectedSourceArtifact = try container.decodeIfPresent(ArtifactReference.self, forKey: .expectedSourceArtifact)
         projectRootPath = try container.decodeIfPresent(String.self, forKey: .projectRootPath)
     }
 
@@ -71,6 +75,7 @@ public struct PDKStandardViewInspectionRequest: Sendable, Codable {
         case expectedLayerNames
         case expectedPhysicalLayerNumbers
         case expectedCellNames
+        case expectedSourceArtifact
         case projectRootPath
     }
 }

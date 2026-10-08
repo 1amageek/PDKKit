@@ -36,6 +36,15 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         let data: Data
         do {
             data = try await provider.resultData(for: request)
+        } catch is CancellationError {
+            return try failureResult(
+                request: request, startedAt: startedAt, status: .cancelled,
+                finding: finding(
+                    code: "pdk.external.rule-deck-provider-cancelled",
+                    message: "The external inspection provider was cancelled.", severity: .warning,
+                    actions: ["rerun_external_inspection"]
+                )
+            )
         } catch {
             return try failureResult(
                 request: request,
@@ -152,11 +161,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                     actual: "<missing>"
                 )
             }
-            guard sourceArtifact.id == expectedArtifact.id,
-                  sourceArtifact.digest == expectedArtifact.digest,
-                  sourceArtifact.byteCount == expectedArtifact.byteCount,
-                  sourceArtifact.kind == expectedArtifact.kind,
-                  sourceArtifact.format == expectedArtifact.format else {
+            guard sourceArtifact == expectedArtifact else {
                 throw PDKExternalInspectionError.canonicalArtifactMismatch(
                     expected: Self.artifactDescription(expectedArtifact),
                     actual: Self.artifactDescription(sourceArtifact)
@@ -203,6 +208,17 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 )
             }
             let resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
+            let identityFindings = asset.identityFindings(for: resolved.reference)
+            guard identityFindings.isEmpty else {
+                throw PDKExternalInspectionError.inputReferenceUnavailable(
+                    identityFindings.map(\.code).joined(separator: ", ")
+                )
+            }
+            if let expected = request.expectedSourceArtifact, expected != resolved.reference {
+                throw PDKExternalInspectionError.canonicalArtifactMismatch(
+                    expected: Self.artifactDescription(expected), actual: Self.artifactDescription(resolved.reference)
+                )
+            }
             return (
                 reference: resolved.locator,
                 artifact: resolved.reference

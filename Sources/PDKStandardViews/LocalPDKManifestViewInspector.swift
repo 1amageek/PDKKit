@@ -174,6 +174,18 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
             )
         }
 
+        var identityFindings = asset.identityFindings(for: resolved.reference)
+        if let expected = request.expectedSourceArtifact, expected != resolved.reference {
+            identityFindings.append(PDKValidationFinding(
+                severity: .blocker, code: "pdk.standard-view.source-artifact-mismatch",
+                message: "The resolved asset differs from the upstream expected source identity.",
+                entity: request.assetID, suggestedActions: ["restore_immutable_artifact", "rerun_manifest_view_inspection"]
+            ))
+        }
+        if !identityFindings.isEmpty {
+            return try makeResult(request: request, startedAt: startedAt, status: .blocked, findings: identityFindings)
+        }
+
         let mapping = manifest.crossViewMappings.first {
             $0.assetID == request.assetID && $0.view == request.format.manifestView
         }
@@ -213,9 +225,20 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
             expectedLayerNames: expectedLayerNames,
             expectedPhysicalLayerNumbers: expectedPhysicalLayerNumbers,
             expectedCellNames: expectedCellNames,
+            expectedSourceArtifact: request.expectedSourceArtifact ?? resolved.reference,
             projectRootPath: request.projectRootPath
         )
-        let inspectionResult = try await standardInspector.execute(inspectionRequest)
+        let inspectionResult: PDKStandardViewInspectionResult
+        do {
+            inspectionResult = try await standardInspector.execute(inspectionRequest)
+        } catch is CancellationError {
+            return try makeResult(request: request, startedAt: startedAt, status: .cancelled,
+                findings: [PDKValidationFinding(
+                    severity: .warning, code: "pdk.standard-view.inspection-cancelled",
+                    message: "The standard-view inspector was cancelled.", entity: request.assetID,
+                    suggestedActions: ["rerun_manifest_view_inspection"]
+                )])
+        }
         var findings = inspectionResult.payload.findings
         var binding: PDKStandardViewBindingReport?
         if let inspection = inspectionResult.payload.inspection {

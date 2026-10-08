@@ -33,7 +33,22 @@ The manifest used for asset selection, process/version checks and semantic
 validation must come from the captured bytes matching the request's expected
 manifest reference. No later path verification can authenticate an earlier
 decoded buffer. Capture failures stop semantic validation before a manifest is
-available. Existing request/result schemas and diagnostic categories remain.
+available. Existing validation request/result schemas remain. Asset declaration checks are
+owned by PDKCore's asset value. Validation passes each initially resolved reference
+as the corresponding view/rule request's expected source and checks the returned
+full source reference before incorporating successful evidence. A mismatch or
+missing reference is blocked, including from injected implementations. The final
+provenance retains the same initial references used by those checks.
+
+```text
+initial resolved asset A -> child expected A -> child retained A -> provenance A
+                                mismatch -> blocked
+```
+
+Failure aggregation is monotonic: failed precedes cancelled, which precedes
+blocked, which precedes completed. A returned or thrown cancellation stops the
+remaining checks, including the next rule stage. Earlier failures remain visible;
+a cancellation is never relabeled as an execution failure.
 
 ## Failure, Concurrency, and Constraints
 

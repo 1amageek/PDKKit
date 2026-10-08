@@ -93,9 +93,19 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
             )
         }
 
+        if let expected = request.expectedSourceArtifact,
+           expected.descriptor != ArtifactDescriptor(role: input.role, kind: input.kind, format: input.format) {
+            return try makeResult(request: request, startedAt: startedAt, status: .blocked,
+                findings: [PDKValidationFinding(
+                    severity: .blocker, code: "pdk.standard-view.source-artifact-mismatch",
+                    message: "Expected source descriptor does not match the input artifact.",
+                    entity: request.assetID, suggestedActions: ["repair_expected_source_reference"]
+                )])
+        }
+
         let sourceArtifact: ArtifactReference
         do {
-            sourceArtifact = try PDKArtifactReferenceBuilder.artifactReference(
+            sourceArtifact = try request.expectedSourceArtifact ?? PDKArtifactReferenceBuilder.artifactReference(
                 for: input,
                 resolvedURL: inputURL
             )

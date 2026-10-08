@@ -153,7 +153,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                     return try makeResult(
                         request: request,
                         startedAt: startedAt,
-                        status: .cancelled,
+                        status: hasFailedView ? .failed : .cancelled,
                         oracleID: expectation.oracleID,
                         oracleArtifact: oracleArtifact,
                         findings: findings,
@@ -164,7 +164,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                         return try makeResult(
                             request: request,
                             startedAt: startedAt,
-                            status: .blocked,
+                            status: hasFailedView ? .failed : .blocked,
                             oracleID: expectation.oracleID,
                             oracleArtifact: oracleArtifact,
                             findings: findings,
@@ -207,7 +207,7 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 return try makeResult(
                     request: request,
                     startedAt: startedAt,
-                    status: .cancelled,
+                    status: hasFailedView ? .failed : .cancelled,
                     oracleID: expectation.oracleID,
                     oracleArtifact: oracleArtifact,
                     findings: findings,

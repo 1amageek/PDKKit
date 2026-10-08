@@ -48,6 +48,26 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
         )
     }
 
+    /// Checks supplied manifest identity fields against the selected immutable reference.
+    public func identityFindings(for reference: ArtifactReference) -> [PDKValidationFinding] {
+        var findings: [PDKValidationFinding] = []
+        if let sha256, sha256.lowercased() != reference.digest.hexadecimalValue {
+            findings.append(PDKValidationFinding(
+                severity: .blocker, code: "pdk.validation.asset-digest-mismatch",
+                message: "Asset digest does not match the manifest declaration.",
+                entity: assetID, suggestedActions: ["refresh_asset_digest", "restore_immutable_artifact"]
+            ))
+        }
+        if let byteCount, byteCount < 0 || UInt64(byteCount) != reference.byteCount {
+            findings.append(PDKValidationFinding(
+                severity: .blocker, code: "pdk.validation.asset-size-mismatch",
+                message: "Asset byte count does not match the manifest declaration.",
+                entity: assetID, suggestedActions: ["refresh_asset_metadata", "restore_immutable_artifact"]
+            ))
+        }
+        return findings
+    }
+
     private enum CodingKeys: String, CodingKey {
         case assetID
         case role
