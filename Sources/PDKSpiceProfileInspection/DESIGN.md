@@ -191,3 +191,62 @@ intermediate array uses admitted concrete temporary capacity. Raw model names,
 ports, sections and diagnostic text retain their lower owner until their checked
 copy. Unavailable source PVT and expression-dependent temperatures fail explicitly.
 No analysis defaults or model terminal synthesis enter source facts.
+
+## Candidate Graph Discovery
+
+`PDKSpiceCandidateDiscovering` is a separate draft-only entrypoint. Its request
+owns authorized roots, candidate source bindings, ordered search routes and an
+ordered list of explicitly selected entry contexts. Bindings identify logical
+routes and descriptor/backing availability; they do not assert a known digest
+or an expected edge graph. The provider discovers observed references through
+`PDKLocalSourceDiscovering` and the existing shared accountant. No temporary
+exact definition or admitted PDK input is fabricated to enter parsing.
+
+```text
+approved candidate bindings + ordered entry contexts
+    -> bounded local discovery + retained capture cache
+        -> Core empty preprocessing environment and ordinary parseProfile
+            -> contextual request before child acquisition
+                -> approved parent-relative / ordered search-route lookup
+                -> actual discovered child + fresh occurrence
+    -> ordered observed dependencies + sources + per-occurrence coverage
+        -> caller-owned checked definition construction
+```
+
+The provider owns actual initial environment identity and all child entry
+identities, physical offsets, local statement ordinals and global lexical edge
+order. Each entry begins in the same actual empty environment; all entries share
+one accountant, one unique-source cache and one global occurrence/edge sequence.
+Repeated entry/include contexts keep distinct occurrences while sharing captures.
+The CLI consumes the observed graph and does not invent parser evidence.
+
+Each source key owns one descriptor, optional asset and root/relative-path/budget
+binding; repeated bindings may add distinct routes only with identical ownership.
+A route resolving to two keys is ambiguous and refuses. Child resolution applies
+parent-relative lookup first, then the explicit ordered search routes, matching
+exact admission policy. Absolute, backslash, tilde and escaping routes refuse;
+unknown paths never fall through to arbitrary filesystem search. Context cycles
+are checked against the actual ancestry before acquisition.
+
+Actor state owns captures, occurrences, pending ordered edges and parsed evidence.
+Every table/route normalization/output copy reserves concrete managed capacity
+before allocation. Root acquisition and child depth/edge/expansion counters use
+the same invocation accounting owner. Source discovery completes its awaited
+cleanup before return or failure. The provider never closes the caller's owner.
+Result copies share retained checked captures/text/evidence receipts; raw output
+extraction transfers backing-lifetime responsibility to the caller. The result
+is draft evidence only and cannot establish admission, engine support or a claim.
+
+Unknown conditional meaning, unsupported bounded grammar, source/discovery failure,
+route refusal, cancellation or quota failure produces a typed error and no graph.
+Syntax diagnostics use the existing checked neutral diagnostic copy while the
+Core failure remains retained. Per-occurrence inactive coverage uses Core-owned
+physical location projection. Model/PVT interpretation stays with exact inspection.
+
+Verification owner: `SpiceCandidateDiscoveryTests` in the dedicated adapter test
+product. Proof covers real nested/repeated/conditional/external-library discovery,
+multiple selected entry contexts with one global edge order, approved search and
+alias routes, unknown/escape/ambiguity/conflicting backing/cycle refusal, parser
+syntax location, shared read/hash/work quota, cancellation and final-copy lifetime.
+Prior exact-adapter proof is reused; only new candidate state and its shared bridge
+assumptions require verification.

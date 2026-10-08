@@ -36,6 +36,15 @@ struct PDKSpiceResourceBridge: SPICESourceResourceAccounting {
             if a == nil { return true }
         }
     }
+    func chargePDK(_ dimension: PDKAdmissionResourceDimension, _ amount: UInt64 = 1) throws {
+        try checkCancellation()
+        guard amount > 0 else { return }
+        _ = try resources.reserve(PDKAdmissionCost(dimension: dimension, amount: amount))
+    }
+    func reservePDK(_ dimension: PDKAdmissionResourceDimension, _ amount: UInt64) throws -> PDKAdmissionReservation {
+        try checkCancellation()
+        return try resources.reserve(PDKAdmissionCost(dimension: dimension, amount: amount))
+    }
     func array<Element: Sendable>(_ values: SPICEAccountedCollection<Element>) throws -> (values: [Element], owner: SPICESourceStorageReservation) {
         let owner = try SPICESourceCapacity.reserve(of: Element.self, capacity: values.count,
             kind: .temporaryBytes, resources: self)
