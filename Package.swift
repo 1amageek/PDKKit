@@ -114,6 +114,16 @@ let package = Package(
             dependencies: ["PDKKitCLICore"]
         ),
         .testTarget(
+            name: "PDKBoundedDecodingTests",
+            dependencies: [
+                "PDKCore", "PDKDiscovery", "PDKSourceCapture",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+            ]
+        ),
+        .testTarget(
             name: "PDKProfileValueTests",
             dependencies: [
                 "PDKCore",

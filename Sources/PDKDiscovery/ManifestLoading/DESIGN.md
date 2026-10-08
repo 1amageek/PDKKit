@@ -222,3 +222,87 @@ Xcircuite dependency closure in dependency order. Package manifests retain
 exact immutable revisions; temporary source overrides are verification aids
 and are removed before ordinary graph resolution. Consumer domain behavior
 and qualification ownership remain unchanged.
+
+### Cooperative document decoding
+
+The independent bounded decoder is selected explicitly; the existing ordinary
+manifest-loader codec path remains unchanged until its owner migration. A source
+capture budget alone does not imply this decoder was used.
+
+`PDKBoundedDocumentDecoding` accepts verified `CapturedPDKSource` and the caller's
+single invocation accounting owner. `NativePDKBoundedDocumentDecoder` lends the
+capture's `Span` to a synchronous parser, without a Data copy or JSONDecoder.
+`PDKDecodedDocument<Value>` retains decoder-owned value capacity and the exact
+full `sourceReference`, including its descriptor, on all three public source-based
+operations. The reference does not retain the captured byte buffer. Internal raw
+Span tests may produce an unbound value with a nil reference; production loaders
+reject nil or mismatched references before metadata publication. The wrapper's
+initializer and binding operation are internal, so an external injected provider
+cannot reconstruct a wrapper with arbitrary metadata and a replacement binding.
+Loaded/admitted composition retains the capture and this handle for their separate
+invocation-managed lifetimes; copying the handle shares the same reservations. A caller detaching freely copyable Core
+values or subvalues takes responsibility for their storage lifetime. Such copies
+are outside invocation-managed retained ownership.
+
+```text
+CapturedPDKSource.withBytes
+    -> iterative JSON syntax scan + flat arena
+        -> component-owned Decoder
+            -> existing checked PDKCore Decodable constructors
+                -> PDKDecodedDocument + retained owned reservations
+```
+
+| Resource | Admission boundary and lifetime |
+|---|---|
+| parserWork | Before byte scan, string/number conversion, duplicate comparisons and Decoder lookup; checked Core constructors receive the same accountant through `PDKAdmissionDecodingContext.accountingKey` |
+| decodedElements | Before each JSON value and object key enters the arena |
+| scalarBytes | Before string output growth and number token materialization; cumulative across documents |
+| decodeNesting | Before pushing each object/array frame; released only after close or failure unwind |
+| temporaryBytes | Before string scratch, arena/frame/container growth, key lookup projections, coding paths and reservation bookkeeping; retained until decode finishes |
+| liveOwnedBytes | Before root value, parser-owned immutable String backing and type-aware Array/Dictionary decode growth; returned owner retains these reservations |
+
+The flat arena uses node indices rather than recursively owned JSON values.
+Its parser frame stack is iterative, so malicious unused fields cannot consume
+an unbounded native recursion stack. Source pointers remain within the capture's
+synchronous closure, are byte-bound and never escape into nodes or returned values.
+There is no manual allocation, rebinding or cross-task pointer sharing.
+
+String nodes admit their immutable backing once as owned storage; returned
+values share that backing without a second owned charge. The handle conservatively
+retains string capacity for ignored fields as well as selected values. Syntax-node
+and transient typed-value slots remain separate temporary capacity.
+
+Collection pre-admission derives element/key/value sizes from `MemoryLayout`.
+The fixed Swift 6.4.0 shipped module interface confirms geometric Array growth,
+power-of-two hash buckets and the 3/4 maximum hash load. Capacity includes old
+and replacement backing at growth. These are admitted storage capacities rather
+than exact process RSS: runtime object headers, allocator rounding and framework
+overhead remain separately measured by the host's representative inventory.
+A toolchain/collection implementation change requires rechecking these formulas.
+
+Duplicate decoded keys, malformed delimiters/escapes, invalid UTF-8 and Unicode
+surrogates, invalid numbers and numeric overflow fail with typed errors. Resource
+exhaustion, cancellation and deadline failures retain the original typed resource
+error. Syntax and Decoder operations check the shared deadline/cancellation before
+work boundaries and publication. Definition/claim constructors remain the semantic
+authority; their concrete validation/canonical allocations and loops opt into the
+same accounting contract rather than being inferred from syntax preflight.
+
+All shared decode accounting state uses `Mutex<State>` on the native path. Only
+short local receipt bookkeeping and capacity growth execute inside that lock;
+upstream reserve/check callbacks execute outside it. There is no platform-specific
+raw-state branch or weak ownership.
+
+| Scope | Storage / isolation | Read and mutation | Release |
+|---|---|---|---|
+| Invocation budget | Caller-supplied accountant | Public reserve/check | Caller lifecycle |
+| Decode receipts | Mutex<State> | Synchronous append/takeOwned | Temporary receipts at decode end; owned receipts with returned handle |
+| Syntax arena and frames | Task-local arrays | Iterative scanner; immutable Decoder reads | Decode end, including failure |
+| Captured bytes | Capture-owned immutable buffer | Borrowed byte span | Capture's existing owner |
+
+[PDKBoundedDecodingTests](../../../Tests/PDKBoundedDecodingTests) owns actual checked
+manifest/definition/claim round trips, exact capture after deletion, hostile-depth
+syntax, duplicate/UTF-8/number refusals, cumulative limits, live capacity unwind,
+last-handle release and typed cancellation. Loader/source/discovery composition
+retains its existing integration test ownership. No WASM/Embedded execution claim
+is made by this host component.
