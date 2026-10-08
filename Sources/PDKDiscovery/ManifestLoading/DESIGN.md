@@ -306,3 +306,41 @@ syntax, duplicate/UTF-8/number refusals, cumulative limits, live capacity unwind
 last-handle release and typed cancellation. Loader/source/discovery composition
 retains its existing integration test ownership. No WASM/Embedded execution claim
 is made by this host component.
+
+### Invocation-bounded manifest loading
+
+`PDKBoundedManifestLoading` composes the verified controlled capture/discovery
+requirements and `PDKBoundedDocumentDecoding`. The concrete
+`LocalPDKBoundedManifestLoader` receives only these protocol capabilities. Both
+operations require an explicit root URL/ID, normalized relative path, per-source
+access budget and the caller's invocation accountant. Exact loading compares the
+complete expected reference before decoding and never invokes discovered mode.
+
+`PDKBoundedLoadedManifest` owns the checked source and decoded document together.
+Its checked internal initializer compares the document's complete source reference
+with the capture, including descriptor, and refuses absent or foreign bindings.
+Copies retain both sets of live reservations. Freely detached manifest/subvalue
+copies transfer storage responsibility to the caller. The value proves JSON schema
+and metadata/source association; process/view/corner selection remains with
+[Profile values](../../PDKCore/Profile/DESIGN.md) and admission.
+
+```text
+explicit root + exact reference / candidate descriptor + shared accountant
+    -> bounded capture / same-read discovery -> root cleanup completed
+        -> bounded document decoder -> full input reference comparison
+            -> retained capture + decoded document -> final deadline/cancel check
+```
+
+No referencer, pathname reopen, Data conversion or ordinary JSONDecoder participates.
+Format/input errors, source errors, decoder errors, resource errors and complete
+expected/observed reference disagreements remain typed. Cancellation is preserved,
+including paired source cleanup causes. Source comparison work is admitted before
+comparison; neither a custom capture nor a custom decoder can substitute a different
+input while publishing a successful pair.
+
+The existing `PDKManifestLoading` contract continues to own inventory/caller
+compatibility; the profile path explicitly selects the invocation-bounded capability.
+[PDKDiscoveryTests](../../../Tests/PDKDiscoveryTests) owns real-file exact/discovered
+loading, tamper refusal, foreign descriptor binding refusal, shared-owner lifetime,
+cumulative decode refusal and terminal cancellation. This component has native
+proof only; normal graph adoption and profile consumer composition remain separate.
