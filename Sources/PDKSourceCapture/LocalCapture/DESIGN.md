@@ -35,24 +35,28 @@ Location does not change content identity. Root escape and symlink traversal fai
 through Foundation's public contract. The root and session have one owning
 invocation; no reader uses Data(contentsOf:) after capture.
 
-### Bounded candidate discovery specification
+### Invocation-bounded exact and candidate capture
 
-Status: proposed, distinct from implemented exact capture. A proposed
-`PDKLocalSourceDiscovering` requirement takes explicit root-relative source intent
-and budget and returns a checked CapturedPDKSource from the same immutable observed
-bytes. Its adapter uses the new public Foundation discovery contract linked above.
-It performs no independent pathname rehash and no private-API/filesystem bypass.
-Any required copy and full-buffer verification are charged to invocation resources.
-The discovered capture is candidate input, not an approved profile definition.
-Exact profile execution uses supplied expected references and never invokes this
-discovered mode as recovery. Fixed Foundation 26.812.0 cannot satisfy this new mode;
-until an adopted version does, required bounded discovery fails explicitly.
+`PDKBoundedLocalSourceCapturing` owns exact execution; `PDKLocalSourceDiscovering`
+owns unknown-identity candidate input. Both require caller-supplied root URL/root
+ID and an already checked `ArtifactRelativePath`. Neither derives authorization
+from an absolute file's parent. Their concrete service uses a small injected
+`PDKSourceRootOpening` / `PDKSourceDiscoveryRoot` lifecycle boundary; the default
+constructs Foundation's `ArtifactRootCapability` and calls controlled `discover`.
+No legacy referencer, unchecked read session or direct filesystem read participates.
 
-Profile callers supply explicit authorization roots rather than relying on the
-legacy absolute-locator parent-root selection. The authorizing root is retained
-only in resolution evidence; it is not semantic identity. Await root termination
-before returning successfully. Source buffers transfer their live reservations
-to the returned owner rather than becoming uncharged retained storage.
+The root-FD and concurrent-acquisition extents are reserved before construction.
+Root shutdown is awaited for both success and failure; late cancellation/deadline
+refuses publication after cleanup. Exact mode provides the expected descriptor to
+discovery and checks the full returned descriptor/count/digest reference before
+copying. Candidate mode returns observed input and does not prove profile admission.
+Returned pages are borrowed individually, with a complete owned-copy reservation
+before allocation, and the capture hashes that identical copied storage.
+
+The injected root lifecycle exists to exercise success, primary failure, close
+failure and cancellation during close without weakening the concrete default's
+secure root ownership. A shutdown error remains a cleanup failure and never
+publishes a capture. Root teardown is mandatory even when accounting is terminal.
 
 ## State, Ownership, and Lifecycle
 
@@ -71,3 +75,13 @@ Caller-selected roots are explicit capture boundaries. PDK reader
 absolute locators select their own parent root unless a caller explicitly supplies
 an authorization root. The local adapter never changes the canonical descriptor
 from locator metadata.
+
+### Controlled Candidate Enumeration
+
+`PDKLocalSourceEnumerating.enumerate(intent:rootURL:resources:)` accepts Foundation's
+checked `ArtifactDirectoryInventoryIntent`, calls the same owned root's controlled
+`enumerate`, and awaits shutdown before returning the inventory. Root/open/concurrency
+and work reservations use the same bridge as capture. Foundation owns traversal,
+entry names, typed limits, immutable result storage and last-copy retention; Discovery
+owns candidate filtering. This path uses no FileManager inventory or public bridge
+leakage. Tests exercise real entry-quota refusal and copied-entry owner lifetime.

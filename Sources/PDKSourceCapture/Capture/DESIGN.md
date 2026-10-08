@@ -43,3 +43,13 @@ Tests are [PDKSourceCaptureTests](../../../Tests/PDKSourceCaptureTests).
 Use injected read sessions to reject false receipts, repeated/empty pages,
 truncation, oversized pages and cleanup failure. Real local access is covered by
 LocalCapture tests. Admission changes require affected PDK reader tests.
+
+## Invocation-Owned Storage
+
+Bounded construction reserves copied source bytes before page materialization and
+retains the receipt within `CapturedPDKSource`. Cooperative digest updates use one
+reserved chunk of at most 4096 bytes, admit hashedBytes/parserWork before copying
+or hashing, and check before/after each chunk. Span consumers borrow the immutable
+source without Data conversion. Bounded `data` refuses an unowned copy; the explicit
+bounded capture exposes no additional unowned Data-export API. A downstream domain
+may borrow its Span and explicitly admit a required conversion under its own owner.

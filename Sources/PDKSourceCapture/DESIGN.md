@@ -6,9 +6,9 @@ This module owns a bounded, immutable capture of the bytes actually consumed by
 PDK validation. Parent: [PDKKit](../../DESIGN.md). Children:
 [Capture](Capture/DESIGN.md) and [LocalCapture](LocalCapture/DESIGN.md).
 It is independently buildable against the fixed CircuiteFoundation public products.
-Boundedness starts at admission of an expected reference. Existing identity
-discovery/reference materialization and parser allocations are outside this
-module's budget and must not be reported as bounded by capture.
+Legacy capture bounds one expected source. Invocation-bounded capture and candidate
+discovery additionally require an explicit root, typed root-relative path, and
+PDKCore accounting owner. Parser allocations remain with the document decoder.
 
 ## Responsibilities and Boundaries
 
@@ -83,13 +83,36 @@ preserved; source errors are translated to structured blockers/failures, and
 cancellation remains cancelled or is propagated as cancellation. No simulation,
 DRC execution, WASM/Embedded or process qualification claim follows from these tests.
 
-## Planned Invocation Accounting Integration
+## Invocation Accounting Integration
 
-Status: proposed. SourceCapture adds a dependency on PDKCore for the
-[resource accounting boundary](../PDKCore/Profile/DESIGN.md), not on the higher
-PDKProfileAdmission module. Core does not depend on SourceCapture. Reads,
-materialization, digest work and close checks reserve/check against the supplied
-invocation owner while retaining their existing per-source ArtifactAccessBudget.
-Capture defaults alone do not meet the invocation contract. The FileSystem
-implementation remains in its owner; bounded unknown-identity discovery requires
-the future public Foundation contract, not changes to its fixed 26.812.0 binary.
+SourceCapture depends on PDKCore's resource protocol, never on admission policy.
+`PDKBoundedLocalSourceCapturing.capture` and `PDKLocalSourceDiscovering.discover`
+are separate explicit capabilities implemented by `LocalPDKBoundedSourceCapturer`.
+`PDKLocalSourceEnumerating` supplies controlled directory inventory under the same
+root lifecycle and owner; candidate filtering remains Discovery-owned.
+Capture and discovery require root URL, root ID, `ArtifactRelativePath`, per-source budget and one
+invocation owner. They call only Foundation's controlled source discovery API;
+exact capture supplies the expected descriptor and verifies the entire returned
+reference before copying, and then hashes the same owned published bytes again.
+The legacy capture protocol remains one-source admission and cannot satisfy these
+bounded capabilities by implicit injection.
+
+```text
+explicit root + relative path + invocation owner
+    -> acquire root/concurrency reservations
+    -> Foundation controlled discovery -> immutable pages
+    -> compare exact reference (exact mode only)
+    -> reserve/copy/hash the same owned capture
+    -> await root shutdown -> final resource/time check -> publish owner
+```
+
+The bridge maps Foundation read/hash/page/work/entry work and owned/temporary/open
+extents onto readBytes/hashedBytes/pages/parserWork/scannedEntries/liveOwnedBytes/
+temporaryBytes/openResources. Typed original errors survive the bridge, including
+cancellation/deadline/closed errors. Each root descriptor is admitted before root
+construction; each acquisition is admitted before opening. Primary and cleanup
+failures remain distinct. Cleanup is awaited even after resource cancellation.
+Managed extents cover declared payload and container capacities, not process RSS,
+allocator rounding or host runtime overhead. Copies of captures share live-owner
+receipts; the last copy releases capacity. Unaccounted Data export is refused for
+bounded captures, which expose Span borrowing or an explicitly caller-owned copy.

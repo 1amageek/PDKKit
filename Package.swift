@@ -32,6 +32,7 @@ let package = Package(
         .target(
             name: "PDKSourceCapture",
             dependencies: [
+                "PDKCore",
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
@@ -134,6 +135,7 @@ let package = Package(
         .testTarget(
             name: "PDKSourceCaptureTests",
             dependencies: [
+                "PDKCore",
                 "PDKSourceCapture",
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),

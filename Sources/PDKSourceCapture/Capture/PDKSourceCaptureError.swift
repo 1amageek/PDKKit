@@ -1,7 +1,10 @@
 import CircuiteFoundation
 import CircuiteFoundationFileSystem
+import PDKCore
 
 public enum PDKSourceCaptureError: Error, Sendable, Equatable {
+    case resource(PDKAdmissionResourceError)
+    case discovery(ArtifactSourceDiscoveryError)
     case access(ArtifactAccessError)
     case digest(ContentDigestError)
     case root(ArtifactRootCapabilityError)
@@ -21,7 +24,7 @@ public enum PDKSourceCaptureError: Error, Sendable, Equatable {
 
     public var classification: PDKSourceCaptureFailureClassification {
         switch self {
-        case .cancelled, .access(.cancelled): .cancellation
+        case .cancelled, .access(.cancelled), .resource(.cancelled): .cancellation
         case .digestMismatch, .access(.contentDigestMismatch): .digestMismatch
         case .byteCountMismatch, .access(.byteCountMismatch): .byteCountMismatch
         case .cleanup(let primary, let cleanup):
