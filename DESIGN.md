@@ -109,12 +109,22 @@ Inspection remains distinct from engine capability and process qualification.
 |---|---|---|---|---|
 | [LSI](../DESIGN.md) | Parent | Exact process evidence | Platform composition | Inventory does not establish production closure |
 | [PDKCore](Sources/PDKCore/DESIGN.md) | Child | Manifest and asset identity | Declaration checks and resolution | Resolution does not authenticate declarations |
+| [PDKDiscovery](Sources/PDKDiscovery/DESIGN.md) | Child | Candidate discovery and planned manifest loading | Reference-construction owner | Proposed loading contract is distinct from current implementation |
 | [PDKStandardViews](Sources/PDKStandardViews/DESIGN.md) | Child | Retained standard semantics | Inspection boundary | Unsupported grammar fails explicitly |
 | [PDKValidation](Sources/PDKValidation/DESIGN.md) | Child | Manifest and composed validation | Validation results | Admission does not imply qualification |
 | [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) | Child | Bounded exact owned parser input | Manifest/view/rule-deck admission | Successful cleanup is part of source admission; captures do not imply a closed PDK graph |
 | [LEF](../swift-mask-data/Sources/LEF/DESIGN.md) | Depends on | LEFDocument and typed errors | Standard physical schema ownership | Consumers must resolve process names and capability |
 
 ## Verification and Change Impact
+
+The next identity-construction sprint is specified by
+[PDKDiscovery](Sources/PDKDiscovery/DESIGN.md) and its
+[ManifestLoading](Sources/PDKDiscovery/ManifestLoading/DESIGN.md) child, using the
+planned [Core Identity](Sources/PDKCore/Identity/DESIGN.md) contract. These are
+proposed contracts; the builder and duplicate value fields remain in current
+source until implementation. Existing discovery-before-capture and parser budget
+limitations continue to apply. Exact database locks and canonical PDK persistence
+remain owned by the existing system/database integration designs.
 
 PDKStandardViewTests verifies actual inspection, source identity, retained
 physical fields, serialization and parser failures. PDK validation/corpus and

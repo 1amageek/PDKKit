@@ -1,5 +1,10 @@
 # PDKKit Interface Contract
 
+The current API below remains implemented. The next breaking identity-construction
+design is owned by [Identity](Sources/PDKCore/Identity/DESIGN.md) and
+[ManifestLoading](Sources/PDKDiscovery/ManifestLoading/DESIGN.md); its declarations
+are proposals until the implementation and caller migration are verified.
+
 ## Common shape
 
 ```swift
