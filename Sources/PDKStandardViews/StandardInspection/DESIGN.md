@@ -19,6 +19,7 @@ publishing a successful inspection.
 | [LEF](../../../../swift-mask-data/Sources/LEF/DESIGN.md) | Depends on | Reader and LEFDocument | Preserve cell/pin/via/site/rule values | Unsupported or unretained grammar must remain explicit |
 | [CircuiteFoundation](../../../../CircuiteFoundation/DESIGN.md) | Depends on | ArtifactReference, digest, integrity | Canonical content identity | Compare the parsed buffer to the retained reference |
 | [PDKSourceCapture](../../PDKSourceCapture/DESIGN.md) | Depends on | Exact bounded owned bytes | Shared admission before parsing | Identity discovery precedes capture; capture does not bound parser allocations |
+| [ProfileInspection](../ProfileInspection/DESIGN.md) | Coordinates with | Explicit whole-invocation format capability | Separate profile adapter | Do not wrap structural success as bounded profile facts |
 
 ## Architecture
 
@@ -107,3 +108,9 @@ An opaque/unbounded codec cannot advertise that capability merely because its
 input bytes fit a limit. Rule-deck or script dependencies require an owning
 backend's explicit closure evidence; unknown dynamic includes cannot be asserted
 leaf-only by a manifest flag. Numerical rule execution remains Engine-owned.
+
+The native bounded profile registration and explicit unsupported-format policy
+are owned by [ProfileInspection](../ProfileInspection/DESIGN.md). This structural
+component continues to use its existing reader contracts. Its result, byte budget,
+optional exact reference and fixed OASIS collection guards do not establish
+cooperative parser/storage accounting or active dependency closure.

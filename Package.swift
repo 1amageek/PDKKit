@@ -100,7 +100,7 @@ let package = Package(
                 .product(name: "OASIS", package: "swift-mask-data"),
                 .product(name: "LEF", package: "swift-mask-data"),
             ],
-            exclude: ["DESIGN.md", "StandardInspection/DESIGN.md"]
+            exclude: ["DESIGN.md", "StandardInspection/DESIGN.md", "ProfileInspection/DESIGN.md"]
         ),
         .target(
             name: "PDKKit",
@@ -118,7 +118,8 @@ let package = Package(
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
-            ]
+            ],
+            exclude: ["DESIGN.md", "ProfileCommands/DESIGN.md"]
         ),
         .executableTarget(
             name: "PDKKitCLI",

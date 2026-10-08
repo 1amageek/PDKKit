@@ -38,6 +38,7 @@ struct AdmissionFixture {
         var bindings = [PDKProfileSourceBinding(sourceKey: "root", logicalRoute: "root.sp", rootID: rootID,
             relativePath: try ArtifactRelativePath(segments: ["root.sp"]), budget: access)]
         var edges: [PDKSourceDependency] = []
+        let childEnvironment = graph == .cycle ? "environment.empty.v1" : "policy.v1"
         var child: ArtifactReference?
         if graph != .leaf {
             let ref = try await write(Data("child source data\n".utf8), "child.sp", kind: "pdk.spice")
@@ -47,16 +48,16 @@ struct AdmissionFixture {
                 relativePath: try ArtifactRelativePath(segments: ["child.sp"]), budget: access))
             edges.append(try PDKSourceDependency(parentSourceKey: "root", parentReference: rootRef, statementByteOffset: 1,
                 statementOrdinal: 1, directiveKind: "include", literalRoute: "child.sp", childSourceKey: "child", childReference: ref,
-                selectedSection: nil, preprocessingIdentity: "policy.v1", lexicalOrder: 1))
+                selectedSection: nil, preprocessingIdentity: childEnvironment, lexicalOrder: 1))
             if graph == .repeated {
                 edges.append(try PDKSourceDependency(parentSourceKey: "root", parentReference: rootRef, statementByteOffset: 2,
                     statementOrdinal: 2, directiveKind: "include", literalRoute: "child.sp", childSourceKey: "child", childReference: ref,
-                    selectedSection: nil, preprocessingIdentity: "policy.v1", lexicalOrder: 2))
+                    selectedSection: nil, preprocessingIdentity: childEnvironment, lexicalOrder: 2))
             }
             if graph == .cycle {
                 edges.append(try PDKSourceDependency(parentSourceKey: "child", parentReference: ref, statementByteOffset: 1,
                     statementOrdinal: 1, directiveKind: "include", literalRoute: "root.sp", childSourceKey: "root", childReference: rootRef,
-                    selectedSection: nil, preprocessingIdentity: "policy.v1", lexicalOrder: 2))
+                    selectedSection: nil, preprocessingIdentity: childEnvironment, lexicalOrder: 2))
             }
         }
         let pvt = PDKPVTCondition(process: PDKProcessCorner(name: "typical", nominal: true), voltage: 1, temperatureCelsius: 25)
@@ -94,7 +95,7 @@ struct AdmissionFixture {
         let manifestRef = try await write(PDKManifestCodec.encode(manifest), "pdk.json", kind: "pdk.technology", format: .json)
         let definition = try PDKProfileDefinition(profileID: "fixture", manifestReference: manifestRef, processID: "p", version: "1",
             requiredCornerIDs: cornerIDs, requirements: requirements, sources: sources, orderedSearchRoutes: ["models"], dependencies: edges,
-            inspectionPolicyIdentity: "policy.v1")
+            inspectionPolicyIdentity: "policy.v1", initialPreprocessingIdentity: "environment.empty.v1")
         let definitionRef = try await write(PDKProfileCodec().encodeDefinition(definition), "profile.json", kind: "pdk.profile", format: .json)
         let request = PDKProfileAdmissionRequest(definition: .init(reference: definitionRef, rootID: rootID,
             relativePath: try ArtifactRelativePath(segments: ["profile.json"]), budget: access),

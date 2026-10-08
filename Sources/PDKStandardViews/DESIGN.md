@@ -4,7 +4,8 @@
 
 Own standard-view inspection protocols and results. Parent:
 [PDKKit](../../DESIGN.md). Affected child:
-[StandardInspection](StandardInspection/DESIGN.md).
+[StandardInspection](StandardInspection/DESIGN.md) and
+[ProfileInspection](ProfileInspection/DESIGN.md).
 
 ## Responsibilities and Boundaries
 
@@ -18,6 +19,7 @@ mapping; engines own executable process capability.
 |---|---|---|---|---|
 | [PDKKit](../../DESIGN.md) | Parent | Process inspection contract | Host standard views | No tool qualification inference |
 | [StandardInspection](StandardInspection/DESIGN.md) | Child | Actual parsed bytes and values | Public IR and local inspector | No names-only physical completion |
+| [ProfileInspection](ProfileInspection/DESIGN.md) | Child | Checked source inspection and explicit format capability | Invocation-accounted typed technology JSON or refusal | Structural parser success does not grant this capability |
 | [PDKCore](../PDKCore/DESIGN.md) | Depends on | Asset identity findings and resolver protocol | Authoritative declaration checks | Current availability does not authenticate declarations |
 | [PDKSourceCapture](../PDKSourceCapture/DESIGN.md) | Depends on | Verified immutable source | Manifest, view, rule and oracle admission | No path reread after capture; identity discovery is outside capture budget |
 | [LEF](../../../swift-mask-data/Sources/LEF/DESIGN.md) | Depends on | Typed standard declarations | Physical source schema | Native capabilities remain separately validated |
@@ -28,6 +30,7 @@ mapping; engines own executable process capability.
 flowchart LR
   Request --> Inspector[StandardInspection] --> IR[PDKStandardViewIR]
   LEF[LEFDocument] --> IR --> Mapping[Manifest validation]
+  Checked[Checked profile source] --> Profile[ProfileInspection] --> Facts[Checked profile facts or typed refusal]
 ```
 
 ## Contracts and Invariants
@@ -37,6 +40,11 @@ and inventory facts derived from that document. Missing or unsupported semantics
 cannot be inferred from names or successful JSON decoding.
 The LEF inventory/declaration distinction and external-master inference boundary
 are owned by [StandardInspection](StandardInspection/DESIGN.md).
+The independently selected profile capability, audited typed JSON specialization,
+registration policy and resource ownership are owned by
+[ProfileInspection](ProfileInspection/DESIGN.md). It depends toward admission and
+Discovery's existing decoder; neither portable Core nor admission imports the
+format adapter. Numerical process execution and qualification remain separate.
 
 Manifest-view, standalone view and rule-deck requests carry an optional
 `expectedSourceArtifact`. When supplied, it is authoritative: a backend must not

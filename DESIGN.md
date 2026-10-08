@@ -15,7 +15,8 @@ Parent: [LSI](../DESIGN.md). The affected child is
 buildable [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) admission module.
 Manifest validation is owned by [PDKValidation](Sources/PDKValidation/DESIGN.md).
 The profile foundation is indexed below. PDKCore profile values and their isolated
-test target are implemented; admission and format composition remain planned.
+test target, checked admission and stage consumption matching are implemented;
+format adapters and host composition remain in progress.
 Each implemented boundary records its behavioral evidence in its owning design.
 
 ## Responsibilities and Boundaries
@@ -118,6 +119,7 @@ Inspection remains distinct from engine capability and process qualification.
 | [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) | Child | Bounded exact owned parser input | Manifest/view/rule-deck admission | Successful cleanup is part of source admission; captures do not imply a closed PDK graph |
 | [PDKProfileAdmission](Sources/PDKProfileAdmission/DESIGN.md) | Child | Checked exact profile admission and stage consumption comparison | Independent host module without Engine codecs | Native format adapters and host adoption remain separate |
 | [PDKSpiceProfileInspection](Sources/PDKSpiceProfileInspection/DESIGN.md) | Planned child | CoreSpice grammar adapter | Optional standalone host product | No CoreSpice-to-PDK reverse dependency |
+| [PDKKitCLICore](Sources/PDKKitCLICore/DESIGN.md) | Child | Standalone command composition and scoped output | Inventory implemented; bounded profile commands specified | Actual output delivery is part of completion |
 | [PDKDesignDatabaseIntegration](../PDKDesignDatabaseIntegration/DESIGN.md) | Used by | Canonical exact profile/source retention | Host-only schema/runtime | Existing database locks/plans remain authoritative |
 | [LEF](../swift-mask-data/Sources/LEF/DESIGN.md) | Depends on | LEFDocument and typed errors | Standard physical schema ownership | Consumers must resolve process names and capability |
 

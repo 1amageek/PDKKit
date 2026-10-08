@@ -123,6 +123,26 @@ reference is then reloaded through `PDKBoundedManifestLoading`. A supplied
 manifest cannot authenticate admission. Pure `PDKProfilePlanning` remains an
 I/O-free checked selection boundary accepting already decoded values/references.
 
+Selected and mandatory-support root contexts use the definition's separately
+checked initial preprocessing identity, under the
+[Profile value contract](../../PDKCore/Profile/DESIGN.md#initial-preprocessing-identity).
+The admission owner transports this identity; the inspector's grammar owner
+verifies it against the actual initial inputs. Child contexts use each observed
+dependency's actual child-entry identity. Inspection policy is never substituted
+for an initial environment, and corner selection does not alter it implicitly.
+
+### Shared-owner composition prerequisite
+
+The standalone CLI requires a new `PDKProfileAdmitting` protocol requirement
+`admit(_:resources:)` accepting a trusted external invocation accountant. This
+entrypoint is specified, not implemented. Its configured limits/accounting version
+must correspond to `request.budget`; composition supplies the same checked budget
+to both. It neither creates another accountant nor closes the external owner.
+Existing `admit(_:)` remains the native convenience owning creation and close.
+External owners retain the original deadline and cumulative charges through input,
+admission and output, then close after their terminal delivery. The
+[CLI owner](../../PDKKitCLICore/ProfileCommands/DESIGN.md) owns that longer lifetime.
+
 | Public value | Meaning and owner |
 |---|---|
 | PDKProfileAuthorizedRoot | Absolute caller-selected root URL and root ID |

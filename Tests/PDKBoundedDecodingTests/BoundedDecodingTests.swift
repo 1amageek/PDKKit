@@ -71,6 +71,22 @@ import CircuiteFoundationFoundation
         let missing = String(decoding: data, as: UTF8.self).replacingOccurrences(of: "\"profileID\":\"demo\"", with: "\"profileID\":\"\"")
         #expect(throws: PDKBoundedDecodeError.self) { try decode(PDKProfileDefinition.self, missing) }
     }
+    @Test func obsoleteOrMissingInitialEnvironmentRefusesAndReleasesDecodeStorage() throws {
+        let definition = try BoundedDecodeFixture.values().1
+        let original = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(definition)) as? [String: Any])
+        for legacy in [true, false] {
+            var object = original
+            if legacy { object["schemaVersion"] = 1 }
+            else { object.removeValue(forKey: "initialPreprocessingIdentity") }
+            let bytes = Array(try JSONSerialization.data(withJSONObject: object))
+            let resources = DecodeTestAccounting()
+            #expect(throws: PDKBoundedDecodeError.self) {
+                try NativePDKBoundedDocumentDecoder().decode(PDKProfileDefinition.self, bytes: bytes.span, accounting: resources)
+            }
+            #expect(resources.amount(.liveOwnedBytes) == 0)
+            #expect(resources.amount(.temporaryBytes) == 0)
+        }
+    }
     @Test func duplicateKeysAndMalformedSyntaxFail() throws {
         for json in ["{\"a\":1,\"a\":2}", "{\"a\":1,\"\\u0061\":2}"] {
             do { _ = try decode([String: Int].self, json); Issue.record("Duplicate key accepted") }

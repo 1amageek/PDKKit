@@ -20,6 +20,10 @@ struct ProfileAdmissionTests {
         #expect(admitted?.claim.mandatorySupportSourceKeys == ["support"])
         #expect(admitted?.sourceInputs.count == 2)
         #expect(admitted?.rootOccurrences.filter { $0.isMandatorySupport }.count == 1)
+        #expect(fixture.definition.initialPreprocessingIdentity != fixture.definition.inspectionPolicyIdentity)
+        #expect(admitted?.sourceInputs.allSatisfy {
+            $0.context.preprocessingIdentity == fixture.definition.initialPreprocessingIdentity
+        } == true)
         #expect(resources.used(.readBytes) == fixture.expectedReadBytes)
         #expect(held > 0)
         #expect(throws: PDKAdmissionResourceError.closed) { try resources.check() }
@@ -54,6 +58,9 @@ struct ProfileAdmissionTests {
         #expect(admitted.sourceInputs.count == 3)
         #expect(admitted.dependencies[0].childNodeID != admitted.dependencies[1].childNodeID)
         #expect(admitted.dependencies[0].parentContext == admitted.dependencies[1].parentContext)
+        #expect(admitted.dependencies[0].parentContext.preprocessingIdentity == fixture.definition.initialPreprocessingIdentity)
+        #expect(admitted.dependencies[0].childContext.preprocessingIdentity == fixture.definition.dependencies[0].preprocessingIdentity)
+        #expect(admitted.dependencies[0].childContext.preprocessingIdentity != fixture.definition.initialPreprocessingIdentity)
         #expect(probe.references.filter { $0.id == fixture.childReference?.id }.count == 1)
         #expect(probe.resources?.used(.readBytes) == fixture.expectedReadBytes)
         #expect(probe.resources?.used(.dependencyEdges) == 2)

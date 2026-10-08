@@ -51,7 +51,8 @@ struct ConsumptionFixture {
         let definition = try PDKProfileDefinition(profileID: base.definition.profileID, manifestReference: manifestRef,
             processID: base.definition.processID, version: base.definition.version, requiredCornerIDs: cornerIDs,
             requirements: [requirement], sources: base.definition.sources, orderedSearchRoutes: base.definition.orderedSearchRoutes,
-            dependencies: edges, inspectionPolicyIdentity: base.definition.inspectionPolicyIdentity)
+            dependencies: edges, inspectionPolicyIdentity: base.definition.inspectionPolicyIdentity,
+            initialPreprocessingIdentity: base.definition.initialPreprocessingIdentity)
         let definitionRef = try await write(PDKProfileCodec().encodeDefinition(definition), binding: availability.definition)
         let request = PDKProfileAdmissionRequest(definition: .init(reference: definitionRef, rootID: availability.definition.rootID,
             relativePath: availability.definition.relativePath, budget: availability.definition.budget),

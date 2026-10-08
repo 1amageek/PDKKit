@@ -307,6 +307,36 @@ last-handle release and typed cancellation. Loader/source/discovery composition
 retains its existing integration test ownership. No WASM/Embedded execution claim
 is made by this host component.
 
+### Audited typed decoding specialization
+
+The proposed concrete native convenience `decodeAudited(_:source:accounting:
+rejectUnknownFields:)` reuses this syntax/typed decoder, returns a full-source-bound
+`PDKDecodedDocument<Value>` and preserves typed resource errors. It is an audited
+specialization boundary, not an arbitrary generic whole-allocation guarantee.
+`PDKBoundedDocumentDecoding` retains its three non-generic PDK document operations.
+The generic type's custom Decodable code, custom CodingKey initialization, derived
+storage and collection families other than the reviewed Array/Dictionary paths
+are outside the decoder guarantee unless their concrete owner audits/accounts
+them. Merely satisfying Decodable or fitting the source byte budget is insufficient.
+
+The opt-in strict mode rejects a raw object member that cannot be represented by
+the requested CodingKey before decoding that object's typed fields, including
+nested objects. Dictionary keys remain data. Existing manifest/definition/claim
+operations retain their mode and checks. The strict-key checks and their key/path
+storage use the same invocation accounting owner; this introduces no second JSON
+parser or standard schema. A specializing owner validates any additional accepted
+schema policy through Decoder containers and delegates to the existing standard
+type rather than recreating its physical fields.
+
+The [StandardViews ProfileInspection](../../PDKStandardViews/ProfileInspection/DESIGN.md)
+specialization owns the reviewed IRTechLibrary family and its strict data-only
+policy, mapping projection and constructor/fact accounting. This component owns
+decoder storage and receipts only. Source bytes remain separately owned by the
+checked input. Detached decoded values retain the existing caller-owned lifetime
+contract. Native specialization tests must exercise actual non-PDK typed values,
+unknown nested fields, resource failure and last-copy receipts before the new
+entry can support a production capability claim.
+
 ### Invocation-bounded manifest loading
 
 `PDKBoundedManifestLoading` composes the verified controlled capture/discovery

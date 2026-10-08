@@ -3,6 +3,7 @@ import Synchronization
 import Testing
 import CircuiteFoundation
 import CircuiteFoundationFoundation
+import CircuiteFoundationCrypto
 @testable import PDKCore
 
 @Suite struct ProfileValueTests {
@@ -30,7 +31,7 @@ import CircuiteFoundationFoundation
         }
         let definition = try PDKProfileDefinition(profileID: "demo", manifestReference: manifestRef, processID: "p", version: "1",
             requiredCornerIDs: shared ? [] : ["tt"], requirements: [r], sources: sources, orderedSearchRoutes: ["models"], dependencies: edges,
-            inspectionPolicyIdentity: "policy.v1")
+            inspectionPolicyIdentity: "policy.v1", initialPreprocessingIdentity: "environment.empty.v1")
         var assets = [try PDKAssetReference(assetID: "model", role: .model, path: "model.sp", kind: ArtifactKind(rawValue: "spice"), format: .spice,
             required: true, sha256: String(repeating: "1", count: 64), byteCount: 4, cornerIDs: shared ? [] : ["tt"])]
         var mappings = [PDKCrossViewMapping(mappingID: "spice", view: .spice, assetID: "model", cornerIDs: shared ? [] : ["tt"])]
@@ -90,10 +91,11 @@ import CircuiteFoundationFoundation
         #expect(throws: PDKProfileValueError.self) { try claim((replacing(f.0, requirements: [singular]), f.1, f.2)) }
     }
     func replacing(_ d: PDKProfileDefinition, requirements: [PDKViewRequirement]? = nil, sources: [PDKProfileSource]? = nil,
-                   dependencies: [PDKSourceDependency]? = nil) throws -> PDKProfileDefinition {
+                   dependencies: [PDKSourceDependency]? = nil, initialPreprocessingIdentity: String? = nil) throws -> PDKProfileDefinition {
         try PDKProfileDefinition(profileID: d.profileID, manifestReference: d.manifestReference, processID: d.processID, version: d.version,
             requiredCornerIDs: d.requiredCornerIDs, requirements: requirements ?? d.requirements, sources: sources ?? d.sources,
-            orderedSearchRoutes: d.orderedSearchRoutes, dependencies: dependencies ?? d.dependencies, inspectionPolicyIdentity: d.inspectionPolicyIdentity)
+            orderedSearchRoutes: d.orderedSearchRoutes, dependencies: dependencies ?? d.dependencies, inspectionPolicyIdentity: d.inspectionPolicyIdentity,
+            initialPreprocessingIdentity: initialPreprocessingIdentity ?? d.initialPreprocessingIdentity)
     }
     @Test func exactDescriptorAndDependencyIdentity() throws {
         let f = try fixture(dependencies: true)
@@ -158,6 +160,49 @@ import CircuiteFoundationFoundation
         var definition = try #require(JSONSerialization.jsonObject(with: codec.encodeDefinition(c.definition)) as? [String: Any])
         definition.removeValue(forKey: "dependencies")
         #expect(throws: PDKProfileValueError.self) { try codec.decodeDefinition(JSONSerialization.data(withJSONObject: definition)) }
+    }
+    @Test func initialEnvironmentRequiresCurrentWireWithoutPolicyDefault() throws {
+        let definition = try fixture().0
+        let codec = PDKProfileCodec()
+        let bytes = try codec.encodeDefinition(definition)
+        #expect(try codec.decodeDefinition(bytes) == definition)
+        let original = try #require(JSONSerialization.jsonObject(with: bytes) as? [String: Any])
+        #expect(original["schemaVersion"] as? Int == 2)
+        #expect(definition.initialPreprocessingIdentity != definition.inspectionPolicyIdentity)
+        for mutation in ["legacy", "missing", "empty", "unknown"] {
+            var wire = original
+            switch mutation {
+            case "legacy": wire["schemaVersion"] = 1
+            case "missing": wire.removeValue(forKey: "initialPreprocessingIdentity")
+            case "empty": wire["initialPreprocessingIdentity"] = ""
+            default: wire["initialEnvironment"] = "foreign"
+            }
+            #expect(throws: PDKProfileValueError.self) { try codec.decodeDefinition(JSONSerialization.data(withJSONObject: wire)) }
+        }
+        #expect(throws: PDKProfileValueError.self) { try replacing(definition, initialPreprocessingIdentity: "") }
+    }
+    @Test func initialEnvironmentCommitsThroughExactDefinitionWithoutChangingFraming() throws {
+        let f = try fixture()
+        let changed = try replacing(f.0, initialPreprocessingIdentity: "environment.choice.one.v1")
+        let codec = PDKProfileCodec()
+        func exactReference(_ definition: PDKProfileDefinition) throws -> ArtifactReference {
+            let bytes = try codec.encodeDefinition(definition)
+            let buffer = Array(bytes)
+            let count = UInt64(buffer.count)
+            let digest = try SHA256ContentDigester().digest(using: .sha256,
+                limits: ContentDigestSessionLimits(maximumChunkByteCount: count,
+                    maximumTotalByteCount: count, maximumUpdateCount: 1)) {
+                    (lease: borrowing ContentDigestUpdateLease) throws(ContentDigestError) in
+                try lease.update(buffer)
+            }.digest
+            return try ArtifactReference(digest: digest, byteCount: UInt64(bytes.count), descriptor: f.2.descriptor)
+        }
+        let a = try claim((f.0, f.1, exactReference(f.0)))
+        let b = try claim((changed, f.1, exactReference(changed)))
+        #expect(a.definitionReference != b.definitionReference)
+        #expect(a.semanticSelectionDigest != b.semanticSelectionDigest)
+        #expect(a.definition.inspectionPolicyIdentity == b.definition.inspectionPolicyIdentity)
+        #expect(try codec.decodeClaim(codec.encodeClaim(b)) == b)
     }
     @Test func duplicateAndUnsafeRouteRefusal() throws {
         let f = try fixture()

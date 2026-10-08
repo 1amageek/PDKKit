@@ -42,7 +42,7 @@ and typed construction errors. Admission-only values have a different owner.
 
 | Type | Required meaning |
 |---|---|
-| `PDKProfileDefinition` | Stable profile ID; exact manifest reference; explicit process/version; required corner IDs; required view bindings; exact expected source table; ordered source-search authority; dependency records; inspection policy identity |
+| `PDKProfileDefinition` | Stable profile ID; exact manifest reference; explicit process/version; required corner IDs; required view bindings; exact expected source table; ordered source-search authority; dependency records; inspection policy identity and separate initial preprocessing identity |
 | `PDKViewRequirement` | Stable requirement ID; purpose ID; existing PDKViewKind/PDKAssetRole; explicit asset IDs; corner IDs; explicit selected section where applicable; demanded source-fact coverage |
 | `PDKProfilePlan` | Pure selection outcome, manifest identity and requirements; selected roots and their full expected references; no admission or qualification flag |
 | `PDKSourceDependency` | Parent source key and full reference; physical statement position; directive kind; selected child key/reference; section and preprocessing-context identity; lexical occurrence order |
@@ -134,13 +134,38 @@ and canonical retention together.
 ## Encoding v1 and Public Boundary
 
 `PDKProfileCoding` / `PDKProfileCodec` own strict current-schema wire encoding.
-Profile declarations retain `schemaVersion: 1`; consumption source and claim use
-schema 2 as specified below, and consumed mapping uses schema 1. Every wire value
+Profile definition uses `schemaVersion: 2`; other profile declarations retain
+schema 1. Consumption source and claim use schema 2 as specified below, and
+consumed mapping uses schema 1. Every wire value
 requires its exact current schema, every declared field (optional values use explicit
 null), and rejects unknown fields. Decode invokes checked
 construction. The wire codec performs no bounded parser admission: runtime callers
 must supply the admission-owned bounded decode path rather than treating ordinary
 JSONDecoder use as resource evidence.
+
+### Initial preprocessing identity
+
+The definition requires a nonempty checked `initialPreprocessingIdentity`,
+separate from `inspectionPolicyIdentity`. The latter identifies inspection
+semantics; it cannot identify two different initial parameter environments under
+the same policy. Selected roots and mandatory-support roots use the declared
+initial identity. Dependency edges retain their own actual child-entry identity.
+The grammar owner computes identities from the actual initial inputs and checks
+the declared identity before parsing. A caller-supplied opaque label cannot replace
+that check. This value does not introduce a second expression evaluator or change
+parameter/function inheritance.
+
+One initial identity applies to every root in this definition. Corner-specific
+initial environments require another explicit contract; no implicit substitution
+is provided. The initial identity is committed through the exact definition
+reference already present in canonical encoding v1; the v1 framing is unchanged.
+Schema 1 definitions and a missing, empty or unknown initial-identity field are
+rejected, without deriving a default from inspection policy.
+
+`PDKProfileValueTests` owns checked construction and strict schema-2 round trips.
+`PDKProfileAdmissionTests` owns root/support propagation and changed-context
+behavior through actual capture and admission. Format adapters own checking the
+grammar-computed identity against this declaration.
 
 `PDKProfilePlan` selects the copied manifest through exact `manifestReference`,
 process/version, explicit requirement IDs, roles, corner membership and mappings.

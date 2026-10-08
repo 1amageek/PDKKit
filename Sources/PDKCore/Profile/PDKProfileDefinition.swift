@@ -2,7 +2,7 @@ import Foundation
 import CircuiteFoundation
 import CircuiteFoundationFoundation
 public struct PDKProfileDefinition: Sendable, Hashable, Codable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
     public let profileID: String
     public let manifestReference: ArtifactReference
     public let processID: String
@@ -13,13 +13,15 @@ public struct PDKProfileDefinition: Sendable, Hashable, Codable {
     public let orderedSearchRoutes: [String]
     public let dependencies: [PDKSourceDependency]
     public let inspectionPolicyIdentity: String
-    public init(profileID: String, manifestReference: ArtifactReference, processID: String, version: String, requiredCornerIDs: [String], requirements: [PDKViewRequirement], sources: [PDKProfileSource], orderedSearchRoutes: [String], dependencies: [PDKSourceDependency], inspectionPolicyIdentity: String, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
+    public let initialPreprocessingIdentity: String
+    public init(profileID: String, manifestReference: ArtifactReference, processID: String, version: String, requiredCornerIDs: [String], requirements: [PDKViewRequirement], sources: [PDKProfileSource], orderedSearchRoutes: [String], dependencies: [PDKSourceDependency], inspectionPolicyIdentity: String, initialPreprocessingIdentity: String, resources: (any PDKAdmissionResourceAccounting)? = nil) throws(PDKProfileValueError) {
         let work = PDKProfileConstructionWork(resources)
         try work.check()
         try PDKProfileWire.id(profileID, resources: resources)
         try PDKProfileWire.id(processID, resources: resources)
         try PDKProfileWire.id(version, resources: resources)
         try PDKProfileWire.id(inspectionPolicyIdentity, resources: resources)
+        try PDKProfileWire.id(initialPreprocessingIdentity, resources: resources)
         try PDKProfileWire.reference(manifestReference, id: profileID, resources: resources)
         guard manifestReference.descriptor.format == .json,
               try work.technologyKind(manifestReference.descriptor.kind) else { throw .conflictingReference(work.context(profileID)) }
@@ -63,10 +65,11 @@ public struct PDKProfileDefinition: Sendable, Hashable, Codable {
         self.orderedSearchRoutes = orderedSearchRoutes
         self.dependencies = dependencies
         self.inspectionPolicyIdentity = inspectionPolicyIdentity
+        self.initialPreprocessingIdentity = initialPreprocessingIdentity
     }
-    private enum CodingKeys: String, CodingKey { case schemaVersion, profileID, manifestReference, processID, version, requiredCornerIDs, requirements, sources, orderedSearchRoutes, dependencies, inspectionPolicyIdentity }
+    private enum CodingKeys: String, CodingKey { case schemaVersion, profileID, manifestReference, processID, version, requiredCornerIDs, requirements, sources, orderedSearchRoutes, dependencies, inspectionPolicyIdentity, initialPreprocessingIdentity }
     public init(from decoder: Decoder) throws {
-        try PDKProfileWire.check(decoder, fields: ["profileID", "manifestReference", "processID", "version", "requiredCornerIDs", "requirements", "sources", "orderedSearchRoutes", "dependencies", "inspectionPolicyIdentity"])
+        try PDKProfileWire.check(decoder, fields: ["profileID", "manifestReference", "processID", "version", "requiredCornerIDs", "requirements", "sources", "orderedSearchRoutes", "dependencies", "inspectionPolicyIdentity", "initialPreprocessingIdentity"], schemaVersion: Self.currentSchemaVersion)
         let c = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
             profileID: c.decode(String.self, forKey: .profileID),
@@ -79,6 +82,7 @@ public struct PDKProfileDefinition: Sendable, Hashable, Codable {
             orderedSearchRoutes: c.decode([String].self, forKey: .orderedSearchRoutes),
             dependencies: c.decode([PDKSourceDependency].self, forKey: .dependencies),
             inspectionPolicyIdentity: c.decode(String.self, forKey: .inspectionPolicyIdentity),
+            initialPreprocessingIdentity: c.decode(String.self, forKey: .initialPreprocessingIdentity),
             resources: PDKProfileWire.resources(decoder)
         )
     }
@@ -95,5 +99,6 @@ public struct PDKProfileDefinition: Sendable, Hashable, Codable {
         try c.encode(orderedSearchRoutes, forKey: .orderedSearchRoutes)
         try c.encode(dependencies, forKey: .dependencies)
         try c.encode(inspectionPolicyIdentity, forKey: .inspectionPolicyIdentity)
+        try c.encode(initialPreprocessingIdentity, forKey: .initialPreprocessingIdentity)
     }
 }

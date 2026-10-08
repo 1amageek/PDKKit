@@ -76,7 +76,7 @@ public struct LocalPDKProfileAdmitter: PDKProfileAdmitting {
         for selection in plan.selections {
             for sourceKey in selection.sourceKeys {
                 let context = PDKProfileSourceContext(sourceKey: sourceKey, selectedSection: selection.selectedSection,
-                    preprocessingIdentity: definition.inspectionPolicyIdentity, cornerID: selection.cornerID)
+                    preprocessingIdentity: definition.initialPreprocessingIdentity, cornerID: selection.cornerID)
                 var existing: PDKProfileSourceFacts?
                 for candidate in facts { if try work.equal(candidate.input.context, context) { existing = candidate; break } }
                 let selectedFacts: PDKProfileSourceFacts
@@ -100,7 +100,7 @@ public struct LocalPDKProfileAdmitter: PDKProfileAdmitting {
         for key in plan.mandatorySupportSourceKeys {
             let source = try source(key, definition: definition, work: work)
             let context = PDKProfileSourceContext(sourceKey: key, selectedSection: nil,
-                preprocessingIdentity: definition.inspectionPolicyIdentity)
+                preprocessingIdentity: definition.initialPreprocessingIdentity)
             let input = try await resolver.root(source: source, context: context)
             let support = try await inspect(input, requirementID: nil, view: nil, corner: nil,
                 demands: [], resolver: resolver, policy: definition.inspectionPolicyIdentity, work: work)

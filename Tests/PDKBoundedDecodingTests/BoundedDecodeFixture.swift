@@ -17,7 +17,7 @@ struct BoundedDecodeFixture {
             allowsMultipleSources: false, demandedFactKinds: ["devices", "dependencies"])
         let definition = try PDKProfileDefinition(profileID: "demo", manifestReference: manifestReference, processID: "p", version: "1",
             requiredCornerIDs: ["tt"], requirements: [requirement], sources: [source], orderedSearchRoutes: ["models"], dependencies: [],
-            inspectionPolicyIdentity: "policy.v1")
+            inspectionPolicyIdentity: "policy.v1", initialPreprocessingIdentity: "environment.empty.v1")
         let pvt = PDKPVTCondition(process: PDKProcessCorner(name: "typical", nominal: true), voltage: 1, temperatureCelsius: 25)
         let asset = try PDKAssetReference(assetID: "model", role: .model, path: "model.sp", kind: ArtifactKind(rawValue: "spice"),
             format: .spice, sha256: String(repeating: "1", count: 64), byteCount: 4, cornerIDs: ["tt"])

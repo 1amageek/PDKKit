@@ -213,7 +213,7 @@ struct ConsumptionTests {
         uint(0); uint(1); text("simulation"); bytes.append(0)
         uint(1); text("model"); uint(1); text("root"); bytes.append(0)
         uint(1); uint(0); text("root"); reference(fixture.rootReference)
-        bytes.append(0); bytes.append(0); text("policy.v1"); bytes.append(0); bytes.append(0)
+        bytes.append(0); bytes.append(0); text("environment.empty.v1"); bytes.append(0); bytes.append(0)
         uint(2); uint(0); uint(0); text("devices"); uint(0); uint(1); text("m")
         let limits = try ContentDigestSessionLimits(maximumChunkByteCount: UInt64(bytes.count),
             maximumTotalByteCount: UInt64(bytes.count), maximumUpdateCount: 1)
