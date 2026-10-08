@@ -36,9 +36,12 @@ existing owners.
   `ArtifactReference` are used directly throughout the public boundary.
 - Production-profile validation controls that require immutable identity for
   required assets and require every locked process corner to be declared.
-- Standard-view, rule-deck, oracle and qualification artifact reads use the
-  same Foundation verifier and retain canonical `ArtifactReference`
-  provenance.
+- Manifest validation, standard-view, rule-deck and oracle evidence admission
+  use the independent PDKSourceCapture product and decode only its verified
+  immutable bytes. Manifest-bound view composition checks the exact resolved
+  source reference before binding. Qualification artifact reads retain their
+  separate verifier owner. Identity discovery and parser allocations are not
+  covered by source capture budgets.
 - Cross-view mapping coverage and structured blocked diagnostics.
 - Deterministic JSON CLI with inspect/discover/validate/corpus commands.
 - Retained positive fixture, isolated negative-path fixture and request/payload round-trip tests.
@@ -146,3 +149,14 @@ qualification.
 PDKKit reports capability, immutable evidence and limitations. A process-scoped
 corpus, reference-oracle correlation and ToolQualification record are evaluated
 outside this package; PDKKit never promotes a PDK to foundry-qualified.
+
+## Source admission reproduction
+
+The source product can be built independently with
+`swift build --target PDKSourceCapture`. Focused source tests use
+`swift test --filter PDKSourceCaptureTests`; composed admission regressions use
+`swift test --filter 'PDKSourceAdmissionRegressionTests|PDKSourceConsumerTests|PDKBoundSourceCaptureTests'`.
+Wrap each test command with the repository's timeout policy. These tests execute
+real local SHA-256/file access, post-capture path replacement/deletion, same-length
+tampering, exact manifest binding, malformed page accounting and cleanup refusal.
+They do not qualify process models, DRC decks or WASM/Embedded behavior.

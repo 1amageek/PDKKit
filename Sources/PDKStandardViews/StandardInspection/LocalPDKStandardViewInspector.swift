@@ -1,16 +1,17 @@
 import Foundation
 import CircuiteFoundation
-import CircuiteFoundationFileSystem
 import CircuiteFoundationFoundation
-import CircuiteFoundationCrypto
 import GDSII
 import LEF
 import LayoutIR
 import OASIS
 import PDKCore
+import PDKSourceCapture
 
 public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
     private let clock: any PDKStandardViewExecutionClock
+    private let sourceCapturer: any PDKLocalSourceCapturing
+    private let captureBudget: ArtifactAccessBudget?
 
     private struct LibertyToken {
         var value: String
@@ -25,9 +26,13 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
     }
 
     public init(
-        clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock()
+        clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock(),
+        sourceCapturer: any PDKLocalSourceCapturing = LocalPDKSourceCapturer(),
+        captureBudget: ArtifactAccessBudget? = nil
     ) {
         self.clock = clock
+        self.sourceCapturer = sourceCapturer
+        self.captureBudget = captureBudget
     }
 
     public func execute(
@@ -126,39 +131,56 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
 
         let data: Data
         do {
-            data = try Data(contentsOf: inputURL)
+            let budget = try captureBudget ?? PDKSourceCapturePolicy.defaultBudget
+            let captured = try await sourceCapturer.capture(
+                reference: sourceArtifact,
+                at: input,
+                relativeTo: input.location.storage == .workspaceRelative
+                    ? request.projectRootPath.map { URL(filePath: $0) } ?? URL(filePath: FileManager.default.currentDirectoryPath)
+                    : nil,
+                budget: budget
+            )
+            data = try captured.data(maximumByteCount: budget.maximumTotalByteCount)
+        } catch let error as PDKSourceCaptureError {
+            let code: String
+            let status: PDKExecutionStatus
+            switch error.classification {
+            case .cancellation:
+                code = "pdk.standard-view.capture-cancelled"
+                status = .cancelled
+            case .digestMismatch:
+                code = "pdk.standard-view.digest-mismatch"
+                status = .blocked
+            case .byteCountMismatch:
+                code = "pdk.standard-view.byte-count-mismatch"
+                status = .blocked
+            case .cleanup, .other:
+                code = "pdk.standard-view.capture-failed"
+                status = .blocked
+            }
+            let finding = PDKValidationFinding(
+                severity: status == .cancelled ? .warning : .blocker,
+                code: code,
+                message: "Standard-view source admission failed: \(error).",
+                entity: input.path,
+                suggestedActions: ["restore_immutable_artifact", "check_capture_budget_and_access"]
+            )
+            return try makeResult(request: request, startedAt: startedAt, status: status,
+                                  findings: [finding], artifacts: [sourceArtifact])
         } catch {
             let finding = PDKValidationFinding(
-                severity: .error,
-                code: "pdk.standard-view.input-unreadable",
-                message: "The standard-view artifact could not be read: \(error.localizedDescription)",
-                entity: inputURL.path,
-                suggestedActions: ["restore_standard_view_artifact", "check_file_permissions"]
+                severity: .blocker,
+                code: "pdk.standard-view.capture-failed",
+                message: "Standard-view capture could not be configured: \(error).",
+                entity: input.path,
+                suggestedActions: ["check_capture_budget_and_access"]
             )
-            return try makeResult(
-                request: request,
-                startedAt: startedAt,
-                status: .failed,
-                findings: [finding],
-                artifacts: [sourceArtifact]
-            )
+            return try makeResult(request: request, startedAt: startedAt, status: .blocked,
+                                  findings: [finding], artifacts: [sourceArtifact])
         }
 
         var findings: [PDKValidationFinding] = []
         do {
-            let actualDigest = try SHA256ContentDigester().digest(data: data, using: sourceArtifact.digest.algorithm)
-            var integrityIssues: [ArtifactIntegrityIssue] = []
-            if UInt64(data.count) != sourceArtifact.byteCount {
-                integrityIssues.append(.byteCountMismatch(expected: sourceArtifact.byteCount, actual: UInt64(data.count)))
-            }
-            if actualDigest != sourceArtifact.digest {
-                integrityIssues.append(.digestMismatch(expected: sourceArtifact.digest, actual: actualDigest))
-            }
-            let integrityFindings = self.findings(for: ArtifactIntegrity(issues: integrityIssues), entity: input.path)
-            guard integrityFindings.isEmpty else {
-                return try makeResult(request: request, startedAt: startedAt, status: .blocked,
-                                      findings: integrityFindings, artifacts: [sourceArtifact])
-            }
             var inspection = try parse(data: data, reference: input, format: request.format)
             inspection.sourceArtifact = sourceArtifact
             findings.append(contentsOf: semanticFindings(inspection: inspection, request: request))
@@ -198,48 +220,6 @@ public struct LocalPDKStandardViewInspector: PDKStandardViewInspecting {
                 findings: findings,
                 artifacts: [sourceArtifact]
             )
-        }
-    }
-
-    private func findings(
-        for integrity: ArtifactIntegrity,
-        entity: String
-    ) -> [PDKValidationFinding] {
-        integrity.issues.map { issue in
-            switch issue.code {
-            case .missingFile:
-                PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.standard-view.input-missing",
-                    message: "Standard-view input artifact is missing.",
-                    entity: entity,
-                    suggestedActions: ["restore_standard_view_artifact"]
-                )
-            case .byteCountMismatch:
-                PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.standard-view.byte-count-mismatch",
-                    message: "Standard-view input bytes do not match the recorded byte count.",
-                    entity: entity,
-                    suggestedActions: ["rebuild_input_reference", "restore_immutable_artifact"]
-                )
-            case .digestMismatch:
-                PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.standard-view.digest-mismatch",
-                    message: "Standard-view input bytes do not match the recorded SHA-256 digest.",
-                    entity: entity,
-                    suggestedActions: ["rebuild_input_reference", "restore_immutable_artifact"]
-                )
-            case .notRegularFile, .unreadableFile, .invalidLocation, .unsupportedDigestAlgorithm:
-                PDKValidationFinding(
-                    severity: .error,
-                    code: "pdk.standard-view.digest-failed",
-                    message: "Standard-view input integrity could not be verified: \(issue.code.rawValue).",
-                    entity: entity,
-                    suggestedActions: ["check_file_permissions", "restore_standard_view_artifact"]
-                )
-            }
         }
     }
 

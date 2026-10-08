@@ -21,6 +21,43 @@ and execution provenance.
 
 PDK identity and immutable manifest reference.
 
+### PDKSourceCapture
+
+Independently buildable host source admission, depending only on the fixed
+CircuiteFoundation products. The owning contract is
+[PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md).
+
+```swift
+public protocol PDKSourceCapturing: Sendable {
+    func capture(_ intent: ArtifactAccessIntent)
+        async throws(PDKSourceCaptureError) -> CapturedPDKSource
+}
+
+public protocol PDKLocalSourceCapturing: Sendable {
+    func capture(
+        reference: ArtifactReference,
+        at locator: ArtifactLocator,
+        relativeTo root: URL?,
+        budget: ArtifactAccessBudget
+    ) async throws(PDKSourceCaptureError) -> CapturedPDKSource
+}
+```
+
+`StandardPDKSourceCapturer` accepts an injected `ArtifactAccessing` service and
+`ContentDigesting` implementation. `LocalPDKSourceCapturer` uses the secure root
+capability backend. `CapturedPDKSource` has no arbitrary public initializer; its
+immutable buffer was checked against the expected content identity. `withBytes`
+lends a `Span`; `data(maximumByteCount:)` makes an explicit bounded codec copy.
+`PDKSourceCaptureError` retains both primary and cleanup failures.
+
+Local validation, standard-view, manifest-view, rule-deck, external rule-deck
+admission and oracle comparison inject `PDKLocalSourceCapturing` and optionally
+`ArtifactAccessBudget`. Their default is the source module's capture policy.
+`projectRootPath` remains a base for workspace-relative availability; it does not
+restrict separately supplied absolute availability. Explicit capture roots do
+restrict absolute sources to their descendants. Identity discovery preceding
+capture and codec/parser allocations are outside this budget.
+
 ### PDKDiscovery
 
 Local PDK discovery without validation claims.
@@ -52,7 +89,7 @@ Umbrella API.
 | `LocalPDKCorpusValidator` | Execute deterministic valid/blocked/failed corpus cases over `PDKValidating` |
 | `LocalPDKStandardViewInspector` | Parse standard views into canonical detailed IR with input integrity checks |
 | `PDKManifestViewBindingValidator` | Compare canonical view facts with manifest layer/device mappings |
-| `LocalPDKManifestViewInspector` | Resolve a manifest asset, inspect it and return binding evidence |
+| `LocalPDKManifestViewInspector` | Capture the manifest, resolve its asset and verify exact retained source identity before binding |
 | `PDKRuleDeckInspecting` | Inspect a manifest-bound rule-deck asset through a typed request/payload contract |
 | `LocalPDKRuleDeckInspector` | Verify rule-deck integrity, executable statements and mapped-layer evidence |
 | `PDKExternalStandardViewResultProviding` | Supply a JSON-encoded typed result from an external standard-view backend |

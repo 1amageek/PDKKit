@@ -1,25 +1,31 @@
 import Foundation
 import CircuiteFoundation
-import CircuiteFoundationFileSystem
 import CircuiteFoundationFoundation
 import PDKCore
+import PDKSourceCapture
 
 public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
     private let clock: any PDKStandardViewExecutionClock
     private let assetResolver: any PDKAssetResolving
     private let standardInspector: any PDKStandardViewInspecting
     private let bindingValidator: PDKManifestViewBindingValidator
+    private let sourceCapturer: any PDKLocalSourceCapturing
+    private let captureBudget: ArtifactAccessBudget?
 
     public init(
         clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock(),
         assetResolver: any PDKAssetResolving = LocalPDKAssetResolver(),
         standardInspector: any PDKStandardViewInspecting = LocalPDKStandardViewInspector(),
-        bindingValidator: PDKManifestViewBindingValidator = PDKManifestViewBindingValidator()
+        bindingValidator: PDKManifestViewBindingValidator = PDKManifestViewBindingValidator(),
+        sourceCapturer: any PDKLocalSourceCapturing = LocalPDKSourceCapturer(),
+        captureBudget: ArtifactAccessBudget? = nil
     ) {
         self.clock = clock
         self.assetResolver = assetResolver
         self.standardInspector = standardInspector
         self.bindingValidator = bindingValidator
+        self.sourceCapturer = sourceCapturer
+        self.captureBudget = captureBudget
     }
 
     public func execute(
@@ -49,39 +55,45 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         }
         let manifest: PDKManifest
         do {
-            let manifestArtifact = try PDKArtifactReferenceBuilder.artifactReference(
-                for: request.pdk.manifest,
-                resolvedURL: manifestURL
+            let budget = try captureBudget ?? PDKSourceCapturePolicy.defaultBudget
+            let captured = try await sourceCapturer.capture(
+                reference: request.pdk.manifest,
+                at: request.pdk.manifestLocator,
+                relativeTo: request.pdk.manifestLocator.location.storage == .workspaceRelative
+                    ? URL(filePath: request.projectRootPath ?? FileManager.default.currentDirectoryPath) : nil,
+                budget: budget
             )
-            let integrity = LocalArtifactVerifier().verify(
-                manifestArtifact,
-                at: try PDKArtifactReferenceBuilder.materializedLocator(
-                    for: request.pdk.manifestLocator,
-                    resolvedURL: manifestURL
-                ),
-                relativeTo: nil
-            )
-            guard integrity.isVerified else {
-                let issue = integrity.issues.first
-                let code = issue?.code == .digestMismatch
-                    ? "pdk.standard-view.manifest-digest-mismatch"
-                    : "pdk.standard-view.manifest-integrity-failed"
-                let finding = PDKValidationFinding(
+            let data = try captured.data(maximumByteCount: budget.maximumTotalByteCount)
+            manifest = try PDKManifestCodec.decode(data: data)
+        } catch let error as PDKSourceCaptureError {
+            let code: String
+            let status: PDKExecutionStatus
+            switch error.classification {
+            case .cancellation:
+                code = "pdk.standard-view.manifest-capture-cancelled"
+                status = .cancelled
+            case .digestMismatch:
+                code = "pdk.standard-view.manifest-digest-mismatch"
+                status = .blocked
+            case .byteCountMismatch:
+                code = "pdk.standard-view.manifest-integrity-failed"
+                status = .blocked
+            case .cleanup, .other:
+                code = "pdk.standard-view.manifest-capture-failed"
+                status = .blocked
+            }
+            return try makeResult(
+                request: request,
+                startedAt: startedAt,
+                status: status,
+                findings: [PDKValidationFinding(
                     severity: .blocker,
                     code: code,
-                    message: "PDK manifest integrity verification failed: \(issue?.code.rawValue ?? "unknown").",
+                    message: "PDK manifest capture failed: \(error).",
                     entity: manifestURL.path,
-                    suggestedActions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
-                )
-                return try makeResult(
-                    request: request,
-                    startedAt: startedAt,
-                    status: .blocked,
-                    findings: [finding]
-                )
-            }
-            let data = try Data(contentsOf: manifestURL)
-            manifest = try PDKManifestCodec.decode(data: data)
+                    suggestedActions: ["restore_immutable_artifact", "inspect_capture_failure"]
+                )]
+            )
         } catch let error as PDKManifestError {
             let finding = PDKValidationFinding(
                 severity: .error,
@@ -207,6 +219,23 @@ public struct LocalPDKManifestViewInspector: PDKManifestViewInspecting {
         var findings = inspectionResult.payload.findings
         var binding: PDKStandardViewBindingReport?
         if let inspection = inspectionResult.payload.inspection {
+            guard inspection.sourceArtifact == resolved.reference else {
+                findings.append(PDKValidationFinding(
+                    severity: .blocker,
+                    code: "pdk.standard-view.source-artifact-mismatch",
+                    message: "The inspected source identity differs from the manifest-resolved asset identity.",
+                    entity: request.assetID,
+                    suggestedActions: ["restore_immutable_artifact", "rerun_manifest_view_inspection"]
+                ))
+                return try makeResult(
+                    request: request,
+                    startedAt: startedAt,
+                    status: inspectionResult.status == .cancelled ? .cancelled : .blocked,
+                    findings: findings,
+                    artifacts: inspectionResult.artifacts,
+                    inspection: inspectionResult.payload
+                )
+            }
             let report = bindingValidator.validate(
                 manifest: manifest,
                 assetID: request.assetID,

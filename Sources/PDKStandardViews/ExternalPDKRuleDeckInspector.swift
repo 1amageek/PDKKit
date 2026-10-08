@@ -1,26 +1,31 @@
 import Foundation
 import CircuiteFoundation
-import CircuiteFoundationFileSystem
 import CircuiteFoundationFoundation
 import PDKCore
-import CircuiteFoundation
+import PDKSourceCapture
 
 public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     private let provider: any PDKExternalRuleDeckResultProviding
     private let decoder: PDKExternalInspectionResultDecoder
     private let clock: any PDKStandardViewExecutionClock
     private let assetResolver: any PDKAssetResolving
+    private let sourceCapturer: any PDKLocalSourceCapturing
+    private let captureBudget: ArtifactAccessBudget?
 
     public init(
         provider: any PDKExternalRuleDeckResultProviding,
         decoder: PDKExternalInspectionResultDecoder = PDKExternalInspectionResultDecoder(),
         clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock(),
-        assetResolver: any PDKAssetResolving = LocalPDKAssetResolver()
+        assetResolver: any PDKAssetResolving = LocalPDKAssetResolver(),
+        sourceCapturer: any PDKLocalSourceCapturing = LocalPDKSourceCapturer(),
+        captureBudget: ArtifactAccessBudget? = nil
     ) {
         self.provider = provider
         self.decoder = decoder
         self.clock = clock
         self.assetResolver = assetResolver
+        self.sourceCapturer = sourceCapturer
+        self.captureBudget = captureBudget
     }
 
     public func execute(
@@ -52,8 +57,21 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
                 expectedRunID: request.runID
             )
             receivedArtifacts = result.artifacts
-            try validate(payload: result.payload, status: result.status, request: request)
+            try await validate(payload: result.payload, status: result.status, request: request)
             return result
+        } catch let error as PDKSourceCaptureError {
+            return try failureResult(
+                request: request,
+                startedAt: startedAt,
+                status: error.classification == .cancellation ? .cancelled : .blocked,
+                artifacts: receivedArtifacts,
+                finding: finding(
+                    code: "pdk.external.rule-deck-capture-failed",
+                    message: "PDK manifest capture failed: \(error).",
+                    severity: .blocker,
+                    actions: ["restore_immutable_artifact", "inspect_capture_failure"]
+                )
+            )
         } catch let error as PDKExternalInspectionError {
             if receivedArtifacts.isEmpty {
                 receivedArtifacts = artifacts(from: data)
@@ -94,7 +112,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         payload: PDKRuleDeckInspectionPayload,
         status: PDKExecutionStatus,
         request: PDKRuleDeckInspectionRequest
-    ) throws {
+    ) async throws {
         guard payload.assetID == request.assetID else {
             throw PDKExternalInspectionError.assetIDMismatch(
                 expected: request.assetID,
@@ -113,7 +131,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             )
         }
         if status == .completed {
-            let expectedIdentity = try expectedRuleDeckIdentity(for: request)
+            let expectedIdentity = try await expectedRuleDeckIdentity(for: request)
             let expectedArtifact = expectedIdentity.artifact
             let expectedReference = expectedIdentity.reference
             guard let actualReference = payload.reference else {
@@ -149,7 +167,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
 
     private func expectedRuleDeckIdentity(
         for request: PDKRuleDeckInspectionRequest
-    ) throws -> (reference: ArtifactLocator, artifact: ArtifactReference) {
+    ) async throws -> (reference: ArtifactLocator, artifact: ArtifactReference) {
         let manifestURL: URL
         do {
             manifestURL = try PDKArtifactURLResolver().resolve(
@@ -161,27 +179,20 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
         }
         let manifestData: Data
         do {
-            let manifestArtifact = try PDKArtifactReferenceBuilder.artifactReference(
-                for: request.pdk.manifest,
-                resolvedURL: manifestURL
+            let budget = try captureBudget ?? PDKSourceCapturePolicy.defaultBudget
+            let captured = try await sourceCapturer.capture(
+                reference: request.pdk.manifest,
+                at: request.pdk.manifestLocator,
+                relativeTo: request.pdk.manifestLocator.location.storage == .workspaceRelative
+                    ? URL(filePath: request.projectRootPath ?? FileManager.default.currentDirectoryPath) : nil,
+                budget: budget
             )
-            let integrity = LocalArtifactVerifier().verify(
-                manifestArtifact,
-                at: try PDKArtifactReferenceBuilder.materializedLocator(
-                    for: request.pdk.manifestLocator,
-                    resolvedURL: manifestURL
-                ),
-                relativeTo: nil
-            )
-            guard integrity.isVerified else {
-                throw PDKExternalInspectionError.inputReferenceUnavailable(
-                    "PDK manifest integrity failed: " + integrity.issues.map { $0.code.rawValue }.joined(separator: ", ")
-                )
-            }
-            manifestData = try Data(contentsOf: manifestURL)
+            manifestData = try captured.data(maximumByteCount: budget.maximumTotalByteCount)
+        } catch let error as PDKSourceCaptureError {
+            throw error
         } catch {
             throw PDKExternalInspectionError.inputReferenceUnavailable(
-                "PDK manifest could not be read: \(error.localizedDescription)"
+                "PDK manifest capture budget failed: \(error)"
             )
         }
         do {
@@ -194,7 +205,7 @@ public struct ExternalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             let resolved = try assetResolver.resolve(asset, relativeTo: manifestURL)
             return (
                 reference: resolved.locator,
-                artifact: try resolved.artifactReference()
+                artifact: resolved.reference
             )
         } catch let error as PDKExternalInspectionError {
             throw error

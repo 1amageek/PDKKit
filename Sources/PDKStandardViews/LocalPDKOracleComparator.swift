@@ -1,19 +1,25 @@
 import Foundation
 import CircuiteFoundation
-import CircuiteFoundationFileSystem
 import CircuiteFoundationFoundation
 import PDKCore
+import PDKSourceCapture
 
 public struct LocalPDKOracleComparator: PDKOracleComparing {
     private let clock: any PDKStandardViewExecutionClock
     private let manifestInspector: any PDKManifestViewInspecting
+    private let sourceCapturer: any PDKLocalSourceCapturing
+    private let captureBudget: ArtifactAccessBudget?
 
     public init(
         clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock(),
-        manifestInspector: any PDKManifestViewInspecting = LocalPDKManifestViewInspector()
+        manifestInspector: any PDKManifestViewInspecting = LocalPDKManifestViewInspector(),
+        sourceCapturer: any PDKLocalSourceCapturing = LocalPDKSourceCapturer(),
+        captureBudget: ArtifactAccessBudget? = nil
     ) {
         self.clock = clock
         self.manifestInspector = manifestInspector
+        self.sourceCapturer = sourceCapturer
+        self.captureBudget = captureBudget
     }
 
     public func execute(
@@ -41,66 +47,50 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 )]
             )
         }
-        let oracleArtifact: ArtifactReference
-        do {
-            oracleArtifact = try PDKArtifactReferenceBuilder.artifactReference(
-                for: request.oracle,
-                resolvedURL: oracleURL
-            )
-            let integrity = LocalArtifactVerifier().verify(
-                oracleArtifact,
-                at: try PDKArtifactReferenceBuilder.materializedLocator(
-                    for: request.oracleLocator,
-                    resolvedURL: oracleURL
-                ),
-                relativeTo: nil
-            )
-            let integrityFindings = findings(
-                for: integrity,
-                entity: request.oracleLocator.path
-            )
-            guard !integrityFindings.contains(where: { $0.severity == .blocker || $0.severity == .error }) else {
-                return try makeResult(
-                    request: request,
-                    startedAt: startedAt,
-                    status: .blocked,
-                    oracleID: "unavailable",
-                    oracleArtifact: oracleArtifact,
-                    findings: integrityFindings
-                )
-            }
-        } catch {
-            return try makeResult(
-                request: request,
-                startedAt: startedAt,
-                status: .blocked,
-                oracleID: "unavailable",
-                findings: [PDKValidationFinding(
-                    severity: .blocker,
-                    code: "pdk.oracle.input-unreadable",
-                    message: "Oracle expectation could not be read: \(error.localizedDescription)",
-                    entity: oracleURL.path,
-                    suggestedActions: ["restore_oracle_expectation", "check_file_permissions"]
-                )]
-            )
-        }
-
+        let oracleArtifact = request.oracle
         let data: Data
         do {
-            data = try Data(contentsOf: oracleURL)
+            let budget = try captureBudget ?? PDKSourceCapturePolicy.defaultBudget
+            let captured = try await sourceCapturer.capture(
+                reference: request.oracle,
+                at: request.oracleLocator,
+                relativeTo: request.oracleLocator.location.storage == .workspaceRelative
+                    ? URL(filePath: request.projectRootPath ?? FileManager.default.currentDirectoryPath) : nil,
+                budget: budget
+            )
+            data = try captured.data(maximumByteCount: budget.maximumTotalByteCount)
+        } catch let error as PDKSourceCaptureError {
+            let code: String
+            switch error.classification {
+            case .digestMismatch: code = "pdk.oracle.digest-mismatch"
+            case .byteCountMismatch: code = "pdk.oracle.byte-count-mismatch"
+            case .cancellation, .cleanup, .other: code = "pdk.oracle.capture-failed"
+            }
+            return try makeResult(
+                request: request,
+                startedAt: startedAt,
+                status: error.classification == .cancellation ? .cancelled : .blocked,
+                oracleID: "unavailable",
+                findings: [PDKValidationFinding(
+                    severity: .blocker,
+                    code: code,
+                    message: "Oracle expectation capture failed: \(error).",
+                    entity: oracleURL.path,
+                    suggestedActions: ["restore_immutable_artifact", "inspect_capture_failure"]
+                )]
+            )
         } catch {
             return try makeResult(
                 request: request,
                 startedAt: startedAt,
                 status: .blocked,
                 oracleID: "unavailable",
-                oracleArtifact: oracleArtifact,
                 findings: [PDKValidationFinding(
                     severity: .blocker,
-                    code: "pdk.oracle.input-unreadable",
-                    message: "Oracle expectation could not be read: \(error.localizedDescription)",
+                    code: "pdk.oracle.capture-failed",
+                    message: "Oracle capture budget is invalid: \(error).",
                     entity: oracleURL.path,
-                    suggestedActions: ["restore_oracle_expectation", "check_file_permissions"]
+                    suggestedActions: ["repair_capture_budget"]
                 )]
             )
         }
@@ -157,9 +147,30 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 let inspectionFindings = result.payload.findings
                 findings.append(contentsOf: inspectionFindings)
                 switch result.status {
-                case .failed, .cancelled:
+                case .failed:
                     hasFailedView = true
+                case .cancelled:
+                    return try makeResult(
+                        request: request,
+                        startedAt: startedAt,
+                        status: .cancelled,
+                        oracleID: expectation.oracleID,
+                        oracleArtifact: oracleArtifact,
+                        findings: findings,
+                        comparisons: comparisons
+                    )
                 case .blocked:
+                    guard result.payload.inspection?.inspection != nil else {
+                        return try makeResult(
+                            request: request,
+                            startedAt: startedAt,
+                            status: .blocked,
+                            oracleID: expectation.oracleID,
+                            oracleArtifact: oracleArtifact,
+                            findings: findings,
+                            comparisons: comparisons
+                        )
+                    }
                     hasBlockedView = true
                 case .completed:
                     break
@@ -185,6 +196,23 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
                 let comparison = compare(expected: view, observed: inspection)
                 comparisons.append(comparison)
                 findings.append(contentsOf: comparison.findings)
+            } catch is CancellationError {
+                findings.append(PDKValidationFinding(
+                    severity: .warning,
+                    code: "pdk.oracle.view-execution-cancelled",
+                    message: "Manifest-bound inspection was cancelled.",
+                    entity: view.assetID,
+                    suggestedActions: ["rerun_pdkkit_oracle"]
+                ))
+                return try makeResult(
+                    request: request,
+                    startedAt: startedAt,
+                    status: .cancelled,
+                    oracleID: expectation.oracleID,
+                    oracleArtifact: oracleArtifact,
+                    findings: findings,
+                    comparisons: comparisons
+                )
             } catch {
                 let executionFinding = PDKValidationFinding(
                     severity: .error,
@@ -222,30 +250,6 @@ public struct LocalPDKOracleComparator: PDKOracleComparing {
             findings: findings,
             comparisons: comparisons
         )
-    }
-
-    private func findings(
-        for integrity: ArtifactIntegrity,
-        entity: String
-    ) -> [PDKValidationFinding] {
-        integrity.issues.map { issue in
-            let code: String
-            switch issue.code {
-            case .digestMismatch:
-                code = "pdk.oracle.digest-mismatch"
-            case .byteCountMismatch:
-                code = "pdk.oracle.byte-count-mismatch"
-            default:
-                code = "pdk.oracle.hash-failed"
-            }
-            return PDKValidationFinding(
-                severity: .blocker,
-                code: code,
-                message: "Oracle expectation integrity verification failed: \(issue.code.rawValue).",
-                entity: entity,
-                suggestedActions: ["rebuild_oracle_reference", "restore_immutable_artifact"]
-            )
-        }
     }
 
     private func validateExpectation(

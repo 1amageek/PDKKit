@@ -16,6 +16,7 @@ let package = Package(
     platforms: [.macOS(.v26)],
     products: [
         .library(name: "PDKCore", targets: ["PDKCore"]),
+        .library(name: "PDKSourceCapture", targets: ["PDKSourceCapture"]),
         .library(name: "PDKDiscovery", targets: ["PDKDiscovery"]),
         .library(name: "PDKValidation", targets: ["PDKValidation"]),
         .library(name: "PDKStandardViews", targets: ["PDKStandardViews"]),
@@ -28,6 +29,16 @@ let package = Package(
         swiftMaskDataDependency,
     ],
     targets: [
+        .target(
+            name: "PDKSourceCapture",
+            dependencies: [
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+            ],
+            exclude: ["DESIGN.md", "Capture/DESIGN.md", "LocalCapture/DESIGN.md"]
+        ),
         .target(
             name: "PDKCore",
             dependencies: [
@@ -48,17 +59,20 @@ let package = Package(
         .target(
             name: "PDKValidation",
             dependencies: [
+                "PDKSourceCapture",
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
                 "PDKCore",
                 "PDKStandardViews",
-            ]
+            ],
+            exclude: ["DESIGN.md"]
         ),
         .target(
             name: "PDKStandardViews",
             dependencies: [
+                "PDKSourceCapture",
                 .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
@@ -93,8 +107,19 @@ let package = Package(
             dependencies: ["PDKKitCLICore"]
         ),
         .testTarget(
+            name: "PDKSourceCaptureTests",
+            dependencies: [
+                "PDKSourceCapture",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+            ]
+        ),
+        .testTarget(
             name: "PDKKitTests",
             dependencies: [
+                "PDKSourceCapture",
                 "PDKCore",
                 "PDKDiscovery",
                 "PDKValidation",

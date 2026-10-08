@@ -1,24 +1,27 @@
 import Foundation
 import CircuiteFoundation
 import CircuiteFoundationCrypto
-import CircuiteFoundationFileSystem
 import CircuiteFoundationFoundation
 import PDKCore
-import CircuiteFoundation
+import PDKSourceCapture
 
 public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
     private let clock: any PDKStandardViewExecutionClock
     private let assetResolver: any PDKAssetResolving
-    private let digester: any ContentDigesting
+    private let sourceCapturer: any PDKLocalSourceCapturing
+    private let captureBudget: ArtifactAccessBudget?
 
     public init(
         clock: any PDKStandardViewExecutionClock = SystemPDKStandardViewExecutionClock(),
         assetResolver: any PDKAssetResolving = LocalPDKAssetResolver(),
-        digester: any ContentDigesting = SHA256ContentDigester()
+        digester: any ContentDigesting = SHA256ContentDigester(),
+        sourceCapturer: (any PDKLocalSourceCapturing)? = nil,
+        captureBudget: ArtifactAccessBudget? = nil
     ) {
         self.clock = clock
         self.assetResolver = assetResolver
-        self.digester = digester
+        self.sourceCapturer = sourceCapturer ?? LocalPDKSourceCapturer(digester: digester)
+        self.captureBudget = captureBudget
     }
 
     public func execute(
@@ -48,35 +51,30 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
 
         let manifest: PDKManifest
         do {
-            let manifestArtifact = try PDKArtifactReferenceBuilder.artifactReference(
-                for: request.pdk.manifest,
-                resolvedURL: manifestURL
+            let budget = try captureBudget ?? PDKSourceCapturePolicy.defaultBudget
+            let captured = try await sourceCapturer.capture(
+                reference: request.pdk.manifest,
+                at: request.pdk.manifestLocator,
+                relativeTo: request.pdk.manifestLocator.location.storage == .workspaceRelative
+                    ? URL(filePath: request.projectRootPath ?? FileManager.default.currentDirectoryPath) : nil,
+                budget: budget
             )
-            let integrity = LocalArtifactVerifier(digester: digester).verify(
-                manifestArtifact,
-                at: try PDKArtifactReferenceBuilder.materializedLocator(
-                    for: request.pdk.manifestLocator,
-                    resolvedURL: manifestURL
-                ),
-                relativeTo: nil
-            )
-            guard integrity.isVerified else {
-                let issue = integrity.issues.first
-                return try makeResult(
-                    request: request,
-                    startedAt: startedAt,
-                    status: .blocked,
-                    findings: [finding(
-                        severity: .blocker,
-                        code: "pdk.rule-deck.manifest-integrity-failed",
-                        message: "PDK manifest integrity could not be verified: \(issue?.code.rawValue ?? "unknown").",
-                        entity: manifestURL.path,
-                        actions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
-                    )]
-                )
-            }
-            let data = try Data(contentsOf: manifestURL)
+            let data = try captured.data(maximumByteCount: budget.maximumTotalByteCount)
             manifest = try PDKManifestCodec.decode(data: data)
+        } catch let error as PDKSourceCaptureError {
+            return try makeResult(
+                request: request,
+                startedAt: startedAt,
+                status: error.classification == .cancellation ? .cancelled : .blocked,
+                findings: [finding(
+                    severity: .blocker,
+                    code: error.classification == .digestMismatch || error.classification == .byteCountMismatch
+                        ? "pdk.rule-deck.manifest-integrity-failed" : "pdk.rule-deck.manifest-capture-failed",
+                    message: "PDK manifest capture failed: \(error).",
+                    entity: manifestURL.path,
+                    actions: ["restore_immutable_artifact", "inspect_capture_failure"]
+                )]
+            )
         } catch let error as PDKManifestError {
             return try makeResult(
                 request: request,
@@ -170,43 +168,55 @@ public struct LocalPDKRuleDeckInspector: PDKRuleDeckInspecting {
             )
         }
 
-        let sourceArtifact: ArtifactReference
-        do {
-            sourceArtifact = try resolved.artifactReference()
-        } catch {
-            return try makeResult(
-                request: request,
-                startedAt: startedAt,
-                status: .failed,
-                reference: resolved.reference,
-                referenceLocator: resolved.locator,
-                findings: [finding(
-                    severity: .error,
-                    code: "pdk.validation.rule-deck-integrity-failed",
-                    message: "The rule-deck artifact could not be projected into the canonical artifact identity: \(error.localizedDescription)",
-                    entity: request.assetID,
-                    actions: ["rebuild_input_reference", "restore_immutable_artifact"]
-                )]
-            )
-        }
-
+        let sourceArtifact = resolved.reference
         let data: Data
         do {
-            data = try Data(contentsOf: URL(filePath: resolved.path))
+            let budget = try captureBudget ?? PDKSourceCapturePolicy.defaultBudget
+            let captured = try await sourceCapturer.capture(
+                reference: resolved.reference,
+                at: resolved.locator,
+                relativeTo: resolved.locator.location.storage == .workspaceRelative
+                    ? manifestURL.deletingLastPathComponent() : nil,
+                budget: budget
+            )
+            data = try captured.data(maximumByteCount: budget.maximumTotalByteCount)
+        } catch let error as PDKSourceCaptureError {
+            let code: String
+            switch error.classification {
+            case .digestMismatch:
+                code = "pdk.validation.rule-deck-asset-digest-mismatch"
+            case .byteCountMismatch:
+                code = "pdk.validation.rule-deck-asset-size-mismatch"
+            case .cancellation, .cleanup, .other:
+                code = "pdk.validation.rule-deck-capture-failed"
+            }
+            return try makeResult(
+                request: request,
+                startedAt: startedAt,
+                status: error.classification == .cancellation ? .cancelled : .blocked,
+                reference: resolved.reference,
+                referenceLocator: resolved.locator,
+                findings: [finding(
+                    severity: .blocker,
+                    code: code,
+                    message: "The rule-deck source could not be captured: \(error).",
+                    entity: request.assetID,
+                    actions: ["restore_immutable_artifact", "inspect_capture_failure"]
+                )]
+            )
         } catch {
             return try makeResult(
                 request: request,
                 startedAt: startedAt,
-                status: .failed,
+                status: .blocked,
                 reference: resolved.reference,
                 referenceLocator: resolved.locator,
-                sourceArtifact: sourceArtifact,
                 findings: [finding(
-                    severity: .error,
-                    code: "pdk.validation.rule-deck-unreadable",
-                    message: "The rule-deck asset could not be read: " + error.localizedDescription,
+                    severity: .blocker,
+                    code: "pdk.validation.rule-deck-capture-failed",
+                    message: "The rule-deck capture budget is invalid: \(error).",
                     entity: request.assetID,
-                    actions: ["check_file_permissions", "restore_rule_deck"]
+                    actions: ["repair_capture_budget"]
                 )]
             )
         }

@@ -18,14 +18,16 @@ publishing a successful inspection.
 | [Module](../DESIGN.md) | Parent | Inspection results | Public host boundary | Engine support and process qualification remain independent |
 | [LEF](../../../../swift-mask-data/Sources/LEF/DESIGN.md) | Depends on | Reader and LEFDocument | Preserve cell/pin/via/site/rule values | Unsupported or unretained grammar must remain explicit |
 | [CircuiteFoundation](../../../../CircuiteFoundation/DESIGN.md) | Depends on | ArtifactReference, digest, integrity | Canonical content identity | Compare the parsed buffer to the retained reference |
+| [PDKSourceCapture](../../PDKSourceCapture/DESIGN.md) | Depends on | Exact bounded owned bytes | Shared admission before parsing | Identity discovery precedes capture; capture does not bound parser allocations |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
   Locator --> Reference[Stable source reference]
-  Locator --> Bytes[Read buffer] --> Digest[Digest / byte count check]
-  Reference --> Digest --> Parser --> IR[Retained standard document and PDK facts]
+  Locator --> Capture[Bounded capture and cleanup]
+  Reference --> Capture --> Bytes[Immutable verified buffer]
+  Bytes --> Parser --> IR[Retained standard document and PDK facts]
 ```
 
 ## Contracts and Invariants

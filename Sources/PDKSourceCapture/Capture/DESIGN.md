@@ -1,0 +1,45 @@
+# Capture
+
+## Purpose and Scope
+
+Parent: [PDK Source Capture](../DESIGN.md). No children. Own the capture protocol,
+checked immutable source, policy and injected capture algorithm.
+
+## Responsibilities and Boundaries
+
+Own actual-byte verification, sequential accumulation, limits and session cleanup.
+Availability resolution and local root opening belong to LocalCapture.
+
+## Related Designs
+
+| Design | Relationship | Contract Used | Summary | Cautions |
+|---|---|---|---|---|
+| [Parent](../DESIGN.md) | Parent | Source admission | Module composition | No parser semantics |
+| [LocalCapture](../LocalCapture/DESIGN.md) | Used by | Injected capture | Host service | Always await cleanup |
+
+## Architecture
+
+```text
+intent -> read pages -> check/accumulate owned bytes -> digest exact buffer
+       -> validate terminal identity -> await close -> immutable capture
+```
+
+## Contracts and Invariants
+
+The parent admission invariants are owned by this component. The initializer of
+the captured type validates expected byte count and digest; arbitrary receipts
+cannot create a verified source. Safe immutable storage provides synchronous
+borrowed views, with an explicit bounded conversion at Foundation codec boundaries.
+
+## Failure, Concurrency, and Constraints
+
+Read and digest errors remain typed. Always complete cleanup; combine primary and
+cleanup failures without replacing either with success. Check cancellation and
+page progress in the caller's task. Limits apply before allocation and appending.
+
+## Verification and Change Impact
+
+Tests are [PDKSourceCaptureTests](../../../Tests/PDKSourceCaptureTests).
+Use injected read sessions to reject false receipts, repeated/empty pages,
+truncation, oversized pages and cleanup failure. Real local access is covered by
+LocalCapture tests. Admission changes require affected PDK reader tests.

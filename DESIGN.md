@@ -11,7 +11,9 @@ The implementation is intentionally manifest-driven: the manifest is the typed
 semantic index, while standard-format files remain immutable artifacts whose
 bytes are verified by digest and size.
 Parent: [LSI](../DESIGN.md). The affected child is
-[PDKStandardViews](Sources/PDKStandardViews/DESIGN.md).
+[PDKStandardViews](Sources/PDKStandardViews/DESIGN.md), alongside the independently
+buildable [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) admission module.
+Manifest validation is owned by [PDKValidation](Sources/PDKValidation/DESIGN.md).
 
 ## Responsibilities and Boundaries
 
@@ -64,12 +66,11 @@ qualification; ToolQualification consumes the evidence and owns trust state.
 types directly, and each execution protocol refines `Engine` with its domain
 request and result types.
 
-The same boundary applies to standard-view, rule-deck and oracle artifact
-reads. Local inspectors verify declared artifacts
-through `LocalArtifactVerifier`, and canonical `ArtifactReference` values are
-retained in standard-view IR, rule-deck payloads and oracle comparison
-payloads. Old PDK-owned content-hash helpers have been removed; all artifact
-identity and integrity work uses CircuiteFoundation directly.
+Manifest validation and standard-view, rule-deck and oracle admission use
+[PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md). Semantic readers consume
+its verified immutable bytes. Canonical `ArtifactReference` values are retained
+in standard-view IR, rule-deck payloads and oracle comparison payloads. Earlier
+identity discovery remains separate and is not covered by capture budgets.
 
 Corpus and oracle reports retain the selected PDK manifest digest so
 ToolQualification can evaluate their scope together with independent process
@@ -103,6 +104,8 @@ Inspection remains distinct from engine capability and process qualification.
 |---|---|---|---|---|
 | [LSI](../DESIGN.md) | Parent | Exact process evidence | Platform composition | Inventory does not establish production closure |
 | [PDKStandardViews](Sources/PDKStandardViews/DESIGN.md) | Child | Retained standard semantics | Inspection boundary | Unsupported grammar fails explicitly |
+| [PDKValidation](Sources/PDKValidation/DESIGN.md) | Child | Manifest and composed validation | Validation results | Admission does not imply qualification |
+| [PDKSourceCapture](Sources/PDKSourceCapture/DESIGN.md) | Child | Bounded exact owned parser input | Manifest/view/rule-deck admission | Successful cleanup is part of source admission; captures do not imply a closed PDK graph |
 | [LEF](../swift-mask-data/Sources/LEF/DESIGN.md) | Depends on | LEFDocument and typed errors | Standard physical schema ownership | Consumers must resolve process names and capability |
 
 ## Verification and Change Impact

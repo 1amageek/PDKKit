@@ -5,12 +5,14 @@ import CircuiteFoundationFileSystem
 import CircuiteFoundationFoundation
 import PDKCore
 import PDKStandardViews
-import CircuiteFoundation
+import PDKSourceCapture
 
 public struct LocalPDKValidator: PDKValidating {
     private let clock: any PDKValidationExecutionClock
     private let assetResolver: any PDKAssetResolving
     private let contentDigester: any ContentDigesting
+    private let sourceCapturer: any PDKLocalSourceCapturing
+    private let captureBudget: ArtifactAccessBudget?
     private let manifestValidator: PDKManifestValidator
     private let standardViewInspector: any PDKManifestViewInspecting
     private let ruleDeckInspector: any PDKRuleDeckInspecting
@@ -21,11 +23,15 @@ public struct LocalPDKValidator: PDKValidating {
         contentDigester: any ContentDigesting = SHA256ContentDigester(),
         manifestValidator: PDKManifestValidator = PDKManifestValidator(),
         standardViewInspector: any PDKManifestViewInspecting = LocalPDKManifestViewInspector(),
-        ruleDeckInspector: any PDKRuleDeckInspecting = LocalPDKRuleDeckInspector()
+        ruleDeckInspector: any PDKRuleDeckInspecting = LocalPDKRuleDeckInspector(),
+        sourceCapturer: (any PDKLocalSourceCapturing)? = nil,
+        captureBudget: ArtifactAccessBudget? = nil
     ) {
         self.clock = clock
         self.assetResolver = assetResolver
         self.contentDigester = contentDigester
+        self.sourceCapturer = sourceCapturer ?? LocalPDKSourceCapturer(digester: contentDigester)
+        self.captureBudget = captureBudget
         self.manifestValidator = manifestValidator
         self.standardViewInspector = standardViewInspector
         self.ruleDeckInspector = ruleDeckInspector
@@ -41,7 +47,7 @@ public struct LocalPDKValidator: PDKValidating {
                 request.pdk.manifestLocator,
                 baseDirectoryPath: request.projectRootPath
             )
-            validationResult = validate(request: request, manifestURL: manifestURL)
+            validationResult = await validate(request: request, manifestURL: manifestURL)
         } catch {
             let finding = PDKValidationFinding(
                 severity: .blocker,
@@ -102,7 +108,7 @@ public struct LocalPDKValidator: PDKValidating {
     private func validate(
         request: PDKValidationRequest,
         manifestURL: URL
-    ) -> ValidationResult {
+    ) async -> ValidationResult {
         guard FileManager.default.fileExists(atPath: manifestURL.path) else {
             let finding = PDKValidationFinding(
                 severity: .blocker,
@@ -114,9 +120,57 @@ public struct LocalPDKValidator: PDKValidating {
             return result(status: .blocked, findings: [finding], request: request)
         }
 
+        let data: Data
+        do {
+            let budget = try captureBudget ?? PDKSourceCapturePolicy.defaultBudget
+            let captured = try await sourceCapturer.capture(
+                reference: request.pdk.manifest,
+                at: request.pdk.manifestLocator,
+                relativeTo: request.pdk.manifestLocator.location.storage == .workspaceRelative
+                    ? request.projectRootPath.map { URL(filePath: $0) } ?? URL(filePath: FileManager.default.currentDirectoryPath)
+                    : nil,
+                budget: budget
+            )
+            data = try captured.data(maximumByteCount: budget.maximumTotalByteCount)
+        } catch let error as PDKSourceCaptureError {
+            let code: String
+            let status: PDKExecutionStatus
+            switch error.classification {
+            case .cancellation:
+                code = "pdk.validation.manifest-capture-cancelled"
+                status = .cancelled
+            case .digestMismatch:
+                code = "pdk.validation.manifest-digest-mismatch"
+                status = .blocked
+            case .byteCountMismatch:
+                code = "pdk.validation.manifest-byte-count-mismatch"
+                status = .blocked
+            case .cleanup, .other:
+                code = "pdk.validation.manifest-capture-failed"
+                status = .blocked
+            }
+            let finding = PDKValidationFinding(
+                severity: status == .cancelled ? .warning : .blocker,
+                code: code,
+                message: "PDK manifest source admission failed: \(error).",
+                entity: manifestURL.path,
+                suggestedActions: ["restore_immutable_artifact", "check_capture_budget_and_access"]
+            )
+            return result(status: status, findings: [finding], request: request)
+        } catch {
+            let finding = PDKValidationFinding(
+                severity: .blocker,
+                code: "pdk.validation.manifest-capture-failed",
+                message: "PDK manifest capture could not be configured: \(error).",
+                entity: manifestURL.path,
+                suggestedActions: ["check_capture_budget_and_access"]
+            )
+            return result(status: .blocked, findings: [finding], request: request)
+        }
+
         let manifest: PDKManifest
         do {
-            manifest = try PDKManifestCodec.decode(contentsOf: manifestURL)
+            manifest = try PDKManifestCodec.decode(data: data)
         } catch {
             let finding = PDKValidationFinding(
                 severity: .error,
@@ -154,12 +208,6 @@ public struct LocalPDKValidator: PDKValidating {
                 suggestedActions: ["rebuild_pdk_reference"]
             ))
         }
-
-        validateManifestIntegrity(
-            request: request,
-            manifestURL: manifestURL,
-            findings: &findings
-        )
 
         for role in request.requiredAssetRoles where !manifest.assets.contains(where: { $0.role == role }) {
             findings.append(PDKValidationFinding(
@@ -662,53 +710,6 @@ public struct LocalPDKValidator: PDKValidating {
                     suggestedActions: ["check_file_permissions", "rebuild_input_reference"]
                 ))
             }
-        }
-    }
-
-    private func validateManifestIntegrity(
-        request: PDKValidationRequest,
-        manifestURL: URL,
-        findings: inout [PDKValidationFinding]
-    ) {
-        do {
-            let artifact = try PDKArtifactReferenceBuilder.artifactReference(
-                for: request.pdk.manifest,
-                resolvedURL: manifestURL
-            )
-            let integrity = LocalArtifactVerifier(digester: contentDigester).verify(
-                artifact,
-                at: try PDKArtifactReferenceBuilder.materializedLocator(
-                    for: request.pdk.manifestLocator,
-                    resolvedURL: manifestURL
-                ),
-                relativeTo: nil
-            )
-            for issue in integrity.issues {
-                let code: String
-                switch issue.code {
-                case .digestMismatch:
-                    code = "pdk.validation.manifest-digest-mismatch"
-                case .byteCountMismatch:
-                    code = "pdk.validation.manifest-byte-count-mismatch"
-                default:
-                    code = "pdk.validation.manifest-integrity-failed"
-                }
-                findings.append(PDKValidationFinding(
-                    severity: .blocker,
-                    code: code,
-                    message: "PDK manifest integrity verification failed: \(issue.code.rawValue).",
-                    entity: manifestURL.path,
-                    suggestedActions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
-                ))
-            }
-        } catch {
-            findings.append(PDKValidationFinding(
-                severity: .blocker,
-                code: "pdk.validation.manifest-integrity-failed",
-                message: "PDK manifest could not be represented or verified at the Foundation boundary: \(error.localizedDescription)",
-                entity: manifestURL.path,
-                suggestedActions: ["rebuild_pdk_reference", "restore_immutable_artifact"]
-            ))
         }
     }
 
