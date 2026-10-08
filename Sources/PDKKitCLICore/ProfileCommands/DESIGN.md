@@ -5,6 +5,8 @@
 Status: implementation contract. Parent: [PDK CLI Core](../DESIGN.md). No children.
 Own candidate authoring, exact planning/admission, retained-claim replay and bounded
 operational output. All profile command sources belong in this component directory.
+The borrowed-span budget parser is implemented and behaviorally verified. File
+acquisition and complete profile dispatch/output remain later implementation work.
 
 ## Responsibilities and Boundaries
 
@@ -120,6 +122,29 @@ is CLI configuration policy, not a foundry source ceiling. A policy change requi
 the sizing, capacity-boundary and oversize-refusal proofs to be rerun against the
 complete current dimension vocabulary.
 
+The schema-1 budget wire uses `limits` as an alternating array of dimension string
+and UInt64 value, not a JSON object. The fixed current vocabulary contains 21
+dimensions. Require each exactly once before checked Core construction; the
+standard Dictionary decoder's last-value-wins behavior is not the bootstrap
+contract. Root fields are `schemaVersion`, `accountingVersion`, `limits` and
+`maximumElapsedNanoseconds`, each required once. Accept field/dimension permutation,
+JSON whitespace and ASCII `\uXXXX` escapes for the known vocabulary; reject all
+other keys, duplicate dimensions, odd arrays, negative/fractional/exponent/overflow
+numbers and trailing payloads.
+
+The independent `PDKBudgetBootstrapDecoding` requirement takes a borrowed
+`Span<UInt8>` and checked `PDKBudgetBootstrapPolicy`, returning a checked budget
+and bootstrap observations. The native cursor retains no span or pointer and
+constructs only fixed-vocabulary key scratch and the bounded 21-entry limit table.
+This entry owns typed parsing, not file acquisition or full CLI completion; the
+later bounded file reader owns its one input buffer. Observations report input
+bytes, scanned work and managed dimension-entry capacity, not process RSS.
+The standard 16,384-byte policy admits the verified maximum 2,524-byte fully
+ASCII-escaped wire plus at most 13,860 bytes of JSON whitespace. Its sizing test
+uses all current dimensions and UInt64 widths and refuses one extra byte. Custom
+positive host-representable policies apply the same complete grammar and refuse
+oversized spans before parsing or key/limit storage construction.
+
 After bootstrap, create one `LocalPDKAdmissionResources` at one monotonic start.
 All variable command argument copying, operational/config intake, discovery,
 capture, decode, selection, grammar, comparison, encoding and delivery share it.
@@ -207,3 +232,11 @@ cancel/cleanup failure and failed/short terminal writes. The actual executable r
 with timeouts and nonzero method execution. Inventory tests remain separate.
 Lower evidence is reused until its assumptions change; no numerical/foundry,
 WASM/Embedded or qualification claim follows from these host command proofs.
+
+[`BudgetBootstrapTests`](../../../Tests/PDKBudgetBootstrapTests/BudgetBootstrapTests.swift)
+owns the standalone typed bootstrap parser proof: real Core codec wire, UInt64
+maxima, field/dimension permutation, fully escaped current vocabulary and selected
+capacity boundary, duplicate/unknown/incomplete inputs, numeric/version refusal,
+nonpositive limits and cancellation. Native Swift 6.4 scope covers 9 distinct
+methods (initial 8-method product plus the targeted final 2-method correction).
+These methods prove no budget-file read, sink delivery or complete profile command.

@@ -129,6 +129,10 @@ let package = Package(
             dependencies: ["PDKKitCLICore"]
         ),
         .testTarget(
+            name: "PDKBudgetBootstrapTests",
+            dependencies: ["PDKKitCLICore", "PDKCore"]
+        ),
+        .testTarget(
             name: "PDKStandardProfileInspectionTests",
             dependencies: [
                 "PDKStandardViews", "PDKProfileAdmission", "PDKCore", "PDKDiscovery", "PDKSourceCapture",
