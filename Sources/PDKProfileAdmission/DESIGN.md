@@ -2,8 +2,8 @@
 
 ## Purpose and Scope
 
-Status: native accounting implementation with verified behavioral evidence; checked
-graph admission and consumer projection follow in their work items. Parent:
+Status: native checked admission implementation; dedicated behavioral verification
+owns acceptance. Consumer projection follows in its separate work item. Parent:
 [PDKKit](../../DESIGN.md). Child: [Admission](Admission/DESIGN.md).
 Own admission of one explicitly selected, exact process input profile, closing
 the gaps identified by RA1..RA3 in [PROGRESS](../../PROGRESS.md).
@@ -28,7 +28,7 @@ codecs. It is not a new framework, technology IR, storage layer or flow facade.
 |---|---|---|---|---|
 | [PDKKit](../../DESIGN.md) | parent | Process evidence and independent API | Package composition | Admission is not qualification |
 | [Profile values](../PDKCore/Profile/DESIGN.md) | depends on | Definition, plan and claims | Selection and canonical identity | Wire claims must be re-admitted |
-| [Manifest loading](../PDKDiscovery/ManifestLoading/DESIGN.md) | depends on | Exact loaded manifest | Source-consistent metadata | Existing loader needs invocation-budget migration |
+| [Manifest loading](../PDKDiscovery/ManifestLoading/DESIGN.md) | depends on | Bounded exact loaded manifest | Source-consistent metadata | Admission supplies the same invocation accountant |
 | [Capture](../PDKSourceCapture/DESIGN.md) | depends on | Checked immutable bytes and cleanup | Exact source input | Same invocation accounting spans all sources |
 | [Admission](Admission/DESIGN.md) | child | Bounded orchestration and provider requests | Concrete algorithm | Providers cannot acquire undeclared sources |
 | [Validation](../PDKValidation/DESIGN.md) | used by | Admission plus current inventory validation | Status/evidence composition | Inspection flags cannot weaken profile requirements |
@@ -55,17 +55,17 @@ flowchart TD
 
 ## Contracts and Invariants
 
-The following public interface is a proposed Swift contract. Resource accounting
+The following public interface defines the runtime boundary; implementation details
+and exact value fields are owned by [Admission](Admission/DESIGN.md). Resource accounting
 requirements and lease/cost values are declared in PDKCore/Profile; this module
-implements them, avoiding a lower-source dependency on this higher target. Referenced types
-are proposed except existing CapturedPDKSource, PDKReference and Foundation
-artifact types. Every existential operation is a protocol requirement; a generic
+implements them, avoiding a lower-source dependency on this higher target. The checked runtime values compose existing CapturedPDKSource, PDKReference and
+Foundation artifact types. Every existential operation is a protocol requirement; a generic
 extension convenience is not the dynamic dispatch boundary.
 
 ```swift
 public protocol PDKProfilePlanning: Sendable {
     func plan(_ request: PDKProfilePlanningRequest)
-        throws(PDKProfilePlanningError) -> PDKProfilePlan
+        throws(PDKProfileAdmissionError) -> PDKProfilePlan
 }
 
 public protocol PDKProfileAdmitting: Sendable {
@@ -96,15 +96,16 @@ public protocol PDKAdmissionResourceAccounting: Sendable {
 root availability and one budget. The native implementation is
 `LocalPDKProfileAdmitter`, composed from existing capture/manifest-loading
 contracts, a format registry, a monotonic clock and an invocation accounting
-owner. `PDKProfileSourceInput` retains a checked capture and contextual selection;
+owner. Native root inspection is serialized; the invocation registry joins any
+provider-owned concurrent alias requests without creating unowned tasks. `PDKProfileSourceInput` retains a checked capture and contextual selection;
 format facts retain that full reference and parser/policy identity. Fact providers
 report required unsupported/lost meaning explicitly. Custom providers are trusted
 injected implementations of the same behavioral contract, not independent trust
 authorities; their output is checked for identity, mapping and required coverage.
 
 
-Public request/fact fields are fixed as follows; they are proposed APIs, not
-aliases to undocumented existing types:
+Public request/fact responsibilities are fixed as follows; the component owns
+the exact checked runtime value fields:
 
 | Value | Required fields |
 |---|---|
@@ -190,23 +191,25 @@ caller tasks own their separate contextual stacks and local fact results. Ordere
 merge holds edge occurrences/diagnostics; the same buffer is shared through its
 immutable owner, without sharing mutable parser state. The accounting owner uses
 `Mutex<State>` for short synchronous reserve/release/check operations on every
-supported target. No I/O, callback or await occurs under the lock. Traversal jobs remain in an invocation-owned task group. Registry insertion
-precedes any acquisition await; aliases join the same in-flight acquisition.
-Concurrent independent roots are admitted only within the shared budget. Deterministic merge keeps
-semantic edge order. Captures are retained and reused while memory permits;
+supported target. No I/O, callback or await occurs under the lock. Native admission
+owns serial root traversal on its structured caller; inspectors must join any
+structured children they create before returning. Registry insertion precedes any
+acquisition await; aliases join the same in-flight acquisition. Deterministic
+resolver order keeps semantic edge occurrences. Captures are retained and reused while memory permits;
 there is no unexplained free/re-read cycle.
 
 Reservations are checked immutable owner handles with exactly-once release at
 last ownership release; cumulative work/read counts are never refunded. Retained
 memory remains charged after admit returns. All opened async resources are closed
 on success, failure and cancellation, with cleanup completion awaited in the owning
-scope. A failed close prevents successful publication. No AsyncStream is needed. Cancel and join every child acquisition before
-terminating the invocation; a waiter cancellation cannot leave an unowned task.
+scope. A failed close prevents successful publication. No AsyncStream is needed.
+The original acquisition belongs to its structured caller; the registry owns
+only joining continuations, and creates no task that could outlive the invocation.
 
 | Logical state | Storage / isolation | Read / mutation | Release |
 |---|---|---|---|
 | Resource counters and reservations | Mutex<AdmissionResourceState>, common source | Synchronous accounting requirements | Last reservation-owner release |
-| Source registry and in-flight acquisition | Invocation actor | Actor methods; no shared raw dictionary | Cancel/join children, close resources |
+| Source registry and in-flight acquisition | Invocation actor | Actor methods; no shared raw dictionary | Structured acquisition completion, close resources |
 | Parser/context stack and facts | One task's local state; immutable returned values | Owning task; ordered result merge | End of call / retained admitted owner |
 
 No Native/WASM/Embedded branch changes these storage/Sendable contracts. Proposed
