@@ -53,3 +53,16 @@ or hashing, and check before/after each chunk. Span consumers borrow the immutab
 source without Data conversion. Bounded `data` refuses an unowned copy; the explicit
 bounded capture exposes no additional unowned Data-export API. A downstream domain
 may borrow its Span and explicitly admit a required conversion under its own owner.
+
+### Content-safe profile aliasing
+
+`CapturedPDKSource.rebinding(reference:resources:)` creates an immutable alias only
+when the supplied full reference has the checked buffer's exact byte count and
+digest algorithm/value. Comparison work and final cancellation/deadline checks
+use the caller's invocation accounting. The alias carries the supplied descriptor
+and retains the same bytes and reservation; no copy, reopen or hash occurs. A
+different content identity throws a typed capture failure. Descriptor/domain
+selection remains the profile admission owner's responsibility. Original and
+aliased copies keep the charge until the last buffer owner is released.
+Legacy captures without an invocation-accounted storage owner are rejected with
+an explicit unsupported-budget capability error before alias publication.

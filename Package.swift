@@ -18,6 +18,7 @@ let package = Package(
         .library(name: "PDKCore", targets: ["PDKCore"]),
         .library(name: "PDKSourceCapture", targets: ["PDKSourceCapture"]),
         .library(name: "PDKDiscovery", targets: ["PDKDiscovery"]),
+        .library(name: "PDKProfileAdmission", targets: ["PDKProfileAdmission"]),
         .library(name: "PDKValidation", targets: ["PDKValidation"]),
         .library(name: "PDKStandardViews", targets: ["PDKStandardViews"]),
         .library(name: "PDKKit", targets: ["PDKKit"]),
@@ -60,6 +61,16 @@ let package = Package(
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
             ],
             exclude: ["DESIGN.md", "ManifestLoading/DESIGN.md", "CandidateDiscovery/DESIGN.md"]
+        ),
+        .target(
+            name: "PDKProfileAdmission",
+            dependencies: [
+                "PDKCore", "PDKDiscovery", "PDKSourceCapture",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+            ],
+            exclude: ["DESIGN.md", "Admission/DESIGN.md"]
         ),
         .target(
             name: "PDKValidation",
@@ -112,6 +123,16 @@ let package = Package(
         .executableTarget(
             name: "PDKKitCLI",
             dependencies: ["PDKKitCLICore"]
+        ),
+        .testTarget(
+            name: "PDKProfileAdmissionTests",
+            dependencies: [
+                "PDKProfileAdmission", "PDKCore", "PDKDiscovery", "PDKSourceCapture",
+                .product(name: "CircuiteFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
+                .product(name: "CircuiteFoundationFileSystem", package: "CircuiteFoundation"),
+            ]
         ),
         .testTarget(
             name: "PDKBoundedDecodingTests",

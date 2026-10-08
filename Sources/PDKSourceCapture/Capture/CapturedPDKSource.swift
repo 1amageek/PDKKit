@@ -102,6 +102,34 @@ public struct CapturedPDKSource: Sendable {
         try body(storage.span)
     }
 
+    /// Shares checked content and its retained owner under a new full descriptor.
+    public func rebinding(reference: ArtifactReference,
+                          resources: any PDKAdmissionResourceAccounting)
+        throws(PDKSourceCaptureError) -> CapturedPDKSource {
+        let work = PDKSourceConstructionWork(resources: resources)
+        try work.check()
+        guard isInvocationAccounted else {
+            throw .resource(.unsupportedBudgetCapability("Profile aliasing requires invocation-accounted source storage"))
+        }
+        guard reference.byteCount == self.reference.byteCount else {
+            throw .byteCountMismatch(expected: reference.byteCount, actual: self.reference.byteCount)
+        }
+        guard reference.digest.algorithm == self.reference.digest.algorithm,
+              try work.equal(reference.digest.hexadecimalValue, self.reference.digest.hexadecimalValue) else {
+            throw .digestMismatch(expected: reference.digest, actual: self.reference.digest)
+        }
+        let alias = CapturedPDKSource(reference: reference, source: self)
+        try work.check()
+        return alias
+    }
+
+    private init(reference: ArtifactReference, source: CapturedPDKSource) {
+        self.reference = reference
+        self.storage = source.storage
+        self.reservation = source.reservation
+        self.isInvocationAccounted = source.isInvocationAccounted
+    }
+
     /// Codec-boundary copy. Callers must include this additional owned buffer
     /// alongside the capture and parser allocations in their memory budget.
     public func data(maximumByteCount: UInt64) throws(PDKSourceCaptureError) -> Data {

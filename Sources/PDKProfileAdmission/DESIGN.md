@@ -2,7 +2,8 @@
 
 ## Purpose and Scope
 
-Status: proposed specification, not an implemented SwiftPM target. Parent:
+Status: native accounting implementation with verified behavioral evidence; checked
+graph admission and consumer projection follow in their work items. Parent:
 [PDKKit](../../DESIGN.md). Child: [Admission](Admission/DESIGN.md).
 Own admission of one explicitly selected, exact process input profile, closing
 the gaps identified by RA1..RA3 in [PROGRESS](../../PROGRESS.md).
@@ -271,3 +272,34 @@ owner per executed method. Focused product compilation and nonzero execution
 events are required; a filter alone does not prove compilation isolation.
 Lower evidence remains valid until its owned assumptions change. Review/test a
 stable sprint once; run cumulative integration after all affected sprints.
+
+## Native Accounting Realization
+
+`LocalPDKAdmissionResources` implements the Core accounting requirements for one
+invocation. Its checked `PDKAdmissionBudget` is immutable. The injected
+`PDKAdmissionExecutionClock.now() -> ContinuousClock.Instant` is monotonic;
+`SystemPDKAdmissionExecutionClock` uses the standard continuous clock. Wall-clock
+Discovery timestamps do not own this elapsed-time contract.
+
+The accountant stores one fixed counter slot per Core dimension in `Mutex<State>`.
+Reserve/check sample the clock and task cancellation outside the short lock, then
+validate closed state, one original deadline, overflow and quota under that lock.
+A refused reservation leaves all counters unchanged. Cumulative dimensions never
+refund; live-capacity release occurs exactly once at the last Core reservation
+copy release, even after `close()`. Reservation callbacks retain the accountant
+until release; the accountant never retains reservations. No I/O or external
+callback runs under the lock. Fixed accounting bookkeeping is implementation
+overhead, not a variable payload reservation or an RSS guarantee.
+
+The native owner exposes `close()` for its lifetime owner to reject new work; it
+does not erase retained charges or prevent cleanup. Native admitting owns that
+close on every terminal path. Returned source/fact handles continue to retain
+leases after successful publication. Resource tests own atomic simultaneous
+reserve/refusal, deadline/cancellation/closed rejection, overflow and last-copy
+release; the admitted-profile test owner checks transfer across publication.
+
+The source registry reuses checked bytes by exact digest algorithm/value and byte
+count. [Capture](../PDKSourceCapture/Capture/DESIGN.md) owns the content-safe
+rebinding operation, while admission independently validates each expected full
+descriptor and semantic source key. Rebinding neither reopens nor rehashes a
+source, and retains the existing storage owner. It cannot change content identity.
