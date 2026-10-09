@@ -2,14 +2,14 @@
 
 ## Purpose and Scope
 
-Status: implementation in progress; optional native host SwiftPM product/target. Parent:
+Status: implemented with Native macOS behavioral evidence; optional host SwiftPM product/target. Parent:
 [PDKKit](../../DESIGN.md). No children; production source is an explicit platform
 adapter at the module boundary. Translate the CoreSpice-owned grammar into the
 profile admission contract without implementing another include parser.
 
 ## Responsibilities and Boundaries
 
-The proposed `PDKSpiceProfileInspection` target depends on PDKCore,
+The `PDKSpiceProfileInspection` target depends on PDKCore,
 PDKProfileAdmission, PDKSourceCapture and CoreSpiceIO. CoreSpice does not depend
 on PDKKit. PDKCore/ProfileAdmission do not import this optional adapter.
 The standalone PDK CLI and Xcircuite inject the same native adapter. This adds an
@@ -25,7 +25,7 @@ path references or hidden overrides.
 | [PDKKit](../../DESIGN.md) | parent | Standalone host composition | Optional adapter | No UI or flow runtime dependency |
 | [Admission](../PDKProfileAdmission/DESIGN.md) | depends on | Source inspecting and dependency resolving | Exact acquisition authority | No arbitrary filesystem resolver |
 | [CoreSpiceIO](../../../CoreSpice/Sources/CoreSpiceIO/DESIGN.md) | depends on | Bounded caller-owned source intake | Loaded deck and capture inventory | Existing loadFile alone does not enforce an expected graph |
-| [CoreSpiceParserSPICE](../../../CoreSpice/Sources/CoreSpiceParserSPICE/DESIGN.md) | depends on | Grammar and planned dependency events | Includes/sections/conditionals | Unknown required grammar remains blocked |
+| [CoreSpiceParserSPICE](../../../CoreSpice/Sources/CoreSpiceParserSPICE/DESIGN.md) | depends on | Grammar and checked dependency events | Includes/sections/conditionals | Unknown required grammar remains blocked |
 | [Standard inspection](../PDKStandardViews/StandardInspection/DESIGN.md) | coordinates with | Structural inspection versus profile admission | Handwritten SPICE intake migration | Names/counts do not prove a closed graph |
 
 ## Architecture

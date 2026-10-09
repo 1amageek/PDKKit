@@ -17,7 +17,7 @@ Manifest validation is owned by [PDKValidation](Sources/PDKValidation/DESIGN.md)
 The profile foundation is indexed below. PDKCore profile values and their isolated
 test target, checked admission, stage consumption matching and prepared execution-source binding are implemented;
 bounded native SPICE/JSON adapters and profile CLI are implemented with macOS
-evidence; Engine/host composition remains in progress.
+evidence; Engine/host composition is implemented with Native CPU/SQLite evidence.
 Each implemented boundary records its behavioral evidence in its owning design.
 
 ## Responsibilities and Boundaries

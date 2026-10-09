@@ -8,7 +8,8 @@ owns acceptance. Consumer implementation and proof follow the
 [PDKKit](../../DESIGN.md). Children: [Admission](Admission/DESIGN.md) and
 [Consumption](Consumption/DESIGN.md).
 Own admission of one explicitly selected, exact process input profile, closing
-the gaps identified by RA1..RA3 in [PROGRESS](../../PROGRESS.md).
+the PV/PA/CP contracts in the linked child designs.
+The current closure task is [PROGRESS](../../PROGRESS.md).
 
 The requested result is a reusable input guarantee, not execution or foundry
 qualification. PRD-011's PDK responsibility is scoped here; tool image, candidate
@@ -292,7 +293,7 @@ invocation. Its checked `PDKAdmissionBudget` is immutable. The injected
 Discovery timestamps do not own this elapsed-time contract.
 
 The accountant stores one fixed counter slot per Core dimension in `Mutex<State>`.
-Reserve/check sample the clock and task cancellation outside the short lock, then
+Charge/reserve/check sample the clock and task cancellation outside the short lock, then
 validate closed state, one original deadline, overflow and quota under that lock.
 A refused reservation leaves all counters unchanged. Cumulative dimensions never
 refund; live-capacity release occurs exactly once at the last Core reservation
