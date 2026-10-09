@@ -155,8 +155,8 @@ structural dependency refusal, S3 lower contracts, S4 bounded source/discovery a
 S5 checked admission/consumption comparison are implemented with focused Native
 evidence. S6 native SPICE/JSON adapters and profile CLI are implemented with
 macOS runtime evidence and explicit unsupported-codec/platform refusal. S7 host
-adoption and S8 cumulative integration remain in progress; lower evidence does
-not establish those upper paths.
+adoption is implemented and verified on Native CPU/SQLite; S8 cumulative integration
+remains in progress. Evidence scope follows the actual executed backend and target.
 Scope: close requested-requiredness, exact corner/view/source closure, cooperative
 invocation budgets, domain-consumption comparison and standard verification
 ownership. Existing numerical algorithms, foundry grammar coverage, process
@@ -236,8 +236,9 @@ WASM/Embedded or qualification execution evidence.
 
 ### S7 Prepared Execution Design and Sprint Boundaries
 
-Status: S7a neutral execution binding and S7b/S7c domain preparation are implemented with Native evidence; host adoption remains in progress. The following refines S7 after the concrete-path analysis;
-its existing lower Liberty/IC/database proof does not establish host execution.
+Status: S7a–S7e are implemented and reviewed with Native CPU/SQLite evidence.
+The following refines S7 after the concrete-path analysis; lower and Host proofs
+retain their separate verification ownership.
 This section owns cross-package sequencing, not child contract definitions.
 
 | Confirmed current fact | Contract owner and current evidence |
@@ -245,8 +246,8 @@ This section owns cross-package sequencing, not child contract definitions.
 | Strict projection/matcher compares declared selected corners and contextual sources | [Consumption](Sources/PDKProfileAdmission/Consumption/DESIGN.md); external-entry child has focused Native evidence |
 | Owned Liberty inspection and prepared STA use the same actual library owner and strict corner join | [Timing prepared execution](../TimingEngine/Sources/STAEngine/PreparedExecution/DESIGN.md), commit e03b2f8; Native CPU behavior is verified independently |
 | Prepared native op/DC/transient applies IC/nodeset and records actual configuration/source context | [CoreSpice native execution](../CoreSpice/Sources/CoreSpice/NativeExecution/DESIGN.md), commit 5e6cafb; Native CPU behavior is verified independently |
-| Canonical profile facet and fresh SQLite replay are verified | [PDK DB runtime](../PDKDesignDatabaseIntegration/Sources/PDKDesignDatabaseRuntimeAdapter/DESIGN.md), commit 65a8f39; host registration/exact scope authentication remains proposed |
-| Host source/configuration/full-lineage adoption remains unverified | [Xcircuite module](../Xcircuite/Sources/Xcircuite/DESIGN.md); prepared execution child owns the in-progress connection |
+| Canonical profile facet and fresh SQLite replay are verified | [PDK DB runtime](../PDKDesignDatabaseIntegration/Sources/PDKDesignDatabaseRuntimeAdapter/DESIGN.md), commit 65a8f39; Host registration/exact scope authentication is verified in the dedicated profile shard |
+| Host source/configuration/full-lineage adoption and exact DB replay/resume are verified | [Profile execution](../Xcircuite/Sources/Xcircuite/ProfileExecution/DESIGN.md), commits 4948f9e and 6e71bfb; [standard evidence](../Xcircuite/.verification/runs/pn565-profile-database-20261009/standard-path-authority/report.json), 18/18 actual methods |
 
 | Sprint | One owned responsibility / non-goal | Dependencies | Falsifiable completion evidence |
 |---|---|---|---|
