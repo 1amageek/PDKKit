@@ -236,17 +236,17 @@ WASM/Embedded or qualification execution evidence.
 
 ### S7 Prepared Execution Design and Sprint Boundaries
 
-Status: S7a neutral execution binding is implemented with Native evidence; domain and host adoption remain in progress. The following refines S7 after the concrete-path analysis;
+Status: S7a neutral execution binding and S7b/S7c domain preparation are implemented with Native evidence; host adoption remains in progress. The following refines S7 after the concrete-path analysis;
 its existing lower Liberty/IC/database proof does not establish host execution.
 This section owns cross-package sequencing, not child contract definitions.
 
-| Confirmed current fact | Existing proof / proposed owner closing the remaining gap |
+| Confirmed current fact | Contract owner and current evidence |
 |---|---|
 | Strict projection/matcher compares declared selected corners and contextual sources | [Consumption](Sources/PDKProfileAdmission/Consumption/DESIGN.md); external-entry child has focused Native evidence |
-| Owned Liberty codec returns actual libraries and raw numeric process metadata | [TimingCore codec](../TimingEngine/Sources/TimingCore/LibertyCodec/DESIGN.md), commit 1a5b95a; optional adapter/prepared STA remains proposed |
-| Shared IC/nodeset resolver and CLI actual IC waveform are verified | [CoreSpice IO](../CoreSpice/Sources/CoreSpiceIO/DESIGN.md), commit fd37138; native host preparation/application remains proposed |
+| Owned Liberty inspection and prepared STA use the same actual library owner and strict corner join | [Timing prepared execution](../TimingEngine/Sources/STAEngine/PreparedExecution/DESIGN.md), commit e03b2f8; Native CPU behavior is verified independently |
+| Prepared native op/DC/transient applies IC/nodeset and records actual configuration/source context | [CoreSpice native execution](../CoreSpice/Sources/CoreSpice/NativeExecution/DESIGN.md), commit 5e6cafb; Native CPU behavior is verified independently |
 | Canonical profile facet and fresh SQLite replay are verified | [PDK DB runtime](../PDKDesignDatabaseIntegration/Sources/PDKDesignDatabaseRuntimeAdapter/DESIGN.md), commit 65a8f39; host registration/exact scope authentication remains proposed |
-| Host source/configuration/full-lineage connection is absent | [Xcircuite module](../Xcircuite/Sources/Xcircuite/DESIGN.md); prepared execution child owns the proposed connection |
+| Host source/configuration/full-lineage adoption remains unverified | [Xcircuite module](../Xcircuite/Sources/Xcircuite/DESIGN.md); prepared execution child owns the in-progress connection |
 
 | Sprint | One owned responsibility / non-goal | Dependencies | Falsifiable completion evidence |
 |---|---|---|---|
