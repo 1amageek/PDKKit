@@ -13,12 +13,12 @@ struct PDKSpiceResourceBridge: SPICESourceResourceAccounting {
         try checkCancellation()
         // Capture owns actual filesystem reads; lower admission only observes the same bytes.
         guard kind != .sourceBytes, units > 0 else { return }
-        _ = try resources.reserve(PDKAdmissionCost(dimension: .parserWork, amount: units))
+        try resources.charge(PDKAdmissionCost(dimension: .parserWork, amount: units))
     }
     func chargeHashedBytes(_ byteCount: UInt64) throws {
         try checkCancellation()
         guard byteCount > 0 else { return }
-        _ = try resources.reserve(PDKAdmissionCost(dimension: .hashedBytes, amount: byteCount))
+        try resources.charge(PDKAdmissionCost(dimension: .hashedBytes, amount: byteCount))
     }
     func reserveStorage(kind: SPICESourceStorageKind, byteCount: UInt64) throws -> SPICESourceStorageReservation {
         try checkCancellation()
@@ -39,7 +39,7 @@ struct PDKSpiceResourceBridge: SPICESourceResourceAccounting {
     func chargePDK(_ dimension: PDKAdmissionResourceDimension, _ amount: UInt64 = 1) throws {
         try checkCancellation()
         guard amount > 0 else { return }
-        _ = try resources.reserve(PDKAdmissionCost(dimension: dimension, amount: amount))
+        try resources.charge(PDKAdmissionCost(dimension: dimension, amount: amount))
     }
     func reservePDK(_ dimension: PDKAdmissionResourceDimension, _ amount: UInt64) throws -> PDKAdmissionReservation {
         try checkCancellation()

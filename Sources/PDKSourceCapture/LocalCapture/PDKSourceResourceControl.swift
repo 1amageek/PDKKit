@@ -24,7 +24,7 @@ final class PDKSourceResourceControl: ArtifactSourceControl {
     private func charge(_ dimension: PDKAdmissionResourceDimension, _ amount: UInt64)
         throws(ArtifactSourceControlError) {
         guard amount > 0 else { return }
-        do { _ = try resources.reserve(PDKAdmissionCost(dimension: dimension, amount: amount)) }
+        do { try resources.charge(PDKAdmissionCost(dimension: dimension, amount: amount)) }
         catch { throw record(error) }
     }
     func retain(_ extent: ArtifactSourceExtent) throws(ArtifactSourceControlError) -> any ArtifactSourceRetention {

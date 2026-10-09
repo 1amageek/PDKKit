@@ -33,8 +33,12 @@ public final class LocalPDKAdmissionResources: PDKAdmissionResourceAccounting, P
         }
     }
 
-    public func reserve(_ cost: PDKAdmissionCost)
-        throws(PDKAdmissionResourceError) -> PDKAdmissionReservation {
+    public func charge(_ cost: PDKAdmissionCost) throws(PDKAdmissionResourceError) {
+        guard !cost.dimension.isLiveCapacity else { throw .invalidCost }
+        try admit(cost)
+    }
+
+    private func admit(_ cost: PDKAdmissionCost) throws(PDKAdmissionResourceError) {
         let now = clock.now()
         let cancelled = Task.isCancelled
         let index = Self.index(cost.dimension)
@@ -56,6 +60,12 @@ public final class LocalPDKAdmissionResources: PDKAdmissionResourceAccounting, P
                 state.peaks[index] = max(state.peaks[index], attempted)
             }
         }
+    }
+
+    public func reserve(_ cost: PDKAdmissionCost)
+        throws(PDKAdmissionResourceError) -> PDKAdmissionReservation {
+        try admit(cost)
+        let index = Self.index(cost.dimension)
         return PDKAdmissionReservation(cost: cost) { [self] in
             guard cost.dimension.isLiveCapacity else { return }
             state.withLock { state in

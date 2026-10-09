@@ -85,11 +85,27 @@ records. Each traversal task owns its context stack and mutable parser facts;
 ordered merge publishes immutable results. Register an in-flight source before
 awaiting its acquisition, and let aliases join that owned result.
 `Mutex<AdmissionResourceState>` stores limits, cumulative counters, live
-reservations and closed state. Reserve/release/check are synchronous; clock
+reservations and closed state. Charge/reserve/release/check are synchronous; clock
 sampling and cancellation observation are passed into short state checks.
 Resource callbacks, filesystem operations and provider execution occur outside
 the lock. Source/fact handles retain the resource owner until their final release.
 No target branch removes synchronization or Sendable.
+Native cumulative charging and reservation share one checked counter transition.
+Only reservation constructs a receipt; charging performs no per-cost ownership
+allocation. Parser, source capture and bounded decode forward cumulative costs
+through the [Core accounting contract](../../PDKCore/Profile/DESIGN.md).
+Decode-local live receipts remain retained in their existing Mutex owner.
+
+| State | Native / WASM / Embedded source storage | Read / mutation | Release |
+|---|---|---|---|
+| Invocation counters, peaks, closed | Same `Mutex<State>` declaration | `check`, `snapshot`, `admit`, `close` use `withLock` | Existing reservation callback uses `withLock` |
+| Decode receipts | Same `Mutex<State>` declaration | `reserve`, `takeOwned` use `withLock` | Last receipt owner |
+
+This change qualifies Native execution only; the existing component makes no
+WASM or Embedded runtime claim. It introduces no target-dependent state or
+conformance. Regression evidence compares the real SPICE admission digest and
+all 21 dimension observations before/after, and exercises charge refusal,
+concurrent quota admission, cancellation, deadline and live-owner release.
 
 ## Failure, Concurrency, and Constraints
 

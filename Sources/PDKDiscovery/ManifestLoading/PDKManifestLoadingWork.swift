@@ -10,7 +10,7 @@ struct PDKManifestLoadingWork {
     func scan(_ value: String) throws(PDKBoundedManifestLoadingError) {
         for _ in value.utf8 {
             try check()
-            do { _ = try resources.reserve(PDKAdmissionCost(dimension: .parserWork, amount: 1)) }
+            do { try resources.charge(PDKAdmissionCost(dimension: .parserWork, amount: 1)) }
             catch { throw .resource(error) }
         }
         try check()

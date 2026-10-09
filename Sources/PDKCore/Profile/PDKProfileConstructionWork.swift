@@ -16,7 +16,7 @@ final class PDKProfileConstructionWork {
     func charge(_ dimension: PDKAdmissionResourceDimension, _ amount: UInt64) throws(PDKProfileValueError) {
         try check()
         guard let resources, amount > 0 else { return }
-        do { _ = try resources.reserve(PDKAdmissionCost(dimension: dimension, amount: amount)) }
+        do { try resources.charge(PDKAdmissionCost(dimension: dimension, amount: amount)) }
         catch { throw .resource(error) }
     }
     func retained<T>(_ type: T.Type, capacity: Int) throws(PDKProfileValueError) -> PDKAdmissionReservation? {

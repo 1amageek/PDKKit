@@ -27,6 +27,17 @@ struct ResourceAccountingTests {
         }
     }
 
+    private final class ReceiptAccounting: PDKAdmissionResourceAccounting {
+        let calls = Mutex((reserved: 0, released: 0))
+        func check() throws(PDKAdmissionResourceError) {}
+        func reserve(_ cost: PDKAdmissionCost) throws(PDKAdmissionResourceError) -> PDKAdmissionReservation {
+            calls.withLock { $0.reserved += 1 }
+            return PDKAdmissionReservation(cost: cost) { [self] in
+                calls.withLock { $0.released += 1 }
+            }
+        }
+    }
+
     private func budget(_ overrides: [PDKAdmissionResourceDimension: UInt64] = [:],
                         elapsed: UInt64 = UInt64.max) throws -> PDKAdmissionBudget {
         var limits = Dictionary(uniqueKeysWithValues: PDKAdmissionResourceDimension.allCases.map { ($0, UInt64.max) })
@@ -70,6 +81,45 @@ struct ResourceAccountingTests {
         }
     }
 
+    @Test(arguments: PDKAdmissionResourceDimension.allCases)
+    func chargingKeepsExactCumulativeBoundariesAndRejectsLiveDimensions(dimension: PDKAdmissionResourceDimension) throws {
+        let resources = LocalPDKAdmissionResources(budget: try budget([dimension: 8]))
+        let accounting: any PDKAdmissionResourceAccounting = resources
+        let cost = try PDKAdmissionCost(dimension: dimension, amount: 4)
+        if dimension.isLiveCapacity {
+            #expect(throws: PDKAdmissionResourceError.invalidCost) { try accounting.charge(cost) }
+            #expect(resources.used(dimension) == 0)
+            return
+        }
+        try accounting.charge(cost)
+        _ = try accounting.reserve(cost)
+        #expect(resources.used(dimension) == 8)
+        #expect(throws: PDKAdmissionResourceError.exhausted(dimension: dimension, limit: 8, attempted: 9)) {
+            try accounting.charge(PDKAdmissionCost(dimension: dimension, amount: 1))
+        }
+        #expect(resources.used(dimension) == 8)
+    }
+
+    @Test func defaultChargeUsesInjectedReservationAndReleasePolicy() throws {
+        let owner = ReceiptAccounting()
+        let accounting: any PDKAdmissionResourceAccounting = owner
+        try accounting.charge(PDKAdmissionCost(dimension: .parserWork, amount: 1))
+        #expect(owner.calls.withLock { $0.reserved == 1 && $0.released == 1 })
+        #expect(throws: PDKAdmissionResourceError.invalidCost) {
+            try accounting.charge(PDKAdmissionCost(dimension: .temporaryBytes, amount: 1))
+        }
+        #expect(owner.calls.withLock { $0.reserved == 1 && $0.released == 1 })
+    }
+
+    @Test func cumulativeChargeOverflowLeavesTheCounterUnchanged() throws {
+        let resources = LocalPDKAdmissionResources(budget: try budget())
+        try resources.charge(PDKAdmissionCost(dimension: .parserWork, amount: UInt64.max))
+        #expect(throws: PDKAdmissionResourceError.arithmeticOverflow(.parserWork)) {
+            try resources.charge(PDKAdmissionCost(dimension: .parserWork, amount: 1))
+        }
+        #expect(resources.used(.parserWork) == UInt64.max)
+    }
+
     @Test func dimensionsKeepIndependentCountersAndReleasePolicies() throws {
         let resources = LocalPDKAdmissionResources(budget: try budget())
         var held: [PDKAdmissionReservation] = []
@@ -106,6 +156,10 @@ struct ResourceAccountingTests {
             try resources.reserve(PDKAdmissionCost(dimension: .readBytes, amount: 1))
         }
         #expect(resources.used(.readBytes) == 1)
+        #expect(throws: PDKAdmissionResourceError.deadlineExceeded) {
+            try resources.charge(PDKAdmissionCost(dimension: .readBytes, amount: 1))
+        }
+        #expect(resources.used(.readBytes) == 1)
     }
 
     @Test func closedOwnerRefusesCheckAndNewCapacity() throws {
@@ -116,6 +170,10 @@ struct ResourceAccountingTests {
             try resources.reserve(PDKAdmissionCost(dimension: .liveOwnedBytes, amount: 1))
         }
         #expect(resources.used(.liveOwnedBytes) == 0)
+        #expect(throws: PDKAdmissionResourceError.closed) {
+            try resources.charge(PDKAdmissionCost(dimension: .readBytes, amount: 1))
+        }
+        #expect(resources.used(.readBytes) == 0)
     }
 
     @Test func backwardsClockIsAnExplicitCapabilityFailure() throws {
@@ -134,6 +192,8 @@ struct ResourceAccountingTests {
                 withUnsafeCurrentTask { $0?.cancel() }
                 do throws(PDKAdmissionResourceError) { try resources.check(); return false }
                 catch { guard error == .cancelled else { return false } }
+                do throws(PDKAdmissionResourceError) { try resources.charge(PDKAdmissionCost(dimension: .readBytes, amount: 1)); return false }
+                catch { guard error == .cancelled else { return false } }
                 do throws(PDKAdmissionResourceError) { _ = try resources.reserve(PDKAdmissionCost(dimension: .readBytes, amount: 1)); return false }
                 catch { return error == .cancelled }
             }
@@ -147,9 +207,13 @@ struct ResourceAccountingTests {
         let resources = LocalPDKAdmissionResources(budget: try budget([.readBytes: 8]))
         let cost = try PDKAdmissionCost(dimension: .readBytes, amount: 1)
         let admitted = await withTaskGroup(of: Bool.self) { group in
-            for _ in 0..<32 {
+            for index in 0..<32 {
                 group.addTask {
-                    do throws(PDKAdmissionResourceError) { _ = try resources.reserve(cost); return true }
+                    do throws(PDKAdmissionResourceError) {
+                        if index.isMultiple(of: 2) { try resources.charge(cost) }
+                        else { _ = try resources.reserve(cost) }
+                        return true
+                    }
                     catch { guard case .exhausted = error else { Issue.record("Unexpected concurrent refusal: \(error)"); return false }; return false }
                 }
             }

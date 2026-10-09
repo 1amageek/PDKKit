@@ -290,12 +290,12 @@ same accounting contract rather than being inferred from syntax preflight.
 
 All shared decode accounting state uses `Mutex<State>` on the native path. Only
 short local receipt bookkeeping and capacity growth execute inside that lock;
-upstream reserve/check callbacks execute outside it. There is no platform-specific
+upstream charge/reserve/check callbacks execute outside it. There is no platform-specific
 raw-state branch or weak ownership.
 
 | Scope | Storage / isolation | Read and mutation | Release |
 |---|---|---|---|
-| Invocation budget | Caller-supplied accountant | Public reserve/check | Caller lifecycle |
+| Invocation budget | Caller-supplied accountant | Public charge/reserve/check | Caller lifecycle |
 | Decode receipts | Mutex<State> | Synchronous append/takeOwned | Temporary receipts at decode end; owned receipts with returned handle |
 | Syntax arena and frames | Task-local arrays | Iterative scanner; immutable Decoder reads | Decode end, including failure |
 | Captured bytes | Capture-owned immutable buffer | Borrowed byte span | Capture's existing owner |

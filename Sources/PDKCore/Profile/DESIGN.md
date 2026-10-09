@@ -55,12 +55,24 @@ and typed construction errors. Admission-only values have a different owner.
 | `PDKConsumptionClaim` | Stage requirement identity; parent profile identity; expected projection; ordered actual source occurrences, corners, selections and observed mappings; domain evidence reference |
 | `PDKAdmissionBudget` | Positive finite caller-owned limits and their accounting version; defined by [admission](../../PDKProfileAdmission/DESIGN.md#failure-concurrency-and-constraints), outside semantic identity |
 
-PDKCore also owns the proposed PDKAdmissionCost, PDKAdmissionReservation and
+PDKCore also owns the implemented PDKAdmissionCost, PDKAdmissionReservation and
 PDKAdmissionResourceAccounting boundary types/requirements. Implementation and
 budget policy remain admission-owned. Lower SourceCapture/Discovery use this
 protocol without importing the higher admission module. A reservation retains
 an accountant-owned exactly-once release handle; it is not a serialized
 authorization/evidence token. Accountants are trusted injected resource owners.
+
+`PDKAdmissionResourceAccounting.charge(_:)` admits cumulative work without a
+retained receipt; live dimensions are rejected with `invalidCost`. It is a
+protocol requirement so existential callers use the injected owner's witness.
+The default witness delegates to `reserve(_:)` and immediately releases the
+receipt, preserving existing injected-owner policies. Native owners can avoid
+receipt allocation. `reserve(_:)` remains the ownership boundary for live
+capacity and supports cumulative costs for callers requiring a receipt.
+Both operations must validate deadline, cancellation, accounting version,
+overflow and quota before changing counters; refused work changes no counter.
+Cumulative charges never refund. Live reservation copies share one release.
+The accounting version, cost units, semantic identity and wire schema stay fixed.
 
 PV-01: Requirement IDs and asset IDs are nonempty and unique in their declared
 scope. A requirement names its selected assets explicitly. A singular view has
@@ -423,7 +435,6 @@ Values `PDKExecutionEntry`, `PDKExecutionSourceBinding` and
 They introduce a separate schema-1 execution claim, not a permissive decoder for
 existing consumption schemas. Their constructors validate structure; they cannot
 authenticate domain execution or mint admitted/matched owners.
-
 
 ### Execution Binding Wire Structure
 

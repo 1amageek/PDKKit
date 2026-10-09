@@ -26,7 +26,10 @@ struct PDKSourceConstructionWork {
         catch { throw .resource(error) }
     }
     func charge(_ dimension: PDKAdmissionResourceDimension, _ amount: UInt64) throws(PDKSourceCaptureError) {
-        _ = try reserve(dimension, amount)
+        try check()
+        guard amount > 0 else { return }
+        do { try resources.charge(PDKAdmissionCost(dimension: dimension, amount: amount)) }
+        catch { throw .resource(error) }
     }
     private func stringWork(_ value: String) throws(PDKSourceCaptureError) -> UInt64 {
         var count: UInt64 = 0

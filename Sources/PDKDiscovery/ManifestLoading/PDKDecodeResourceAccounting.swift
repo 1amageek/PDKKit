@@ -54,6 +54,10 @@ internal final class PDKDecodeResourceAccounting: PDKAdmissionResourceAccounting
         return true
     }
 
+    func charge(_ cost: PDKAdmissionCost) throws(PDKAdmissionResourceError) {
+        try upstream.charge(cost)
+    }
+
     func check() throws(PDKAdmissionResourceError) { try upstream.check() }
 
     func takeOwned() -> [PDKAdmissionReservation] {
@@ -66,7 +70,9 @@ internal final class PDKDecodeResourceAccounting: PDKAdmissionResourceAccounting
 
     func charge(_ dimension: PDKAdmissionResourceDimension, _ amount: UInt64) throws {
         guard amount > 0 else { return }
-        _ = try reserve(PDKAdmissionCost(dimension: dimension, amount: amount))
+        let cost = try PDKAdmissionCost(dimension: dimension, amount: amount)
+        if dimension.isLiveCapacity { _ = try reserve(cost) }
+        else { try charge(cost) }
     }
 
     func capacity(_ count: Int, stride: Int, dimension: PDKAdmissionResourceDimension = .temporaryBytes) throws {

@@ -14,7 +14,10 @@ struct PDKAdmissionWork: Sendable {
         catch { throw .resource(error) }
     }
     func charge(_ dimension: PDKAdmissionResourceDimension, _ amount: UInt64 = 1) throws(PDKProfileAdmissionError) {
-        if amount > 0 { _ = try reserve(dimension, amount) } else { try check() }
+        try check()
+        guard amount > 0 else { return }
+        do { try resources.charge(PDKAdmissionCost(dimension: dimension, amount: amount)) }
+        catch { throw .resource(error) }
     }
     func step() throws(PDKProfileAdmissionError) { try charge(.parserWork) }
     func capacity<T>(_ type: T.Type, _ count: Int, dimension: PDKAdmissionResourceDimension = .liveOwnedBytes)
