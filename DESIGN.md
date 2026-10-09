@@ -249,6 +249,8 @@ Completion requires all twelve PDK test products to have standard inventory owne
 actual registered/selected/ended method evidence, independent product builds, real
 profile CLI success/refusal, SQLite reopen/replay, and Host SPICE/STA/resume execution.
 The final Host uses normal URL/exact-revision checkouts with no edited dependencies.
+Standard test preparation and explicit CLI executable binding are owned by the
+[workspace verification contract](../DESIGN.md#verification-and-change-impact).
 Unchanged lower proofs remain valid; newly adopted assumptions are verified at the
 composing boundary. Native macOS CPU/SQLite is the supported execution scope here;
 no new WASM/Embedded/Metal or physical qualification claim follows from this gate.
