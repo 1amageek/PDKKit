@@ -31,7 +31,7 @@ with their existing owners.
 | [Module](../DESIGN.md) | parent | PA-06, PA-05/07 and resource policy | Consumer guarantee | No success from wire claims |
 | [Admission](../Admission/DESIGN.md) | depends on | Checked roots, nodes, events and source facts | Immutable graph and byte owners | Use observed occurrence links, not guessed Core parent context |
 | [Profile values](../../PDKCore/Profile/DESIGN.md) | depends on | Consumer requirement, contextual consumption records and bounded digest | Untrusted wire values | Observations preserve independent optional and signed layer fields losslessly; physical validity remains domain-owned |
-| [ExecutionBinding](ExecutionBinding/DESIGN.md) | child | Proposed external-entry and full-execution source binding | Connect domain occurrences to the strict projection | Existing matching is not proof of this unimplemented connection |
+| [ExecutionBinding](ExecutionBinding/DESIGN.md) | child | External-entry and full-execution source binding | Connect domain occurrences to the strict projection | Standalone matching does not establish execution binding |
 | [Xcircuite](../../../../Xcircuite/Sources/Xcircuite/DESIGN.md#proposed-exact-pdk-profile-handoff) | used by | Explicit stage subset and retained result | Host stage composition | Domain capability and resume remain host-owned |
 
 ## Architecture
@@ -101,7 +101,7 @@ defines the selected-corner meaning. CP-02/05 describe the profile-scoped graph,
 not a circuit's complete execution graph. External circuit entries require the
 child execution-binding operation before a host may claim exact execution-source
 consumption. Existing projection framing version 1 and schema-2 comparison remain
-unchanged; an unbound standalone match cannot stand in for the proposed connection.
+unchanged; an unbound standalone match cannot stand in for the execution binding.
 
 CP-06: Projection identity uses component-owned versioned canonical framing,
 not JSONEncoder or unbounded hashing. Framed UTF-8 domain

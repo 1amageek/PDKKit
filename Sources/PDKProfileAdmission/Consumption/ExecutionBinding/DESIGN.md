@@ -2,7 +2,7 @@
 
 ## Purpose and Scope
 
-Status: proposed; no production API or behavioral proof exists yet. Parent:
+Status: implemented PN5.6.1; focused Native macOS behavioral proof passed. Parent:
 [Consumption](../DESIGN.md). No children. Own the non-overridable connection between
 its strict profile-scoped projection and a domain's complete prepared source graph.
 This closes PN5's external circuit/include boundary without changing profile identity.
@@ -20,7 +20,7 @@ SPICE/Liberty nor observes numerical operating conditions or grants qualificatio
 | Design | Relationship | Contract Used | Summary | Cautions |
 |---|---|---|---|---|
 | [Consumption](../DESIGN.md) | parent | CP-01..06 and retained stage projection | Strict inner graph comparison | Do not weaken preprocessing or corner equality |
-| [Profile values](../../../PDKCore/Profile/DESIGN.md) | depends on | Selection/source/runtime authority and proposed wire values | Neutral occurrence binding | Wire data is not domain execution authority |
+| [Profile values](../../../PDKCore/Profile/DESIGN.md) | depends on | Selection/source/runtime authority and schema-1 wire values | Neutral occurrence binding | Wire data is not domain execution authority |
 | [Core preparation](../../../../../CoreSpice/Sources/CoreSpiceIO/SimulationPreparation/DESIGN.md) | used by | Prepared actual source graph | Circuit-to-library entries | Preserve inherited parameter identity and physical directive position |
 | [STA preparation](../../../../../TimingEngine/Sources/STAEngine/PreparedExecution/DESIGN.md) | used by | Owned per-corner Liberty source selection | Direct root entries | No fabricated named process observation |
 | [Host](../../../../../Xcircuite/Sources/Xcircuite/ProfileExecution/DESIGN.md) | used by | Exact prepared execution, evidence publication | Authenticated composition | Decoded claims are not prepared owners |
@@ -76,7 +76,7 @@ profile selection and CP projection identities, whose framing stays unchanged.
 Canonical source/edge/reference framing reuses its existing owner; negative zero,
 ordering, length and checked arithmetic rules apply consistently.
 
-| Proposed value | Required structural fields / ownership |
+| Value | Required structural fields / ownership |
 |---|---|
 | PDKExecutionSourceObservation | Ordered full domain occurrence table (IDs, references, sections, preprocessing, parent/edge), input/configuration identities and grammar/policy identity; untrusted data retained by the domain owner |
 | PDKExecutionSourceBinding | Profile-scoped occurrence ID plus full-domain occurrence ID; one ordered row per projected occurrence |
@@ -91,7 +91,7 @@ are validated against the complete observation table, not against themselves.
 The host's prepared-owner/artifact join authenticates which observation was used;
 this neutral matcher does not authenticate caller-created observation data.
 
-Proposed module function:
+Non-overridable module function:
 
 ```swift
 public func matchPDKExecutionConsumption(
@@ -140,7 +140,7 @@ Embedded. There is no successful fallback to standalone CP matching.
 
 ## Verification and Change Impact
 
-Proposed `PDKProfileAdmissionTests/ExecutionBindingTests` owns direct-root and actual
+`PDKExecutionBindingTests/ExecutionBindingTests` owns direct-root and actual
 external-entry success, physical edge/parent tampering, inherited parameter drift,
 repeated/extra/missing contributors, section mismatch, stable relocation identity,
 full-graph/configuration drift, quotas/cancellation and final-copy release.
@@ -148,3 +148,42 @@ Core/Timing own the truth of their observations; host owns invocation and eviden
 authentication. Existing CP vectors/tests remain valid if their premise is unchanged.
 Change impact: PDKCore new values, this component's matcher, domain preparation,
 host request/result readers and its integration tests migrate in one adoption.
+
+### Concrete wire and retained storage
+
+Schema-1 observation uses `sources: [PDKConsumedSource]` as its complete domain
+occurrence table, with unique domain IDs and preceding parents (IDs need not be
+contiguous). Domain sources retain actual full context, including inherited
+preprocessing. `executionInputIdentity: ContentDigest` is domain-computed SHA-256;
+`configurationIdentity` and `grammarPolicyIdentity` are nonempty domain identities.
+The matcher does not recompute a domain grammar identity from wire values.
+
+The execution claim stores `scopedClaim`, `executionInputIdentity`, `sourceBindings`
+and `entries`. Entry IDs are `profileRootOccurrenceID` and
+`executionRootOccurrenceID`; external parent ID/reference and incoming dependency
+are jointly present or explicit null. Correspondence preserves table order. Every
+source under a bound root must be represented; an additional occurrence matching any
+projected source key or full reference outside a bound subtree is refused.
+
+The matched value retains checked collection capacities and owned strings/full
+references through last-copy release, together with the existing CP match.
+Original caller wire backing does not acquire authority. All loops, copies and
+hash growth cooperate with the stage accountant. There are no mutable shared
+properties or target-specific synchronization branches in this component.
+
+### Native Evidence
+
+Fixed Swift 6.4.0 release (`org.swift.640202609131a`), arm64 Native macOS,
+SwiftPM default `swiftbuild`, dedicated `PDKProfileAdmissionTests` product:
+12 new execution-binding methods and one existing independent CP framing vector
+passed (13 methods, 0.309s). A single targeted recheck of the two strengthened
+contributor/resource methods passed (2 methods, 0.067s). The controlled provider
+uses real local captured files and checked admission; it does not prove CoreSpice/
+Liberty grammar or numerical operation.
+
+Retained registry, build logs, nonzero method event streams, exact consumed lock
+and toolchain/scope summary reside in
+[PN5.6.1 evidence](../../../../../.verification/runs/pn561-execution-binding-20261009/summary.json).
+Existing local mirrors and preexisting Foundation/CoreSpice edit states were used
+in the same retained scratch; the caller's `Package.resolved` bytes were restored.
+No new dependency source changes, push or tag are part of this proof.

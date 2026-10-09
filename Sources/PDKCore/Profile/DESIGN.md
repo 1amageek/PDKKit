@@ -390,8 +390,7 @@ profile value codec test own this distinction.
 
 ### Selection, Characterization and Runtime Authority
 
-The following meaning contract applies to existing values. New execution-binding
-values below are proposed and have no current wire/runtime implementation.
+The following meaning contract applies to existing values and schema-1 execution-binding values.
 
 | Meaning | Authority | Evidence and limit |
 |---|---|---|
@@ -418,9 +417,34 @@ and completion evidence. PDK admission continues to enforce demanded *source*
 PVT/temperature facts as defined by the admission component; it does not silently
 reinterpret those demands as runtime coverage or permit contradictory source facts.
 
-Proposed values `PDKExecutionEntry`, `PDKExecutionSourceBinding` and
+Values `PDKExecutionEntry`, `PDKExecutionSourceBinding` and
 `PDKExecutionConsumptionClaim` carry checked structural data for the
 [execution-binding contract](../../PDKProfileAdmission/Consumption/ExecutionBinding/DESIGN.md).
 They introduce a separate schema-1 execution claim, not a permissive decoder for
 existing consumption schemas. Their constructors validate structure; they cannot
 authenticate domain execution or mint admitted/matched owners.
+
+
+### Execution Binding Wire Structure
+
+`PDKExecutionSourceObservation` schema 1 retains the complete domain
+`sources: [PDKConsumedSource]` table and domain-computed SHA-256 execution input,
+configuration and grammar/policy identities. Domain occurrence IDs are unique; a
+parent must precede its child and match its full incoming parent key/reference.
+External circuit parent corner `nil` may enter `tt`/`ss` profile roots; the scoped
+claim retains its existing internal corner equality. Sources remain actual
+observations, never rebased expected contexts.
+
+`PDKExecutionSourceBinding` schema 1 identifies profile and execution occurrences.
+`PDKExecutionEntry` schema 1 carries profile/execution root IDs and jointly present
+or explicit null external parent ID/reference/incoming dependency.
+`PDKExecutionConsumptionClaim` schema 1 contains `scopedClaim` (unchanged schema 2),
+execution input identity, ordered source bindings and ordered root entries. Every
+scoped occurrence has exactly one binding; every scoped root has exactly one
+entry. Constructors preserve typed resource failure and cooperative work; supplied
+immutable array backing remains caller-owned. Strict Codable validates structure
+and cannot create a matched owner, bounded parser or domain capability.
+
+Verification owner: `PDKProfileAdmissionTests/ExecutionBindingTests`, jointly
+checking new wire round trips/refusals and real file capture/admission composition.
+Existing selection v1 and consumption schema-2 framing remains unchanged.

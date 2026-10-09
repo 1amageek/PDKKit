@@ -172,3 +172,22 @@ persists typed results through its ledger protocol. Xcircuite supplies the
 concrete `.xcircuite` workspace and run-artifact stores. The detailed
 standard-view suite remains independently reproducible from the package test
 bundle.
+
+## Prepared Execution Source Binding
+
+The non-overridable `matchPDKExecutionConsumption(_:against:observed:resources:)`
+composes existing schema-2 CP matching with the
+[execution binding contract](Sources/PDKProfileAdmission/Consumption/ExecutionBinding/DESIGN.md).
+PDKCore owns schema-1 structural `PDKExecutionSourceObservation`,
+`PDKExecutionSourceBinding`, `PDKExecutionEntry`, and
+`PDKExecutionConsumptionClaim` values. Observations carry domain input/configuration/
+grammar identities and every actual captured occurrence, including external entry
+parents and inherited preprocessing; they are untrusted data.
+
+The result `PDKMatchedExecutionConsumption` has no public arbitrary initializer or
+Codable conformance. It retains `consumption: PDKMatchedConsumption`,
+`bindingIdentity`, `executionInputIdentity`, `configurationIdentity`,
+`grammarPolicyIdentity`, checked `sources`, `sourceBindings`, and `entries`. Retain
+the enclosing checked owner while borrowing its source values. Domain preparation
+and host evidence authentication remain independent owners; neither a decoded
+claim nor this match proves numerical execution or qualification.

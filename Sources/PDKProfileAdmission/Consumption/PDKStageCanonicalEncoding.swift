@@ -7,12 +7,12 @@ struct PDKStageCanonicalEncoding {
                 sources: PDKAdmissionCollection<PDKConsumedSource>, corners: PDKAdmissionCollection<PDKProfileCorner>,
                 selections: PDKAdmissionCollection<PDKProfileSelection>, mappings: PDKAdmissionCollection<PDKStageMappingRequirement>)
         throws(PDKProfileConsumptionError) -> ContentDigest {
-        var sizing = Writer(sizing: true, work: work)
+        var sizing = PDKConsumptionCanonicalWriter(sizing: true, work: work)
         try encode(&sizing, profile, requirement, sources, corners, selections, mappings)
         guard let size = Int(exactly: sizing.count) else { throw .resource(.arithmeticOverflow(.temporaryBytes)) }
         let lease = try work.capacity(UInt8.self, size, dimension: .temporaryBytes)
         defer { withExtendedLifetime(lease) {} }
-        var writer = Writer(sizing: false, work: work); writer.bytes.reserveCapacity(size)
+        var writer = PDKConsumptionCanonicalWriter(sizing: false, work: work); writer.bytes.reserveCapacity(size)
         try encode(&writer, profile, requirement, sources, corners, selections, mappings)
         guard writer.count == sizing.count else { throw .invalidProjection }
         let result = try work.value { () throws(PDKProfileValueError) -> ContentDigest in
@@ -20,7 +20,7 @@ struct PDKStageCanonicalEncoding {
         }
         try work.check(); return result
     }
-    private func encode(_ w: inout Writer, _ profile: ContentDigest, _ r: PDKConsumerRequirement,
+    private func encode(_ w: inout PDKConsumptionCanonicalWriter, _ profile: ContentDigest, _ r: PDKConsumerRequirement,
                         _ sources: PDKAdmissionCollection<PDKConsumedSource>, _ corners: PDKAdmissionCollection<PDKProfileCorner>,
                         _ selections: PDKAdmissionCollection<PDKProfileSelection>, _ mappings: PDKAdmissionCollection<PDKStageMappingRequirement>)
         throws(PDKProfileConsumptionError) {
@@ -45,11 +45,7 @@ struct PDKStageCanonicalEncoding {
             if let parent = source.parentOccurrenceID { try w.uint(parent) }
             try w.bool(source.incomingDependency != nil)
             if let edge = source.incomingDependency {
-                try w.string(edge.parentSourceKey); try w.reference(edge.parentReference)
-                try w.uint(edge.statementByteOffset); try w.uint(edge.statementOrdinal)
-                try w.string(edge.directiveKind); try w.string(edge.literalRoute)
-                try w.string(edge.childSourceKey); try w.reference(edge.childReference)
-                try w.optional(edge.selectedSection); try w.string(edge.preprocessingIdentity); try w.uint(edge.lexicalOrder)
+                try w.dependency(edge)
             }
         }
         try w.uint(UInt64(mappings.count))
@@ -70,39 +66,5 @@ struct PDKStageCanonicalEncoding {
                 }
             }
         }
-    }
-    private struct Writer {
-        let sizing: Bool
-        let work: PDKConsumptionWork
-        var count: UInt64 = 0
-        var bytes: [UInt8] = []
-        mutating func grow(_ amount: UInt64) throws(PDKProfileConsumptionError) {
-            try work.step(); let (next, overflow) = count.addingReportingOverflow(amount)
-            guard !overflow else { throw .resource(.arithmeticOverflow(.temporaryBytes)) }; count = next
-        }
-        mutating func uint(_ value: UInt64) throws(PDKProfileConsumptionError) {
-            try grow(8)
-            if !sizing {
-                for shift in stride(from: 56, through: 0, by: -8) { try work.step(); bytes.append(UInt8(truncatingIfNeeded: value >> shift)) }
-            }
-        }
-        mutating func bool(_ value: Bool) throws(PDKProfileConsumptionError) {
-            try grow(1); if !sizing { bytes.append(value ? 1 : 0) }
-        }
-        mutating func string(_ value: String) throws(PDKProfileConsumptionError) {
-            let size = try work.bytes(value); try uint(size); try grow(size)
-            if !sizing { for byte in value.utf8 { try work.step(); bytes.append(byte) } }
-        }
-        mutating func optional(_ value: String?) throws(PDKProfileConsumptionError) {
-            try bool(value != nil); if let value { try string(value) }
-        }
-        mutating func strings(_ values: [String]) throws(PDKProfileConsumptionError) {
-            try uint(UInt64(values.count)); for value in values { try string(value) }
-        }
-        mutating func reference(_ value: ArtifactReference) throws(PDKProfileConsumptionError) {
-            try string(value.digest.algorithm.rawValue); try string(value.digest.hexadecimalValue); try uint(value.byteCount)
-            try string(value.descriptor.role.rawValue); try string(value.descriptor.kind.rawValue); try string(value.descriptor.format.rawValue)
-        }
-        mutating func number(_ value: Double) throws(PDKProfileConsumptionError) { try uint(value == 0 ? 0 : value.bitPattern) }
     }
 }

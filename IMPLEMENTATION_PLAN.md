@@ -160,3 +160,19 @@ Wrap each test command with the repository's timeout policy. These tests execute
 real local SHA-256/file access, post-capture path replacement/deletion, same-length
 tampering, exact manifest binding, malformed page accounting and cleanup refusal.
 They do not qualify process models, DRC decks or WASM/Embedded behavior.
+
+## PN5.6.1 Execution Binding
+
+PDKCore schema-1 execution values and the admission-owned non-overridable matcher
+connect strict schema-2 profile consumption to a complete prepared domain graph.
+The implementation preserves CP projection framing v1 and compares source
+references/descriptors, corners, sections, preprocessing, physical incoming edges,
+ordered one-to-one occurrence correspondence and every contributor. Stage-owned
+checked capacity/work and last-copy lifetime apply to copied retained observations.
+
+Focused proof uses the existing dedicated `PDKProfileAdmissionTests` product with
+`ExecutionBindingTests`, not the package-wide test bundle. It includes real local
+capture/admission with a controlled graph provider, strict new wire codecs, direct
+and external entries, per-corner entries, mismatches, bounds/cancellation, independent
+binding framing and last-copy release. This neutral proof does not authenticate a
+domain grammar owner or establish host/numerical/WASM/Embedded execution.

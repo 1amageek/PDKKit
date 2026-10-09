@@ -77,7 +77,7 @@ let package = Package(
                 .product(name: "CircuiteFoundationFoundation", package: "CircuiteFoundation"),
                 .product(name: "CircuiteFoundationCrypto", package: "CircuiteFoundation"),
             ],
-            exclude: ["DESIGN.md", "Admission/DESIGN.md", "Consumption/DESIGN.md"]
+            exclude: ["DESIGN.md", "Admission/DESIGN.md", "Consumption/DESIGN.md", "Consumption/ExecutionBinding/DESIGN.md"]
         ),
         .target(
             name: "PDKSpiceProfileInspection",
