@@ -235,6 +235,26 @@ composition, not foundry/process readiness. Required native numerical and Metal
 paths use their owning verification backend; this specification creates no
 WASM/Embedded or qualification execution evidence.
 
+### Foundation Closure Gate
+
+The foundation owns exact input identity and capture, bounded decode/discovery,
+explicit profile selection and dependency closure, checked admission, non-overridable
+stage/execution matching, retained owner lifetime, and exact replay composition.
+The PV/PA/CP/execution contracts remain authoritative in their linked child designs.
+Numerical models, complete foundry grammar, process qualification and release policy
+remain with their existing owners. Unsupported format/accounting capability must
+produce a typed refusal; it cannot satisfy a requested profile requirement.
+
+Completion requires all twelve PDK test products to have standard inventory owners,
+actual registered/selected/ended method evidence, independent product builds, real
+profile CLI success/refusal, SQLite reopen/replay, and Host SPICE/STA/resume execution.
+The final Host uses normal URL/exact-revision checkouts with no edited dependencies.
+Unchanged lower proofs remain valid; newly adopted assumptions are verified at the
+composing boundary. Native macOS CPU/SQLite is the supported execution scope here;
+no new WASM/Embedded/Metal or physical qualification claim follows from this gate.
+A concrete contract counterexample prevents closure. A future codec capability or
+an unrelated domain requirement does not recursively enlarge the foundation task.
+
 ### S7 Prepared Execution Design and Sprint Boundaries
 
 Status: S7a–S7e are implemented and reviewed with Native CPU/SQLite evidence.
