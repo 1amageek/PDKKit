@@ -150,13 +150,14 @@ evidence covers the four API paths, not that complete test product.
 
 ## Profile Foundation Specification and Implementation Order
 
-Status: implementation in progress, not process qualification. S1 requiredness/
+Status: specified foundation and prepared execution sprints are implemented and
+verified on Native CPU/SQLite; process qualification remains independent. S1 requiredness/
 structural dependency refusal, S3 lower contracts, S4 bounded source/discovery and
 S5 checked admission/consumption comparison are implemented with focused Native
 evidence. S6 native SPICE/JSON adapters and profile CLI are implemented with
 macOS runtime evidence and explicit unsupported-codec/platform refusal. S7 host
-adoption is implemented and verified on Native CPU/SQLite; S8 cumulative integration
-remains in progress. Evidence scope follows the actual executed backend and target.
+adoption and S8 cumulative integration are implemented and verified on Native
+CPU/SQLite. Evidence scope follows the actual executed backend and target.
 Scope: close requested-requiredness, exact corner/view/source closure, cooperative
 invocation budgets, domain-consumption comparison and standard verification
 ownership. Existing numerical algorithms, foundry grammar coverage, process
@@ -272,3 +273,10 @@ blocked. No generic JSON technology substitution establishes DRC/LVS/PEX/EMIR
 semantics. Existing independent ordinary APIs retain their documented scope;
 they cannot be reported as the new profile lane. Proposed APIs, products, schemas
 and runtime proofs become current only in the corresponding implementation sprint.
+
+The cumulative standard verification selected and executed all 18 profile methods
+on the exact normal dependency graph, with pristine ordinary checkouts and no
+edited packages. [Integration evidence](../.verification/runs/pdk-prepared-host-20261009/final-standard-host/verification.json)
+records the unchanged Source/test snapshot and current executable CLI proof.
+Resolution uses local Git mirrors of exact commits; it does not prove fresh remote
+fetch, broad unrelated suites, process qualification, Metal, WASM or Embedded.
