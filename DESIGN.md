@@ -131,8 +131,8 @@ Identity construction is specified by
 [ManifestLoading](Sources/PDKDiscovery/ManifestLoading/DESIGN.md) child, using the
 [Core Identity](Sources/PDKCore/Identity/DESIGN.md) contract. Core values, the manifest loader and Xcircuite exact handoff are implemented.
 Standard ownership for the completed identity handoff and four PDK products has
-verified evidence in PROGRESS IM3/IM4; new profile execution products still need
-their own standard shard adoption. Legacy discovery/parser paths do not inherit
+verified evidence in the task records. All twelve PDK test products are declared
+in the schema-3 workspace inventory, including the profile/CLI/adapter products. Legacy discovery/parser paths do not inherit
 the new bounded entry's proof. Exact database locks and canonical PDK persistence
 remain owned by the existing system/database integration designs.
 
