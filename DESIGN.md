@@ -126,6 +126,8 @@ Inspection remains distinct from engine capability and process qualification.
 
 ## Verification and Change Impact
 
+The package manifest consumes the [CoreSpice host deployment contract](../CoreSpice/DESIGN.md#responsibilities-and-boundaries) through its exact dependency closure. Changes to that contract require resolution and affected host-product verification.
+
 Identity construction is specified by
 [PDKDiscovery](Sources/PDKDiscovery/DESIGN.md) and its
 [ManifestLoading](Sources/PDKDiscovery/ManifestLoading/DESIGN.md) child, using the

@@ -6,6 +6,21 @@ import Testing
 
 @Suite(.timeLimit(.minutes(1)))
 struct SpiceProfileAdmissionTests {
+    @Test func binnedAndUnsupportedUnusedCardsRemainRawInventory() async throws {
+        let fixture = try await SpiceProfileFixture.make(files: ["root": """
+        * inventory is independent of instance selection and execution
+        .model process.1 NMOS level=1 lmin=0.1u lmax=2u vto=0.4
+        .model process.2 NMOS level=1 lmin=3u lmax=5u vto=0.9
+        .model unused NMOS level=54 version=4.5 vth0={missing_numeric_binding}
+        """], logicalNames: ["process.1", "process.2", "unused"])
+        defer { fixture.remove() }
+        let facts = try await fixture.admit().sourceFacts[0]
+        #expect(facts.mappings.map(\.name) == ["process.1", "process.2", "unused"])
+        #expect(facts.mappings.allSatisfy { $0.terminals.isEmpty && $0.origin != nil })
+        let unused = try #require(facts.mappings.first { $0.name == "unused" })
+        #expect(unused.model?.parameters.contains { $0.name == "vth0" && $0.value == .expression("missing_numeric_binding") } == true)
+    }
+
     @Test func nestedIncludeOriginsAndModelValues() async throws {
         let fixture = try await SpiceProfileFixture.make(files: [
             "root": "* root\n.include child.sp\n.model m NMOS (level=1 vto=0.4)\n",

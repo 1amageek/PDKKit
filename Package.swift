@@ -1,4 +1,4 @@
-// swift-tools-version: 6.3
+// swift-tools-version: 6.4
 import PackageDescription
 
 let swiftMaskDataDependency: Package.Dependency = .package(
@@ -13,12 +13,12 @@ let circuiteFoundationDependency: Package.Dependency = .package(
 
 let coreSpiceDependency: Package.Dependency = .package(
     url: "https://github.com/1amageek/CoreSpice.git",
-    revision: "d2eefa69cd1980087fcb29787aa1f71ccc276b0f"
+    revision: "60543b6fca295827d568a5d73a3e8134e6419997"
 )
 
 let package = Package(
     name: "PDKKit",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS("27.0")],
     products: [
         .library(name: "PDKCore", targets: ["PDKCore"]),
         .library(name: "PDKSourceCapture", targets: ["PDKSourceCapture"]),
