@@ -13,7 +13,7 @@ let circuiteFoundationDependency: Package.Dependency = .package(
 
 let coreSpiceDependency: Package.Dependency = .package(
     url: "https://github.com/1amageek/CoreSpice.git",
-    revision: "45c096048866e9320395b9b92c6a0e4c35156d14"
+    revision: "f2bd5861610cfc10aae2395d287b0c6a5789c6ed"
 )
 
 let package = Package(
