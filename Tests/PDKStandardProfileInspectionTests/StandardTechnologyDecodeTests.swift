@@ -25,6 +25,50 @@ struct StandardTechnologyDecodeTests {
         copy = nil
         #expect(resources.used(.liveOwnedBytes) == 0)
     }
+    @Test func currentProcessFactsRetainTypedValuesAndSourceBinding() async throws {
+        let library = StandardProfileFixture.retainedProcessLibrary
+        let fixture = try await StandardProfileFixture.make(library: library); defer { fixture.remove() }
+        let resources = LocalPDKAdmissionResources(budget: fixture.budget)
+        let captured = try await fixture.capture(resources: resources)
+        let document = try NativePDKStandardTechnologyDecoder().decodeTechnology(captured, resources: resources)
+        #expect(document.value == library)
+        #expect(document.sourceReference == fixture.reference)
+        #expect(document.value.layers[2].currentDensityLimits[0].quantity == .milliamperesPerSquareMicron(0.36))
+        #expect(document.value.viaGenerationRules[0].cutCenterSpacing == .xy(x: 0.4, y: 0.7))
+        #expect(resources.used(.temporaryBytes) == 0)
+    }
+    @Test func legacyRootOmissionsKeepStandardDefaults() async throws {
+        let library = StandardProfileFixture.library
+        var object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(library)) as? [String: Any])
+        for key in ["manufacturingGrid", "unitDeclarations", "hasDatabaseUnitsDeclaration",
+                    "obstructionSpacingUsesMinimumWidth", "propertyDefinitions", "viaGenerationRules"] {
+            object.removeValue(forKey: key)
+        }
+        let fixture = try await StandardProfileFixture.make(bytes: JSONSerialization.data(withJSONObject: object)); defer { fixture.remove() }
+        let resources = LocalPDKAdmissionResources(budget: fixture.budget)
+        let captured = try await fixture.capture(resources: resources)
+        let document = try NativePDKStandardTechnologyDecoder().decodeTechnology(captured, resources: resources)
+        #expect(document.value == library)
+        #expect(document.sourceReference == fixture.reference)
+    }
+    @Test(arguments: ["manufacturingGrid", "unitDeclarations", "hasDatabaseUnitsDeclaration",
+                      "obstructionSpacingUsesMinimumWidth", "propertyDefinitions", "viaGenerationRules", "futureNested"])
+    func malformedRecognizedOrFutureNestedFieldsRefuse(_ field: String) async throws {
+        var object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(StandardProfileFixture.retainedProcessLibrary)) as? [String: Any])
+        if field == "futureNested" {
+            var rules = try #require(object["viaGenerationRules"] as? [[String: Any]])
+            rules[0]["futureSelector"] = true; object["viaGenerationRules"] = rules
+        } else { object[field] = "invalid type" }
+        let fixture = try await StandardProfileFixture.make(bytes: JSONSerialization.data(withJSONObject: object)); defer { fixture.remove() }
+        let resources = LocalPDKAdmissionResources(budget: fixture.budget)
+        let captured = try await fixture.capture(resources: resources)
+        let baseline = resources.used(.liveOwnedBytes)
+        #expect(throws: PDKBoundedDecodeError.self) {
+            try NativePDKStandardTechnologyDecoder().decodeTechnology(captured, resources: resources)
+        }
+        #expect(resources.used(.liveOwnedBytes) == baseline)
+        #expect(resources.used(.temporaryBytes) == 0)
+    }
     @Test func unknownRootNestedFieldsAndMetadataRefuse() async throws {
         let base = try JSONEncoder().encode(StandardProfileFixture.library)
         for path in ["root", "nested", "metadata", "otherSchema"] {

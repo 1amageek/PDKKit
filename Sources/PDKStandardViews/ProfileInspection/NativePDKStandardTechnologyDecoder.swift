@@ -37,6 +37,12 @@ public struct NativePDKStandardTechnologyDecoder: PDKStandardTechnologyDecoding 
             || equal(field, "enclosureRules", resources: resources) || equal(field, "extensionRules", resources: resources)
             || equal(field, "minimumCutRules", resources: resources) || equal(field, "antennaRules", resources: resources)
             || equal(field, "metadata", resources: resources)
+            || equal(field, "manufacturingGrid", resources: resources)
+            || equal(field, "unitDeclarations", resources: resources)
+            || equal(field, "hasDatabaseUnitsDeclaration", resources: resources)
+            || equal(field, "obstructionSpacingUsesMinimumWidth", resources: resources)
+            || equal(field, "propertyDefinitions", resources: resources)
+            || equal(field, "viaGenerationRules", resources: resources)
     }
     private static func equal(_ left: String, _ right: String, resources: any PDKAdmissionResourceAccounting) throws -> Bool {
         var a = left.utf8.makeIterator(), b = right.utf8.makeIterator()

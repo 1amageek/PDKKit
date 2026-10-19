@@ -220,10 +220,11 @@ limitations.
 
 ## Exact public dependency candidate
 
-This candidate preserves all 477 production and test paths and the owned-code
+The prior public `1050fef9325df488d4de32ed3f078686d9e12d1a` candidate
+preserves all 477 production and test paths and the owned-code
 MIT grant of qualified candidate `9f54fd1485995e0f9b9068037e9cc551a95d0b9a`,
 with public `4bd00d6c7cecc5ef1d5854d60f310fb94a3045b9` as its sole Git parent.
-The CoreSpice dependency now selects published
+Its CoreSpice dependency selects published
 `cfcadac5aeff5d95681d2d91c0bf3e75bd35f169`; CircuiteFoundation and swift-mask-data
 retain their exact qualified pins. See the [dependency contract](DESIGN.md#exact-public-dependency-candidate)
 for the full public source floor and unchanged 54-test qualification requirement.
@@ -236,3 +237,16 @@ The original CoreSpiceIO parseProfile consumer calls and source/resource lifecyc
 remain unchanged. Focused SPICE admission/refusal/resource/candidate and standard
 technology-consumer tests qualify their executed paths only; no whole-PDK,
 foundry, external tool or whole-platform qualification is implied.
+
+
+## Technology root-key compatibility candidate
+
+This isolated source candidate restores the original owned decoder's six TechIR
+root-key admissions. The [owning contract](Sources/PDKStandardViews/ProfileInspection/DESIGN.md#technology-root-key-compatibility-candidate)
+retains strict fields, exact source binding and inventory-only semantics.
+The manifest selects published original-source Mask prerequisite
+`67410f834bdfa8a098c2ec0bfe3675210f658277`. The fresh public graph and focused
+decode/admission/resource tests passed: 19 standard-profile declarations
+(39 cases) plus 11 bounded-decoder declarations, zero skips. Scoped review and
+publication of this successor remain pending. The
+CircuiteFoundation5f/CoreSpicecfc floor and owned MIT grant remain unchanged.

@@ -89,6 +89,57 @@ The audited entry uses a synchronous, non-escaping `validate` hook on the same
 Decoder. Root membership uses accounted byte scans against static field literals,
 without a Set or materialized allCases; metadata is checked before standard decode.
 
+### Technology Root-Key Compatibility Candidate
+
+This isolated source candidate is based on public PDKKit
+`1050fef9325df488d4de32ed3f078686d9e12d1a`. Restore the owned decoder body from
+`8fc9e5ddd8a200fa14bf5b4146da6acfb2cbdbd8` byte-for-byte: only six accounted
+root-key literals are added. No standard type, primitive interpretation, default,
+inspection fact, capability or source identity is reconstructed in PDKKit.
+
+Status: finite Native typed-data execution passed; one scoped review and
+publication of this successor remain pending. The manifest now selects
+published Mask `67410f834bdfa8a098c2ec0bfe3675210f658277`, whose Sources/Tests
+retain exact original `83c926044838fe12f579bc9d2526a8e55899fa60` bytes and use
+public CircuiteFoundation5f. Root verified its normal-main publication and exact
+reviewed tree before this pin adoption. Fresh public resolution and focused execution passed on the exact selected
+graph; publication still requires the scoped review to close.
+CircuiteFoundation5f/CoreSpicecfc and owned MIT terms are retained.
+
+
+The explicit accounted root membership matches the exact adopted IRTechLibrary
+CodingKeys, including manufacturingGrid, unitDeclarations,
+hasDatabaseUnitsDeclaration, obstructionSpacingUsesMinimumWidth,
+propertyDefinitions and viaGenerationRules. The standard type remains the sole
+field/enum/default authority; the specialization does not flatten quantities,
+derive geometry, rescale precision declarations or reinterpret process rules.
+The complete typed value and exact sourceReference are retained by
+PDKDecodedDocument for its owned lifetime. Missing optional/defaulted fields keep
+IRTechLibrary's legacy defaults. Unknown future root or nested fields and malformed
+recognized types still refuse before publishing a document.
+
+Profile inspection projects only its existing inventory and data-only closure
+facts. Retained enclosure/hole/current/antenna/generation/property/unit data does
+not add process-rule or electrical capabilities: demands for those meanings fail
+unsupportedSemantics. The complete immutable input reference remains in coverage;
+unused retained data is not reported as an executed law. Parser and leaf evidence
+identities remain v1 because this fixes current standard-family decoding without
+changing inventory/closure semantics or supported demanded fact kinds.
+
+[StandardTechnologyDecodeTests](../../../Tests/PDKStandardProfileInspectionTests/StandardTechnologyDecodeTests.swift)
+verifies populated retained process facts, full typed equality/source binding,
+legacy omissions, malformed recognized types and future nested fields.
+[StandardProfileAdmissionTests](../../../Tests/PDKStandardProfileInspectionTests/StandardProfileAdmissionTests.swift)
+verifies inventory-only publication and explicit process-meaning demand refusal.
+
+The additional positive admission case uses encoded populated values for ALL six
+keys, exact capture bytes and the real native registration/admitter. Typed decode
+and round-trip equality, legacy omissions, malformed recognized/nested fields,
+unsupported process-meaning demands, shared resource refusal and final ownership
+remain the qualification boundary. The unchanged bounded decoder product is the
+one affected lower regression. Existing prior-revision evidence below does not
+qualify this candidate or its new dependency graph.
+
 | Fact kind | Exact origin | Limits |
 |---|---|---|
 | `layers` | IRTechLibrary.layers: name and optional gdsLayer | layerPurpose remains nil; datatype/type does not imply PDKLayerPurpose |
@@ -189,3 +240,27 @@ accounting. Admission owns graph/required-fact composition. Changes to TechIR
 Codable, decoder strict keys, collection capacity formulas or preprocessing
 authority require the affected assumption and these focused proofs to be checked;
 unchanged structural readers and binary codecs do not need a second audit.
+
+
+### Root-Key Successor Qualification
+
+On fixed Swift 6.4.0/macOS SDK27, the exact public eight-dependency graph passed
+fresh resolution without path/edited/mirror overrides. The standard-profile
+product passed 19 declarations in three suites, 39 expanded cases, zero skips;
+the bounded-decoder product passed 11 declarations in one suite, zero skips.
+Actual tests exercise all six populated encoded root fields, full typed/source
+identity and round-trip equality, delete-after-capture admission, legacy
+omissions, strict malformed/unknown fields, unsupported meaning, resource limits,
+cancellation and final ownership release. No production/test correction was
+needed after the decoder restoration. The first build was deliberately stopped
+after a verification script compared /tmp and /private/tmp without canonicalizing
+them; the corrected graph check preceded the successful build, and the 17.763s
+aborted stage remains separate from qualification.
+
+Successful product builds took 139.062s and 9.443s; runtime bodies took .110s and
+.017s (whole commands 2.465s and 2.374s). Maximum observed isolated logical
+scratch was 348,331,500 bytes, with minimum free space 49,296,625,664 bytes.
+These observations are not managed-memory/RSS limits or process/foundry evidence.
+One focused source/delta review remains the publication gate. The original owned
+decoder is byte-identical to the stated 8fc source; the six literal admissions do
+not change parser/leaf identities or inventory-only capability.

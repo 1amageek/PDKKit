@@ -22,6 +22,29 @@ struct StandardProfileFixture {
             vias: [.init(name: "V1", cutLayerName: "cut", topLayerName: "M2", bottomLayerName: "M1")],
             sites: [.init(name: "S1", width: 1, height: 2)])
     }
+    static var retainedProcessLibrary: IRTechLibrary {
+        var value = library
+        value.manufacturingGrid = 0.005
+        value.hasDatabaseUnitsDeclaration = false
+        value.dbuPerMicron = 100
+        value.unitDeclarations = .init(resistanceOhms: 1000, currentMilliamps: 10000)
+        value.obstructionSpacingUsesMinimumWidth = true
+        value.propertyDefinitions = [.init(objectType: .layer, name: "LEF58_TYPE", valueType: .string)]
+        value.layers[0].antennaStatements = [.model(.oxide2), .ratio(kind: .diffusionSideArea, value: .scalar(400))]
+        value.layers[0].currentDensityLimits = [.init(kind: .acRMS, quantity: .milliamperesPerMicron(6.1))]
+        value.layers.append(.init(name: "M2", type: .routing))
+        value.layers.append(.init(name: "cut", type: .cut, enclosures: [.init(overhang1: 0.03, overhang2: 0.06, side: .below)],
+            cutResistanceOhms: 9.3, currentDensityLimits: [.init(kind: .dcAverage, quantity: .milliamperesPerSquareMicron(0.36))]))
+        value.layers.append(.init(name: "well", type: .masterslice,
+            properties: [.init(name: "LEF58_TYPE", value: .string("TYPE NWELL ;"))], subtype: .nwell))
+        value.designRules = [.init(layerName: "M1", minEnclosedArea: 0.14)]
+        value.viaGenerationRules = [.init(name: "R", routingLayers: [
+            .init(layerName: "M1", enclosure: .init(overhang1: 0.03, overhang2: 0.06)),
+            .init(layerName: "M2", enclosure: .init(overhang1: 0.07, overhang2: 0.04))],
+            cutLayerName: "cut", cutRectangle: .init(x1: -0.1, y1: -0.2, x2: 0.1, y2: 0.2),
+            cutCenterSpacing: .xy(x: 0.4, y: 0.7))]
+        return value
+    }
     static func make(bytes: Data? = nil, library: IRTechLibrary = Self.library, format: ArtifactFormat = .json,
                      demands: [String] = ["layers", "vias", "sites", "dependencyClosure"],
                      view: PDKViewKind = .layerMap, section: String? = nil,

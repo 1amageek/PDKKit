@@ -36,6 +36,40 @@ struct StandardProfileAdmissionTests {
         #expect(profile.dependencies.isEmpty)
     }
 
+    @Test func allSixTechnologyFieldsRoundTripThroughExactCaptureAndActualAdmission() async throws {
+        let library = StandardProfileFixture.retainedProcessLibrary
+        let bytes = try JSONEncoder().encode(library)
+        let object = try #require(JSONSerialization.jsonObject(with: bytes) as? [String: Any])
+        for key in ["manufacturingGrid", "unitDeclarations", "hasDatabaseUnitsDeclaration",
+                    "obstructionSpacingUsesMinimumWidth", "propertyDefinitions", "viaGenerationRules"] {
+            #expect(object[key] != nil)
+        }
+        let fixture = try await StandardProfileFixture.make(bytes: bytes, library: library, corner: true,
+            physicalNames: ["M1", "M2", "cut", "well", "V1", "S1"])
+        defer { fixture.remove() }
+        let resources = LocalPDKAdmissionResources(budget: fixture.budget)
+        do {
+            let captured = try await fixture.capture(resources: resources)
+            let document = try NativePDKStandardTechnologyDecoder().decodeTechnology(captured, resources: resources)
+            #expect(document.value == library && document.sourceReference == fixture.reference)
+            let roundTrip = try JSONDecoder().decode(IRTechLibrary.self, from: JSONEncoder().encode(document.value))
+            #expect(roundTrip == library)
+        }
+        #expect(resources.used(.temporaryBytes) == 0 && resources.used(.liveOwnedBytes) == 0)
+        let registration = try PDKStandardProfileInspection.technologyRegistration(policyIdentity: "policy.v1")
+        let profile = try await LocalPDKProfileAdmitter(inspectors: [registration],
+            capture: StandardCaptureProbe(deleteTechnology: true)).admit(fixture.request)
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.appending(path: "technology.json").path))
+        let facts = try #require(profile.sourceFacts.first)
+        #expect(facts.input.reference == fixture.reference)
+        #expect(facts.mappings.map(\.name) == ["M1", "M2", "cut", "well", "V1", "S1"])
+        #expect(facts.mappings.allSatisfy { $0.input.reference == fixture.reference && $0.layerPurpose == nil })
+        #expect(facts.pvt.isEmpty && facts.temperatures.isEmpty && facts.events.isEmpty)
+        let coverage = try #require(facts.coverage.first)
+        #expect(facts.coverage.count == 1 && coverage.meaning == .leaf)
+        #expect(coverage.input.reference == fixture.reference && coverage.activeDependencies.isEmpty)
+    }
+
     @Test func manifestCannotSupplyMissingPurposeOrPhysicalName() async throws {
         var library = StandardProfileFixture.library
         library.layers[0].gdsLayer = 1
@@ -47,9 +81,10 @@ struct StandardProfileAdmissionTests {
         try await refusal(nameFixture, expected: .mappingMismatch)
     }
 
-    @Test(arguments: ["sourcePVT", "operatingTemperature", "selectedSection", "devices", "unknown"])
+    @Test(arguments: ["sourcePVT", "operatingTemperature", "selectedSection", "devices", "unknown",
+                      "viaGenerationRules", "antennaStatements", "currentDensityLimits", "minEnclosedArea", "enclosures", "unitDeclarations"])
     func unavailableFactDemandRefuses(_ demand: String) async throws {
-        let fixture = try await StandardProfileFixture.make(demands: [demand], corner: true)
+        let fixture = try await StandardProfileFixture.make(library: StandardProfileFixture.retainedProcessLibrary, demands: [demand], corner: true)
         defer { fixture.remove() }
         try await refusal(fixture, expected: .inspection(.unsupportedSemantics))
     }
