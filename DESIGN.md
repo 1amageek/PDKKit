@@ -304,3 +304,34 @@ edited packages. [Integration evidence](../.verification/runs/pdk-prepared-host-
 records the unchanged Source/test snapshot and current executable CLI proof.
 Resolution uses local Git mirrors of exact commits; it does not prove fresh remote
 fetch, broad unrelated suites, process qualification, Metal, WASM or Embedded.
+
+## Exact public dependency candidate
+
+This isolated candidate retains all 477 production and test paths from the
+qualified `9f54fd1485995e0f9b9068037e9cc551a95d0b9a` candidate, whose implementation
+matches public `4bd00d6c7cecc5ef1d5854d60f310fb94a3045b9`. Its sole Git parent is
+that public PDKKit commit. The original qualified candidate and development
+graph remain unchanged.
+
+The exact public dependency floor is CircuiteFoundation
+`5f132c58209123433e0e479e1ea61096e46061ba`, swift-mask-data
+`a1104f119ec9b8c11bc27e7040bef7a44245f351`, and CoreSpice
+`cfcadac5aeff5d95681d2d91c0bf3e75bd35f169`. The CoreSpice prerequisite publishes
+the same implementation and public CoreSpiceIO boundary as the former private
+`bb754369fd2e4796eb4ac44ba07856565529a797` pin, with an already public parent
+and finite source-publication scope. It does not establish complete simulator
+release, validated circuit flow, or all-phase/all-history guarantees.
+
+These exact dependency commits are published. Qualification of this candidate
+requires a fresh public-URL-only dependency solve and the unchanged 39 SPICE
+and 15 standard-profile tests. No availability mirror, path dependency, edited
+workspace, or reused dependency product is permitted in that qualification.
+Historical local-mirror qualification retains its original scope and is not
+relabelled as public-graph evidence.
+
+MIT publication of PDKKit-owned code was explicitly authorized on 2026-10-19.
+Dependency licenses/notices and third-party content retain their own authority.
+The original CoreSpiceIO parseProfile consumer calls and source/resource lifecycle
+remain unchanged. Focused SPICE admission/refusal/resource/candidate and standard
+technology-consumer tests qualify their executed paths only; no whole-PDK,
+foundry, external tool or whole-platform qualification is implied.

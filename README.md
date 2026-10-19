@@ -217,3 +217,22 @@ resolution whenever it is part of their reproducibility contract.
 See `MILESTONES.md`, `CAPABILITY_REPORT.md`, `DESIGN.md`, `INTERFACES.md` and
 `IMPLEMENTATION_PLAN.md` for the implementation boundary and qualification
 limitations.
+
+## Exact public dependency candidate
+
+This candidate preserves all 477 production and test paths and the owned-code
+MIT grant of qualified candidate `9f54fd1485995e0f9b9068037e9cc551a95d0b9a`,
+with public `4bd00d6c7cecc5ef1d5854d60f310fb94a3045b9` as its sole Git parent.
+The CoreSpice dependency now selects published
+`cfcadac5aeff5d95681d2d91c0bf3e75bd35f169`; CircuiteFoundation and swift-mask-data
+retain their exact qualified pins. See the [dependency contract](DESIGN.md#exact-public-dependency-candidate)
+for the full public source floor and unchanged 54-test qualification requirement.
+This adoption does not enlarge CoreSpice's finite source-prerequisite claims or
+establish whole-PDK, foundry, circuit-flow, or all-phase/all-history guarantees.
+
+MIT publication of PDKKit-owned code was explicitly authorized on 2026-10-19.
+Dependency licenses/notices and third-party content retain their own authority.
+The original CoreSpiceIO parseProfile consumer calls and source/resource lifecycle
+remain unchanged. Focused SPICE admission/refusal/resource/candidate and standard
+technology-consumer tests qualify their executed paths only; no whole-PDK,
+foundry, external tool or whole-platform qualification is implied.
