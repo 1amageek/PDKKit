@@ -252,10 +252,18 @@ publication of this successor remain pending. The
 CircuiteFoundation5f/CoreSpicecfc floor and owned MIT grant remain unchanged.
 
 
-## Current CoreSpice source floor
+## Historical CoreSpice source floor
 
-The [current dependency contract](DESIGN.md#current-source-containment-dependency-alignment)
+The [current dependency contract](DESIGN.md#historical-source-containment-dependency-alignment)
 selects CoreSpice `70ebb46d96edf58a173fccc3f76ccb163076238f`.
 This pin-only successor of public `d27217e8312c072f4fde731d722e48f3040d5a5b` preserves
 every implementation, test and resource byte. Earlier runtime receipts retain
 their original graph; final Physical integration owns new consumer execution.
+
+
+## Current simulation-parameter dependency floor
+
+The [current dependency contract](DESIGN.md#current-simulation-parameter-dependency-alignment)
+selects CoreSpice `82eb35e8bc57402880db3529c8a1dc2045349d87`.
+Its CoreSpice source is `82eb35e8bc57402880db3529c8a1dc2045349d87`; CF `5f132c58` and SDK `1.2.0` remain fixed.
+Source behavior is retained; final Physical integration owns new consumer execution.

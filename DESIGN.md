@@ -408,7 +408,7 @@ pin-only publications. No new physical/history/process or release guarantee is
 granted. The generated lock remains qualification-only and is not published.
 
 
-## Current Source Containment Dependency Alignment
+## Historical Source Containment Dependency Alignment
 
 This pin-only successor starts at public PDKKit `d27217e8312c072f4fde731d722e48f3040d5a5b`.
 All production/test/resource bytes, modes, products and license boundaries remain
@@ -433,3 +433,24 @@ tests are not rerun or claimed on this successor graph. CoreSpice owns the actua
 identical-enclosure red/green and scoped review. Final Physical consumer execution
 owns integration. This grants no new full-history, physical-root or release
 guarantee. The generated lock remains qualification-only and is not published.
+
+
+## Current Simulation-Parameter Dependency Alignment
+
+This pin-only successor starts at public `ef26637aad6507bd4544d6958486bdcae0fba147`.
+All production, test, resource, product, mode and license contracts are retained.
+
+| Dependency | Published revision |
+|---|---|
+| CoreSpice | `82eb35e8bc57402880db3529c8a1dc2045349d87` |
+
+The resolved CoreSpice source is `82eb35e8bc57402880db3529c8a1dc2045349d87`.
+CircuiteFoundation remains `5f132c58209123433e0e479e1ea61096e46061ba`;
+swift-osdi remains stable `1.2.0`. PDK controlled-decoder source from public
+`ef26637aad6507bd4544d6958486bdcae0fba147` is retained. CoreSpice owns its
+simulation-parameter correction and focused qualification. Prior consumer runtime
+receipts retain their original graph scope and are reused only for unchanged
+source and assumptions. This step records canonical public dependency resolution;
+no numerical build or test is claimed as rerun. The final Physical consumer owns
+compiled/runtime integration on this graph. No stable tag or broader physical,
+interval or history qualification is granted. The tracked lock records this graph.
