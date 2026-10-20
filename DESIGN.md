@@ -379,7 +379,7 @@ license/notices must match the sole public parent before the scoped pin-only
 publication review.
 
 
-## Current Cancellation Dependency Alignment
+## Prior Cancellation Dependency Alignment
 
 This pin-only successor starts at public PDKKit `a538326cec683bbd41a971c123d817e6093233e3`.
 All production/test/resource bytes, modes, products and license boundaries remain
@@ -406,3 +406,30 @@ reservation cancellation red/green and finding-only recheck. The final Physical
 consumer compile/runtime owns integration on the reconciled graph, not these
 pin-only publications. No new physical/history/process or release guarantee is
 granted. The generated lock remains qualification-only and is not published.
+
+
+## Current Source Containment Dependency Alignment
+
+This pin-only successor starts at public PDKKit `d27217e8312c072f4fde731d722e48f3040d5a5b`.
+All production/test/resource bytes, modes, products and license boundaries remain
+unchanged. Exact published selectors are:
+
+| Dependency | Exact revision |
+|---|---|
+| CoreSpice | `70ebb46d96edf58a173fccc3f76ccb163076238f` |
+
+The transitive CoreSpice revision is `70ebb46d96edf58a173fccc3f76ccb163076238f`. Its only
+production change from `5fa29e8a` accepts identical valid finite source-enclosure
+endpoints before applying the existing directed containment test. No public API,
+parser, PDK, STA or Logic value contract changes. PDK uses
+`CoreSpiceIO.SPICEParser.parseProfile`; CoreSpiceIO does not depend on the target
+owning Native Flow. Timing uses STA/PDK products, and Logic required STA and
+replay use NativeSTAEngine. None of these paths invokes the changed Flow assembly.
+
+Fresh canonical HTTPS resolution and exact source preservation qualify this
+mechanical pin reconciliation without paths, mirrors or edited dependencies.
+Existing consumer runtime receipts retain their original graph scope; builds and
+tests are not rerun or claimed on this successor graph. CoreSpice owns the actual
+identical-enclosure red/green and scoped review. Final Physical consumer execution
+owns integration. This grants no new full-history, physical-root or release
+guarantee. The generated lock remains qualification-only and is not published.

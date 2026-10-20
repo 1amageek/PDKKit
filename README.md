@@ -254,8 +254,8 @@ CircuiteFoundation5f/CoreSpicecfc floor and owned MIT grant remain unchanged.
 
 ## Current CoreSpice source floor
 
-The [current dependency contract](DESIGN.md#current-cancellation-dependency-alignment)
-selects CoreSpice `5fa29e8accb1ff9de0d1e5f8bc9efe128accf0b7` while preserving every
-PDK implementation/test/resource byte. This is a pin-only successor of public
-`a538326cec683bbd41a971c123d817e6093233e3`. Earlier runtime receipts retain their
-original graph; final Physical integration owns the new consumer execution.
+The [current dependency contract](DESIGN.md#current-source-containment-dependency-alignment)
+selects CoreSpice `70ebb46d96edf58a173fccc3f76ccb163076238f`.
+This pin-only successor of public `d27217e8312c072f4fde731d722e48f3040d5a5b` preserves
+every implementation, test and resource byte. Earlier runtime receipts retain
+their original graph; final Physical integration owns new consumer execution.
