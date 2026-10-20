@@ -88,7 +88,7 @@ public struct PDKAssetReference: Sendable, Hashable, Codable {
         path = try container.decode(String.self, forKey: .path)
         kind = try container.decode(ArtifactKind.self, forKey: .kind)
         let rawFormat = try container.decode(String.self, forKey: .format)
-        format = try ArtifactFormat(rawValue: rawFormat.lowercased())
+        format = try ArtifactFormat(rawValue: PDKManifestFormatNormalization.lowercase(rawFormat, decoder: decoder))
         required = try container.decode(Bool.self, forKey: .required)
         sha256 = try container.decodeIfPresent(String.self, forKey: .sha256)
         byteCount = try container.decodeIfPresent(Int64.self, forKey: .byteCount)

@@ -52,3 +52,55 @@ is introduced. The caller owns selection and retention of the checked reference.
 executes declaration mismatch checks through real view admission and composed
 validation. View/rule and validation consumers must be rechecked when declaration
 checks change. This change establishes host execution evidence only.
+
+## Controlled Manifest Construction and Validation
+
+Manifest schema and existing ordinary `PDKManifestCodec.decode` / `validate`
+semantics remain authoritative. The additive controlled entry is owned by
+[ManifestLoading](../PDKDiscovery/ManifestLoading/DESIGN.md#audited-caller-owned-byte-decoding-and-manifest-validation).
+Core supplies no JSON lexer and gains no dependency on Discovery or Timing.
+
+The existing `PDKAdmissionResourceAccounting` is the sole caller-neutral resource
+contract. `reserve` atomically admits live capacity and returns its copyable
+exactly-once reservation; `charge` debits cumulative work; `check` preserves the
+same invocation cancellation/deadline. No budget is reset for validation.
+
+One shared manifest rule implementation supplies ordinary and controlled
+validation. Ordinary mode supplies no accounting action; controlled mode invokes
+package-internal construction events before growth or work. Finding codes,
+messages, severity, entity values, rule ordering and `isValid` meaning remain the
+same. Semantic findings are reported, not silently dropped on a storage refusal.
+
+| Owned payload/work | Required admission |
+|---|---|
+| DTO arrays/maps/escaped strings | Existing typed decoder and immutable string storage |
+| Custom format normalization | DTO's same decoder-context accountant before derived storage |
+| Validation projections and identifier Sets | Type-aware array slots and fixed-toolchain hash-table capacity before construction; same String equality semantics |
+| Findings and suggested-action arrays | Struct/array slots before append, simultaneous old/new capacity at growth |
+| Constructed finding entities/messages | Exact input/literal byte lengths with checked arithmetic before interpolation |
+| Validation loops, string comparisons and token checks | Shared work charge/check before each owned operation and bounded scans |
+| Retained report and lease bookkeeping | Admitted before construction and retained to last result copy |
+
+The format constructor's ordinary path retains Unicode `lowercased()` behavior.
+The controlled path uses the existing cooperative-normalization capability rule:
+ASCII normalization has the exact input UTF-8 length, admitted before output
+construction. A non-ASCII format returns typed
+`PDKAdmissionResourceError.unsupportedBudgetCapability`; it is not invalid schema
+and invokes no unaccounted Unicode fallback. This explicit capability limit does
+not change the ordinary schema or the required ASCII standard-format profile.
+The callable partial branch must carry its owning incomplete-implementation
+marker until an exact, cooperatively accounted Unicode mapping is implemented
+and parity/admission/cancellation tests qualify that path.
+
+The controlled owner retains decoded DTO and report reservations together.
+Copying that owner shares leases. Freely detaching a DTO, finding or String value
+retains the existing caller-owned lifetime responsibility and does not imply a
+second accounting guarantee. No mutable state crosses an actor boundary;
+decode receipt state retains the existing unconditional Mutex, and upstream
+callbacks run outside its critical sections.
+
+Verification compares ordinary and controlled manifest values and complete
+validation reports, including invalid/duplicate/reference/whitespace cases.
+It distinguishes legacy Unicode-format success from explicit controlled
+capability refusal, rejects before derived allocation under tight capacities,
+and executes cancellation/failure unwind and final copied-owner refunds.

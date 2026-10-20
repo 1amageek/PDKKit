@@ -1,0 +1,75 @@
+{
+  "originHash" : "af7c35bc75de992fe115837a8c0663cdd043cad97264c7651b52ecf39b100602",
+  "pins" : [
+    {
+      "identity" : "circuitefoundation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/1amageek/CircuiteFoundation.git",
+      "state" : {
+        "revision" : "5f132c58209123433e0e479e1ea61096e46061ba"
+      }
+    },
+    {
+      "identity" : "corespice",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/1amageek/CoreSpice.git",
+      "state" : {
+        "revision" : "70ebb46d96edf58a173fccc3f76ccb163076238f"
+      }
+    },
+    {
+      "identity" : "signofftoolsupport",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/1amageek/SignoffToolSupport.git",
+      "state" : {
+        "revision" : "e15ea6cd60ca1957297aafbba839e51a478d735e",
+        "version" : "26.1018.0"
+      }
+    },
+    {
+      "identity" : "swift-asn1",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-asn1.git",
+      "state" : {
+        "revision" : "3b6410f7dee09eb33cdd26260c5fd47fda19b0e2",
+        "version" : "1.7.3"
+      }
+    },
+    {
+      "identity" : "swift-crypto",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-crypto.git",
+      "state" : {
+        "revision" : "47d3869a7291f085c1fb9fb1e6d3b97a793f45c6",
+        "version" : "4.5.1"
+      }
+    },
+    {
+      "identity" : "swift-mask-data",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/1amageek/swift-mask-data.git",
+      "state" : {
+        "revision" : "67410f834bdfa8a098c2ec0bfe3675210f658277"
+      }
+    },
+    {
+      "identity" : "swift-osdi",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/1amageek/swift-osdi.git",
+      "state" : {
+        "revision" : "e17d3bcca1224c8ab9ccfaddea7a47580b29b748",
+        "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "toolqualification",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/1amageek/ToolQualification.git",
+      "state" : {
+        "revision" : "601ff5933396be4ba62c77b8bb0502e2f601f159",
+        "version" : "26.1018.0"
+      }
+    }
+  ],
+  "version" : 3
+}

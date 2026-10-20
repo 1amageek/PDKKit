@@ -373,7 +373,118 @@ input while publishing a successful pair.
 
 The existing `PDKManifestLoading` contract continues to own inventory/caller
 compatibility; the profile path explicitly selects the invocation-bounded capability.
+
+### Audited caller-owned byte decoding and manifest validation
+
+This additive path reuses the existing syntax scanner and typed decoder. It
+does not reopen a path, copy the input, recapture a source, or introduce another
+JSON/schema implementation. The concrete native decoder adds this overload:
+
+```swift
+public func decodeAudited<Value: Decodable & Sendable>(
+    _ type: Value.Type,
+    bytes: borrowing Span<UInt8>,
+    accounting: any PDKAdmissionResourceAccounting,
+    rejectUnknownFields: Bool,
+    validate: (any Decoder) throws -> Void
+) throws(PDKControlledDecodeFailure) -> PDKDecodedDocument<Value>
+```
+
+The caller retains its original byte owner throughout the synchronous borrow.
+The parser's pointer cannot escape; returned strings/collections own their
+separately admitted storage. This raw-byte overload always returns
+`sourceReference == nil`. Nil grants zero capture, artifact, integrity or origin
+authority. A caller such as Timing must keep its own verified input identity and
+owner. Existing captured-source operations remain unchanged and retain their
+complete source reference. Neither path can manufacture a checked capture.
+
+The existing generic limitations still apply: custom `Decodable`, `CodingKey`,
+validation hooks and collection families other than the audited Array/Dictionary
+paths must admit their own derived payload and work. The decoder is not a
+generic whole-invocation allocation certificate. Detached value/subvalue copies
+transfer storage responsibility to their caller; retained document copies share
+the original reservations until the last owner disappears.
+
+The existing concrete native decoder also implements the additive protocol:
+
+```swift
+public protocol PDKControlledManifestDecoding: Sendable {
+    func decodeAndValidateManifest(
+        bytes: borrowing Span<UInt8>,
+        accounting: any PDKAdmissionResourceAccounting
+    ) throws(PDKControlledDecodeFailure) -> PDKControlledManifest
+}
+```
+
+`PDKControlledManifest` has no public initializer or Codable conformance. Its
+read-only `manifest: PDKManifest` and `validation: PDKManifestValidationReport`
+are backed by private `PDKDecodedDocument` owners for decoded and validation
+storage. Copies retain both owners. A validation finding is an ordinary domain
+result; `isValid == false` does not become decode success-with-defaults, an
+artifact identity, process qualification or a source-authentication claim.
+
+```text
+caller-owned bytes + SAME PDKAdmissionResourceAccounting
+    -> existing iterative JSON / existing PDKCore DTO decoding
+    -> PDKCore's SAME manifest rules with controlled construction events
+    -> retained decoded payload + retained report/findings
+    -> final shared cancellation/deadline check -> immutable owner
+```
+
+Core owns DTO normalization and manifest validation accounting under
+[PDKCore](../../PDKCore/DESIGN.md#controlled-manifest-construction-and-validation).
+This component adapts those construction events to its existing accounting scope
+and retains their leases. No Timing/Logic import, new accounting protocol,
+neutral reader framework, second ledger or guessed source-byte multiplier is
+introduced. Framework-private parsing/collection runtime workspace, allocator
+rounding/object headers and process RSS remain outside logical payload claims;
+owned DTO/collection/string/finding payload and explicit construction workspace
+remain inside them.
+
+`PDKBoundedDecodingTests` owns public raw-span dispatch, unknown nested fields,
+exact sourceReference absence, tiny-capacity/huge-array pre-growth refusal,
+escaped strings and dictionaries, custom DTO normalization, cumulative work and
+cancellation, ordinary decode/validation fact parity, invalid schema and
+last-copy release. Existing captured-source identity tests remain unchanged.
+Timing/Logic runtime owners separately prove their original-accountant bridges,
+custom DTO work, identity propagation and actual consumer execution.
 [PDKDiscoveryTests](../../../Tests/PDKDiscoveryTests) owns real-file exact/discovered
 loading, tamper refusal, foreign descriptor binding refusal, shared-owner lifetime,
 cumulative decode refusal and terminal cancellation. This component has native
 proof only; normal graph adoption and profile consumer composition remain separate.
+
+### Controlled failure retention
+
+Only the new raw-byte audited and controlled manifest APIs throw
+`PDKControlledDecodeFailure`: a Sendable Error value with read-only
+`cause: PDKBoundedDecodeError` and private reservation storage. It has no public
+initializer or Codable conformance. Existing captured-source signatures and
+legacy failure behavior remain unchanged. The cause preserves the original typed
+error; it is not rewritten as a string or a static substitute.
+
+```text
+pre-admit failure metadata -> same decode/validation accounting scope
+    -> success: reservations move into the returned value owner
+    -> failure: existing reservations move into the thrown failure owner
+        -> copied failures share reservations -> last copy refunds
+```
+
+The failure metadata is admitted before source parsing/materialization. A refusal
+before that admission preserves the upstream typed cause exactly. The trusted
+accountant/caller owns its already-materialized error backing; there is no
+PDK-owned decoded input payload before parsing. Only a new owner-created
+unexpected fallback uses a fixed static cause. Failure
+transfer moves existing receipt storage without asking the caller to reserve or
+check cancellation after failure. Input-derived Strings in a manifest/profile
+cause remain admitted while the failure or a copy is retained. Temporary parser
+workspace unwinds normally. Detaching `cause` or a String subvalue transfers its
+storage responsibility to the caller, as detaching a success DTO does. This is a
+managed source-payload lifetime contract, not a claim about Swift Error boxing,
+allocator headers, arbitrary caller-owned causes or Foundation-private workspace.
+The controlled manifest entry keeps decoded payload and validation in one
+retention scope until either final publication or failure transfer.
+
+[ControlledFailureRetentionTests](../../../Tests/PDKBoundedDecodingTests/ControlledFailureRetentionTests.swift)
+uses the public raw entry, a long input-derived invalidAssetPath cause and copied
+failures to distinguish premature refund from last-copy release. The prior
+17-test success receipt predates this failure-boundary correction.

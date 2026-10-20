@@ -5,7 +5,7 @@ import CircuiteFoundation
 /// Detached value or subvalue copies transfer storage responsibility to the caller.
 public struct PDKDecodedDocument<Value: Sendable>: Sendable {
     public let value: Value
-    /// The exact input identity on source-based decoding; nil only on internal raw-byte tests.
+    /// The exact input identity on source-based decoding; nil on raw-byte decoding, which grants no source authority.
     public let sourceReference: ArtifactReference?
     private let reservations: [PDKAdmissionReservation]
 
