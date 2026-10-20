@@ -250,3 +250,14 @@ decode/admission/resource tests passed: 19 standard-profile declarations
 (39 cases) plus 11 bounded-decoder declarations, zero skips. Scoped review and
 publication of this successor remain pending. The
 CircuiteFoundation5f/CoreSpicecfc floor and owned MIT grant remain unchanged.
+
+
+## Current CoreSpice source floor
+
+This pin-only successor of public PDKKit `f59dfd1` selects published CoreSpice
+`40eefa8efe9960def7d7151298e96f898cbebab2`, preserving PDKKit source/API behavior,
+resources and MIT/third-party terms. The
+[owning dependency contract](DESIGN.md#corespice-public-source-floor-alignment)
+defines the affected SPICE profile verification. Earlier candidate/technology
+qualification records above retain their historical source scope. This update
+does not certify circuit flow, foundry readiness or all-phase/all-history behavior.

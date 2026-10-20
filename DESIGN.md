@@ -350,3 +350,30 @@ scoped review remains required before publication.
 No prior SPICE or standard-profile test result is promoted to this candidate;
 CoreSpicecfc, CircuiteFoundation5f, source identities and owned MIT terms remain
 unchanged. This is a finite typed-data prerequisite, not process qualification.
+
+
+## CoreSpice Public Source-Floor Alignment
+
+This pin-only successor of public PDKKit
+`f59dfd1dbdd20545ddf97e6a0ab9a956ad7ca809` selects published CoreSpice
+`40eefa8efe9960def7d7151298e96f898cbebab2`. PDKKit production sources, tests,
+resources, API and MIT/third-party license boundaries remain identical to that
+public parent. CircuiteFoundation and Mask retain their existing exact pins.
+The grammar/resource/lifetime contract remains owned by
+[PDKSpiceProfileInspection](Sources/PDKSpiceProfileInspection/DESIGN.md); this
+package does not execute Native Flow or duplicate simulator physics.
+
+The changed assumption is the exact CoreSpiceIO dependency source. Qualification
+requires a canonical HTTPS-only resolved graph and the unchanged
+`PDKSpiceProfileInspectionTests` / `SpiceCandidateDiscoveryTests` path: contextual
+source/section/alias capture, strict refusal, cumulative work/cancellation and
+last-copy lifetime. The expected existing scope is 13 declarations / 15 cases,
+with no skips. Unchanged standard-data and numerical proofs retain their own
+source assumptions; this change does not claim new foundry, circuit-flow,
+all-phase/all-history or complete simulator release guarantees.
+
+Only the manifest pin and these current dependency notes change. The generated
+canonical lock is retained as qualification evidence rather than added to this
+library's published tracked inventory. All other tracked blobs/modes and
+license/notices must match the sole public parent before the scoped pin-only
+publication review.
