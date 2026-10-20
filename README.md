@@ -254,10 +254,8 @@ CircuiteFoundation5f/CoreSpicecfc floor and owned MIT grant remain unchanged.
 
 ## Current CoreSpice source floor
 
-This pin-only successor of public PDKKit `f59dfd1` selects published CoreSpice
-`40eefa8efe9960def7d7151298e96f898cbebab2`, preserving PDKKit source/API behavior,
-resources and MIT/third-party terms. The
-[owning dependency contract](DESIGN.md#corespice-public-source-floor-alignment)
-defines the affected SPICE profile verification. Earlier candidate/technology
-qualification records above retain their historical source scope. This update
-does not certify circuit flow, foundry readiness or all-phase/all-history behavior.
+The [current dependency contract](DESIGN.md#current-cancellation-dependency-alignment)
+selects CoreSpice `5fa29e8accb1ff9de0d1e5f8bc9efe128accf0b7` while preserving every
+PDK implementation/test/resource byte. This is a pin-only successor of public
+`a538326cec683bbd41a971c123d817e6093233e3`. Earlier runtime receipts retain their
+original graph; final Physical integration owns the new consumer execution.

@@ -352,7 +352,7 @@ CoreSpicecfc, CircuiteFoundation5f, source identities and owned MIT terms remain
 unchanged. This is a finite typed-data prerequisite, not process qualification.
 
 
-## CoreSpice Public Source-Floor Alignment
+## Historical CoreSpice Public Source-Floor Alignment
 
 This pin-only successor of public PDKKit
 `f59dfd1dbdd20545ddf97e6a0ab9a956ad7ca809` selects published CoreSpice
@@ -377,3 +377,32 @@ canonical lock is retained as qualification evidence rather than added to this
 library's published tracked inventory. All other tracked blobs/modes and
 license/notices must match the sole public parent before the scoped pin-only
 publication review.
+
+
+## Current Cancellation Dependency Alignment
+
+This pin-only successor starts at public PDKKit `a538326cec683bbd41a971c123d817e6093233e3`.
+All production/test/resource bytes, modes, products and license boundaries remain
+unchanged. The following exact published selectors reconcile the same Core graph:
+
+| Dependency | Exact revision |
+|---|---|
+| CoreSpice | `5fa29e8accb1ff9de0d1e5f8bc9efe128accf0b7` |
+
+The transitive CoreSpice revision is `5fa29e8accb1ff9de0d1e5f8bc9efe128accf0b7`. Its only
+production change from `40eefa8e` checks per-call cancellation after the first
+Native voltage-observation reservation, before metadata reservation. It changes
+no public API, parser, STA, PDK or Logic semantics. PDK source inspection uses
+`SPICEParser.parseProfile`; CoreSpiceIO has no dependency on the CoreSpice target
+that owns Native Flow. Timing uses its own STA/PDK products, and Logic required
+STA and replay use NativeSTAEngine. These consumer paths cannot call the changed
+Native Flow observation assembly.
+
+Fresh canonical HTTPS resolution and exact source preservation establish this
+mechanical compatibility step without paths, mirrors or edited dependencies.
+Existing consumer runtime receipts retain their original graph scope; no tests
+or builds are reported as rerun here. CoreSpice owns the demonstrated first-
+reservation cancellation red/green and finding-only recheck. The final Physical
+consumer compile/runtime owns integration on the reconciled graph, not these
+pin-only publications. No new physical/history/process or release guarantee is
+granted. The generated lock remains qualification-only and is not published.
