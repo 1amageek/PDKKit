@@ -271,9 +271,11 @@ Source behavior is retained; final Physical integration owns new consumer execut
 ## Current stable dependency floor
 
 The [current dependency contract](DESIGN.md#current-stable-dependency-alignment)
-selects stable CircuiteFoundation `26.1021.0`, Mask
-`d23f9afd9c049cf06a12e307e4c26b4dd3ad216d`, and public CoreSpice
-`23b5449db81705a026f921c37b49053e93b69060`. SDK `1.2.1` and ToolQualification
-`26.1021.0` remain transitive through CoreSpice. The tracked lock records the
-fresh canonical public graph; all PDK implementation and test bytes remain
-unchanged. Prior runtime receipts retain their original qualification scope.
+selects stable CircuiteFoundation `26.1021.1`, Mask
+`4d6f160e405707220589ea0fcbf71c959204b610`, and public CoreSpice
+`2b22cd478a03e2d119587d583b3e8e8a870f3de8`. SDK `1.2.2` and ToolQualification
+`26.1021.1` remain transitive through CoreSpice. The fresh canonical tracked lock
+records this public graph. Qualified caller-context implementation and all PDK
+source/test/resource bytes are retained from `b187c460`; original runtime
+receipts keep their old graph scope. New-graph execution belongs to the Timing
+bounded saved-result consumer and final Physical integration.

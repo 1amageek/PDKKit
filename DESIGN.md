@@ -457,33 +457,35 @@ interval or history qualification is granted. The tracked lock records this grap
 
 ## Current Stable Dependency Alignment
 
-This dependency-only successor starts at public
-`1bd686f8a4b47a90ef136b5f7dbcca7390971b8e`. All production, test, resource,
-product, mode and license contracts are retained. The current public selectors
-are:
+This metadata-only successor retains the qualified caller-context implementation
+at local `b187c4601a1c11c501aed2cdfdecd372f2f5d0c3`, whose sole parent is public
+`f42dfe9c0650347cdd7d12c269055b8c35c147e3`. All production, test, resource,
+product, mode and license contracts remain unchanged from that implementation.
+The current public dependency selectors are:
 
 | Direct dependency | Exact public selection |
 |---|---|
-| CircuiteFoundation | Stable `26.1021.0` / `4d03b5a561c82a756aaf93860f657733371538dc` |
-| swift-mask-data | `d23f9afd9c049cf06a12e307e4c26b4dd3ad216d` |
-| CoreSpice | `23b5449db81705a026f921c37b49053e93b69060` |
+| CircuiteFoundation | Stable `26.1021.1` / `7b5ab9cfcd89eccd04e98fb8355bd8ed4d5596c3` |
+| swift-mask-data | `4d6f160e405707220589ea0fcbf71c959204b610` |
+| CoreSpice | `2b22cd478a03e2d119587d583b3e8e8a870f3de8` |
 
-CoreSpice selects stable SDK `1.2.1` and ToolQualification `26.1021.0`; these
+CoreSpice selects stable SDK `1.2.2` and ToolQualification `26.1021.1`; these
 remain transitive dependencies. This alignment adds no direct SDK,
-ToolQualification or LogicDesign edge. The tracked lock must come from a fresh
+ToolQualification or LogicDesign edge. The tracked lock must come from fresh
 canonical HTTPS resolution with clean source-control checkouts and no edited,
 path or mirror overrides. It records the actual transitive graph.
 
-Qualification exercises the unchanged `SpiceCandidateDiscoveryTests`,
-`StandardTechnologyDecodeTests`, `ControlledManifestTests` and
-`ControlledFailureRetentionTests` through their three existing test products.
-These consumer seams cover CoreSpiceIO profile parsing and exact source graphs,
-Mask technology root fields, and the controlled manifest/error lifetime on the
-shared Foundation floor. No numerical solver or physics is duplicated. Prior
-behavioral evidence keeps its original source, fixture and graph scope; source
-preservation does not claim that those tests ran on this successor graph.
+Qualification of this metadata step consists of exact source preservation,
+canonical public resolution and unchanged dependency-contract composition.
+Foundation's additive controlled digest construction and decoding context leave
+existing PDK parser/decoder behavior unchanged. The caller-context implementation
+retains its own original focused qualification; earlier discovery, technology,
+controlled-manifest and failure-retention runtime receipts retain their original
+source, fixture and graph scopes. No PDK build or runtime is claimed on this
+successor graph. Timing's actual bounded saved-result decoding owns the new
+Foundation/context composition check, and final Physical execution owns its
+new composed graph. No numerical solver or physics is duplicated.
 
-The focused gates establish only their actual Native source/decode/refusal,
-cumulative resource/cancellation and retained-copy lifetime behavior. They do
-not establish whole-PDK, foundry, all-corner circuit, interval or history
-qualification. CoreSpice owns its own source and simulator qualification.
+These finite source/decode/refusal and retained-owner contracts do not establish
+whole-PDK, foundry, all-corner circuit, interval or history qualification.
+CoreSpice owns its own source and simulator qualification.
