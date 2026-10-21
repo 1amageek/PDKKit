@@ -309,6 +309,70 @@ is made by this host component.
 
 ### Audited typed decoding specialization
 
+#### Explicit caller-owned decoding context (T3)
+
+This additive raw-byte overload is implemented and qualified on the existing
+canonical public dependency graph. It preserves the existing overload and parser/DTO semantics:
+
+```swift
+decodeAudited<Value: Decodable & Sendable>(
+    _ type: Value.Type, bytes: borrowing Span<UInt8>,
+    accounting: any PDKAdmissionResourceAccounting, rejectUnknownFields: Bool,
+    additionalUserInfo: [CodingUserInfoKey: any Sendable],
+    validate: (any Decoder) throws -> Void
+) throws(PDKControlledDecodeFailure) -> PDKDecodedDocument<Value>
+```
+
+Only caller-supplied context values are forwarded. The actual decoder still
+installs its invocation accountant; supplying either reserved accountingKey or
+controlledManifestKey is a typed `unsupportedValue` failure, never an override.
+The original overload forwards an empty context and retains its existing behavior.
+No source identity, resource allowance or decoded-success authority is granted by
+a context value. Nested existing Decoder children forward the same userInfo.
+
+```text
+caller-owned Sendable context + SAME invocation accountant
+    -> reserved-key refusal + concrete dictionary/entry admission
+        -> EXISTING PDKJSONValueDecoder and child propagation
+            -> external owner's checked custom Decodable constructor
+                -> document / whole anchored failure + caller context owner
+```
+
+Before parsing or constructing the merged table, check each caller key against
+the reserved keys and charge its actual UTF-8 visit through the SAME accountant.
+Before merging, reserve the existing dictionary capacity calculation for the
+checked sum of caller entries and internal entries; charge/check each insertion's
+key visit. Recheck cancellation after every caller-work callback and table-capacity
+admission, before reserved-key refusal or table mutation. The caller owns the original additionalUserInfo dictionary and context
+payload. PDK constructs one new Any-valued table without an intermediate converted
+table; its temporary reservation and references remain alive through synchronous
+validation and decode, then end together. No context dictionary is retained in the
+returned document or failure. A custom constructor's workspace/result reservations
+remain its owner's explicit obligation, not the syntax String admission.
+
+For CF ContentDigest, Timing forwards the CF-owned control key. That control
+adapts the same Timing accountant and holds normalized backing reservations until
+the last caller-owned bounded success/failure wrapper ends. PDK's returned
+document retains its EXISTING syntax/source String reservations; the caller must
+retain the complete PDKControlledDecodeFailure with the CF control on failure.
+Neither returning naked cause nor detaching the decoded value preserves that
+managed-lifetime guarantee. No post-error callback is needed for transfer.
+
+`ControlledDecodingContextTests` owns explicit validation/keyed/unkeyed context
+propagation, SAME-accountant work, unchanged empty-context decoding, both reserved
+key refusals before parsing, measured merged-dictionary capacity refusal, original
+typed-cause preservation, context-work cancellation and last-copy PDK success/failure
+retention, including a normally returning charge that sets cancellation before a
+reserved-key refusal. Its seven declarations and nine cases passed alongside the
+eight affected existing manifest/failure declarations and cases: 15 declarations,
+17 cases, zero skips. The [focused qualification receipt](/private/tmp/CircuiteFoundation-pin-successors-20261021-r1/control/t3-pdkkit-context-r1/qualification.json)
+retains the executed source freeze and canonical public graph; this documentation-only
+finalization does not change the tested source or tests. Root's scoped verification
+closed the post-callback cancellation finding. An unavailable overload's compile
+refusal was not behavioral RED evidence. Actual nested CF digest construction and caller-control lifetime
+belong to Timing's later integration against the published CF control API. No
+parser replacement or generic recursive JSON normalization is introduced.
+
 The concrete native convenience `decodeAudited(_:source:accounting:
 rejectUnknownFields:validate:)` reuses this syntax/typed decoder, returns a full-source-bound
 `PDKDecodedDocument<Value>` and preserves typed resource errors. It is an audited
