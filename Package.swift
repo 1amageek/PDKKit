@@ -3,17 +3,17 @@ import PackageDescription
 
 let swiftMaskDataDependency: Package.Dependency = .package(
     url: "https://github.com/1amageek/swift-mask-data.git",
-    revision: "67410f834bdfa8a098c2ec0bfe3675210f658277"
+    revision: "d23f9afd9c049cf06a12e307e4c26b4dd3ad216d"
 )
 
 let circuiteFoundationDependency: Package.Dependency = .package(
     url: "https://github.com/1amageek/CircuiteFoundation.git",
-    revision: "5f132c58209123433e0e479e1ea61096e46061ba"
+    exact: "26.1021.0"
 )
 
 let coreSpiceDependency: Package.Dependency = .package(
     url: "https://github.com/1amageek/CoreSpice.git",
-    revision: "82eb35e8bc57402880db3529c8a1dc2045349d87"
+    revision: "23b5449db81705a026f921c37b49053e93b69060"
 )
 
 let package = Package(

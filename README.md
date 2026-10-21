@@ -261,9 +261,19 @@ every implementation, test and resource byte. Earlier runtime receipts retain
 their original graph; final Physical integration owns new consumer execution.
 
 
-## Current simulation-parameter dependency floor
+## Historical simulation-parameter dependency floor
 
-The [current dependency contract](DESIGN.md#current-simulation-parameter-dependency-alignment)
+The [historical dependency contract](DESIGN.md#historical-simulation-parameter-dependency-alignment)
 selects CoreSpice `82eb35e8bc57402880db3529c8a1dc2045349d87`.
 Its CoreSpice source is `82eb35e8bc57402880db3529c8a1dc2045349d87`; CF `5f132c58` and SDK `1.2.0` remain fixed.
 Source behavior is retained; final Physical integration owns new consumer execution.
+
+## Current stable dependency floor
+
+The [current dependency contract](DESIGN.md#current-stable-dependency-alignment)
+selects stable CircuiteFoundation `26.1021.0`, Mask
+`d23f9afd9c049cf06a12e307e4c26b4dd3ad216d`, and public CoreSpice
+`23b5449db81705a026f921c37b49053e93b69060`. SDK `1.2.1` and ToolQualification
+`26.1021.0` remain transitive through CoreSpice. The tracked lock records the
+fresh canonical public graph; all PDK implementation and test bytes remain
+unchanged. Prior runtime receipts retain their original qualification scope.

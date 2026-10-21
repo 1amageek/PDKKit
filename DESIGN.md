@@ -435,7 +435,7 @@ owns integration. This grants no new full-history, physical-root or release
 guarantee. The generated lock remains qualification-only and is not published.
 
 
-## Current Simulation-Parameter Dependency Alignment
+## Historical Simulation-Parameter Dependency Alignment
 
 This pin-only successor starts at public `ef26637aad6507bd4544d6958486bdcae0fba147`.
 All production, test, resource, product, mode and license contracts are retained.
@@ -454,3 +454,36 @@ source and assumptions. This step records canonical public dependency resolution
 no numerical build or test is claimed as rerun. The final Physical consumer owns
 compiled/runtime integration on this graph. No stable tag or broader physical,
 interval or history qualification is granted. The tracked lock records this graph.
+
+## Current Stable Dependency Alignment
+
+This dependency-only successor starts at public
+`1bd686f8a4b47a90ef136b5f7dbcca7390971b8e`. All production, test, resource,
+product, mode and license contracts are retained. The current public selectors
+are:
+
+| Direct dependency | Exact public selection |
+|---|---|
+| CircuiteFoundation | Stable `26.1021.0` / `4d03b5a561c82a756aaf93860f657733371538dc` |
+| swift-mask-data | `d23f9afd9c049cf06a12e307e4c26b4dd3ad216d` |
+| CoreSpice | `23b5449db81705a026f921c37b49053e93b69060` |
+
+CoreSpice selects stable SDK `1.2.1` and ToolQualification `26.1021.0`; these
+remain transitive dependencies. This alignment adds no direct SDK,
+ToolQualification or LogicDesign edge. The tracked lock must come from a fresh
+canonical HTTPS resolution with clean source-control checkouts and no edited,
+path or mirror overrides. It records the actual transitive graph.
+
+Qualification exercises the unchanged `SpiceCandidateDiscoveryTests`,
+`StandardTechnologyDecodeTests`, `ControlledManifestTests` and
+`ControlledFailureRetentionTests` through their three existing test products.
+These consumer seams cover CoreSpiceIO profile parsing and exact source graphs,
+Mask technology root fields, and the controlled manifest/error lifetime on the
+shared Foundation floor. No numerical solver or physics is duplicated. Prior
+behavioral evidence keeps its original source, fixture and graph scope; source
+preservation does not claim that those tests ran on this successor graph.
+
+The focused gates establish only their actual Native source/decode/refusal,
+cumulative resource/cancellation and retained-copy lifetime behavior. They do
+not establish whole-PDK, foundry, all-corner circuit, interval or history
+qualification. CoreSpice owns its own source and simulator qualification.

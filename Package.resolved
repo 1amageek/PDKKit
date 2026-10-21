@@ -1,12 +1,13 @@
 {
-  "originHash" : "2690a7dbfd92324c28f650f415d842a5d81477a2b5bf94ee3f3103e86e149a0a",
+  "originHash" : "01e9ca365f6c9c7ec6617dd6bb7c621ad57aa6a0f95a6cbaea512ff0c7311167",
   "pins" : [
     {
       "identity" : "circuitefoundation",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/1amageek/CircuiteFoundation.git",
       "state" : {
-        "revision" : "5f132c58209123433e0e479e1ea61096e46061ba"
+        "revision" : "4d03b5a561c82a756aaf93860f657733371538dc",
+        "version" : "26.1021.0"
       }
     },
     {
@@ -14,7 +15,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/1amageek/CoreSpice.git",
       "state" : {
-        "revision" : "82eb35e8bc57402880db3529c8a1dc2045349d87"
+        "revision" : "23b5449db81705a026f921c37b49053e93b69060"
       }
     },
     {
@@ -49,7 +50,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/1amageek/swift-mask-data.git",
       "state" : {
-        "revision" : "67410f834bdfa8a098c2ec0bfe3675210f658277"
+        "revision" : "d23f9afd9c049cf06a12e307e4c26b4dd3ad216d"
       }
     },
     {
@@ -57,8 +58,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/1amageek/swift-osdi.git",
       "state" : {
-        "revision" : "e17d3bcca1224c8ab9ccfaddea7a47580b29b748",
-        "version" : "1.2.0"
+        "revision" : "010f633892177322b433de3c64548999dbeaa0a1",
+        "version" : "1.2.1"
       }
     },
     {
@@ -66,8 +67,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/1amageek/ToolQualification.git",
       "state" : {
-        "revision" : "601ff5933396be4ba62c77b8bb0502e2f601f159",
-        "version" : "26.1018.0"
+        "revision" : "a72a86f54df23f772f201d2c7366fb1fd7ea8c6a",
+        "version" : "26.1021.0"
       }
     }
   ],
